@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assertCronAuthorized } from "@/lib/cron";
+import { assertCronAuthorized, resolveCronCategory } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
 import {
   generateCategoryComparison,
@@ -24,9 +24,7 @@ export async function GET(req: NextRequest) {
   const commentCount = Number(req.nextUrl.searchParams.get("comments") || 6);
 
   try {
-    const category = slug
-      ? await prisma.category.findUnique({ where: { slug } })
-      : await prisma.category.findFirst({ orderBy: { createdAt: "asc" } });
+    const category = await resolveCronCategory(slug);
 
     if (!category) {
       return NextResponse.json(

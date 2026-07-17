@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { prisma } from "@/lib/db/prisma";
 
 export function assertCronAuthorized(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -14,4 +15,27 @@ export function assertCronAuthorized(req: NextRequest) {
     return false;
   }
   return true;
+}
+
+export function getCronSchedule(req: NextRequest) {
+  return req.headers.get("x-vercel-cron-schedule");
+}
+
+export async function resolveCronCategory(slug: string | null) {
+  if (slug) {
+    return prisma.category.findUnique({ where: { slug } });
+  }
+
+  const categories = await prisma.category.findMany({
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (categories.length === 0) {
+    return null;
+  }
+
+  const dayIndex =
+    Math.floor(Date.now() / 86_400_000) % categories.length;
+
+  return categories[dayIndex] ?? categories[0];
 }

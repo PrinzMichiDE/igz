@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assertCronAuthorized } from "@/lib/cron";
+import { assertCronAuthorized, resolveCronCategory } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
 import { getQuotaStatus } from "@/lib/amazon/quota";
 import { syncCategoryDetails, syncCategorySearch } from "@/lib/amazon/sync";
@@ -18,9 +18,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const quotaBefore = await getQuotaStatus();
-    const category = slug
-      ? await prisma.category.findUnique({ where: { slug } })
-      : await prisma.category.findFirst({ orderBy: { createdAt: "asc" } });
+    const category = await resolveCronCategory(slug);
 
     if (!category) {
       return NextResponse.json(
