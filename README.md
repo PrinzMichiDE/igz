@@ -50,7 +50,12 @@ Header: `Authorization: Bearer $CRON_SECRET`
 2. KI-synthetisierte Nutzererfahrungs-Kommentare je Produkt/Locale
 3. Kategorie-Vergleiche
 
-Weekly schedules are defined in `vercel.json`.
+Daily schedules are defined in `vercel.json` (UTC):
+
+- `sync-products` — every day at 06:00 UTC
+- `generate-content` — every day at 07:00 UTC
+
+Without a `category` query parameter, each run rotates through seeded categories by day. Set `CRON_SECRET` in Vercel so scheduled invocations are authorized automatically.
 
 ## Env
 
