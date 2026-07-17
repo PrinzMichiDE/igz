@@ -6,6 +6,7 @@ import {
   generateProductExperienceComments,
   generateProductReview,
 } from "@/lib/ai/generate";
+import { pingProductUrls } from "@/lib/seo/ping-after-publish";
 import type { Locale } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest) {
       locale: Locale;
       count: number;
     }> = [];
+    const indexNowResults = [];
 
     for (const product of products) {
       for (const locale of locales) {
@@ -69,6 +71,14 @@ export async function GET(req: NextRequest) {
           count: savedComments.length,
         });
       }
+
+      indexNowResults.push(
+        await pingProductUrls({
+          productSlug: product.slug,
+          categorySlug: category.slug,
+          locales,
+        }),
+      );
     }
 
     const comparisons = [];
@@ -86,6 +96,7 @@ export async function GET(req: NextRequest) {
       reviews,
       comments,
       comparisons,
+      indexNowResults,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

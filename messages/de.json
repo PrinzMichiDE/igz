@@ -6,6 +6,9 @@
   "nav": {
     "home": "Home",
     "categories": "Kategorien",
+    "bestLists": "Bestenlisten",
+    "methodology": "Methodik",
+    "about": "Über uns",
     "imprint": "Impressum",
     "privacy": "Datenschutz"
   },
@@ -55,7 +58,8 @@
     "scoreQuality": "Verarbeitung",
     "scoreUsability": "Alltagstauglichkeit",
     "scoreLongevity": "Langzeitnutzen",
-    "scoreOverall": "Gesamt"
+    "scoreOverall": "Gesamt",
+    "internalLinks": "Weiterführende Vergleiche & Guides"
   },
   "seo": {
     "homeTitle": "Amazon Produktvergleiche & Testberichte",

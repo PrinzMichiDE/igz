@@ -15,6 +15,7 @@ import { ScoreBadge } from "@/components/product/score-badge";
 import { ScoreBreakdown } from "@/components/product/score-breakdown";
 import { UserExperienceComments } from "@/components/content/user-experience-comments";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+import { InternalLinks } from "@/components/seo/internal-links";
 import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
@@ -110,16 +111,25 @@ export default async function ProductPage({ params }: Props) {
     locale === "en" ? product.category.nameEn : product.category.nameDe;
   const pageUrl = absoluteUrl(localizedPath(locale, `/produkt/${product.slug}`));
 
-  const related = await prisma.product
-    .findMany({
-      where: {
-        categoryId: product.categoryId,
-        id: { not: product.id },
-      },
-      take: 3,
-      orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
-    })
-    .catch(() => []);
+  const [related, otherCategories] = await Promise.all([
+    prisma.product
+      .findMany({
+        where: {
+          categoryId: product.categoryId,
+          id: { not: product.id },
+        },
+        take: 3,
+        orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
+      })
+      .catch(() => []),
+    prisma.category
+      .findMany({
+        where: { id: { not: product.categoryId } },
+        take: 4,
+        orderBy: { updatedAt: "desc" },
+      })
+      .catch(() => []),
+  ]);
 
   const features = Array.isArray(product.features)
     ? (product.features as string[])
@@ -405,6 +415,45 @@ export default async function ProductPage({ params }: Props) {
           ))}
         </div>
       </section>
+
+      <InternalLinks
+        title={t("product.internalLinks")}
+        items={[
+          {
+            href: `/${locale}/kategorie/${product.category.slug}`,
+            title:
+              locale === "en"
+                ? `${categoryName} comparison`
+                : `${categoryName} Vergleich`,
+            description:
+              locale === "en"
+                ? product.category.descriptionEn
+                : product.category.descriptionDe,
+          },
+          {
+            href: `/${locale}/bestenlisten`,
+            title: t("nav.bestLists"),
+            description:
+              locale === "en"
+                ? "All category winners in one place"
+                : "Alle Kategorie-Testsieger auf einen Blick",
+          },
+          {
+            href: `/${locale}/methodik`,
+            title: t("nav.methodology"),
+            description:
+              locale === "en"
+                ? "How scores and reviews are created"
+                : "So entstehen Scores und Testberichte",
+          },
+          ...otherCategories.map((category) => ({
+            href: `/${locale}/kategorie/${category.slug}`,
+            title: locale === "en" ? category.nameEn : category.nameDe,
+            description:
+              locale === "en" ? category.descriptionEn : category.descriptionDe,
+          })),
+        ]}
+      />
     </div>
   );
 }

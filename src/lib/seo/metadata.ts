@@ -32,9 +32,23 @@ export function buildPageMetadata(input: BuildMetadataInput): Metadata {
       canonical,
       languages: hreflangAlternates(input.pathWithoutLocale),
     },
+    verification: {
+      google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+      other: {
+        ...(process.env.BING_SITE_VERIFICATION
+          ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION }
+          : {}),
+      },
+    },
     robots: input.noIndex
       ? { index: false, follow: false }
-      : { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+      : {
+          index: true,
+          follow: true,
+          "max-image-preview": "large" as const,
+          "max-snippet": -1,
+          "max-video-preview": -1,
+        },
     openGraph: {
       type: input.type || "website",
       locale: input.locale === "en" ? "en_US" : "de_DE",

@@ -15,12 +15,18 @@ export async function SiteHeader({ locale }: Props) {
         <Link href={`/${locale}`} className="font-bold tracking-tight text-zinc-900">
           {t("site.name")}
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-zinc-600 md:flex">
+        <nav className="hidden items-center gap-5 text-sm font-medium text-zinc-600 lg:flex">
           <Link href={`/${locale}`} className="hover:text-zinc-900">
             {t("nav.home")}
           </Link>
-          <Link href={`/${locale}#categories`} className="hover:text-zinc-900">
-            {t("nav.categories")}
+          <Link href={`/${locale}/bestenlisten`} className="hover:text-zinc-900">
+            {t("nav.bestLists")}
+          </Link>
+          <Link href={`/${locale}/methodik`} className="hover:text-zinc-900">
+            {t("nav.methodology")}
+          </Link>
+          <Link href={`/${locale}/ueber-uns`} className="hover:text-zinc-900">
+            {t("nav.about")}
           </Link>
         </nav>
         <LocaleSwitcher />

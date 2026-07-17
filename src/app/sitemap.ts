@@ -4,17 +4,33 @@ import { routing } from "@/i18n/routing";
 import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticPaths = ["", "/impressum", "/datenschutz"];
+  const staticPaths = [
+    "",
+    "/bestenlisten",
+    "/methodik",
+    "/ueber-uns",
+    "/impressum",
+    "/datenschutz",
+  ];
 
   const entries: MetadataRoute.Sitemap = [];
 
   for (const locale of routing.locales) {
     for (const path of staticPaths) {
+      const priority =
+        path === ""
+          ? 1
+          : path === "/bestenlisten"
+            ? 0.9
+            : path === "/methodik" || path === "/ueber-uns"
+              ? 0.6
+              : 0.3;
+
       entries.push({
         url: absoluteUrl(localizedPath(locale, path)),
         lastModified: new Date(),
-        changeFrequency: path ? "yearly" : "daily",
-        priority: path ? 0.3 : 1,
+        changeFrequency: path === "" || path === "/bestenlisten" ? "daily" : "weekly",
+        priority,
       });
     }
   }
@@ -34,8 +50,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         entries.push({
           url: absoluteUrl(localizedPath(locale, `/kategorie/${category.slug}`)),
           lastModified: category.updatedAt,
-          changeFrequency: "weekly",
-          priority: 0.8,
+          changeFrequency: "daily",
+          priority: 0.85,
         });
       }
       for (const product of products) {
@@ -43,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url: absoluteUrl(localizedPath(locale, `/produkt/${product.slug}`)),
           lastModified: product.updatedAt,
           changeFrequency: "weekly",
-          priority: 0.7,
+          priority: 0.75,
         });
       }
     }

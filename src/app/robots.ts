@@ -3,6 +3,22 @@ import { getSiteUrl } from "@/lib/seo/site";
 
 export default function robots(): MetadataRoute.Robots {
   const site = getSiteUrl();
+  const aiAgents = [
+    "GPTBot",
+    "ChatGPT-User",
+    "OAI-SearchBot",
+    "PerplexityBot",
+    "Google-Extended",
+    "Googlebot",
+    "Googlebot-Image",
+    "ClaudeBot",
+    "anthropic-ai",
+    "Bingbot",
+    "DuckDuckBot",
+    "Applebot",
+    "Applebot-Extended",
+  ];
+
   return {
     rules: [
       {
@@ -10,26 +26,10 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/api/", "/admin/"],
       },
-      {
-        userAgent: "GPTBot",
+      ...aiAgents.map((userAgent) => ({
+        userAgent,
         allow: "/",
-      },
-      {
-        userAgent: "ChatGPT-User",
-        allow: "/",
-      },
-      {
-        userAgent: "PerplexityBot",
-        allow: "/",
-      },
-      {
-        userAgent: "Google-Extended",
-        allow: "/",
-      },
-      {
-        userAgent: "ClaudeBot",
-        allow: "/",
-      },
+      })),
     ],
     sitemap: `${site}/sitemap.xml`,
     host: site,

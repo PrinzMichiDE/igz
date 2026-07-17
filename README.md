@@ -19,10 +19,14 @@ Next.js-Plattform für automatisierte Amazon-Produktvergleiche und Testberichte.
 
 - Canonical + hreflang (`de`/`en`/`x-default`)
 - Open Graph / Twitter Cards
-- `sitemap.xml`, `robots.txt`, `feed.xml`, `llms.txt`
+- `sitemap.xml`, `robots.txt`, `feed.xml`, `llms.txt`, `ai.txt`, `humans.txt`
+- IndexNow (`INDEXNOW_KEY`, Cron `/api/cron/indexnow`)
+- Google/Bing Verification Envs
 - JSON-LD: Organization, WebSite, Breadcrumb, Product/Review, FAQ, ItemList, QAPage
 - AEO-Blöcke: Direct Answer, Key Takeaways, Speakable selectors
+- E-E-A-T: `/methodik`, `/ueber-uns`, `/bestenlisten`
 - Innovative UI: Score-Breakdown, Decision Guide, Quick Compare, Article TOC, Reading Time
+- Playbook: [`docs/seo-aeo-playbook.md`](docs/seo-aeo-playbook.md)
 
 ## Setup
 

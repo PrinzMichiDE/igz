@@ -1,0 +1,148 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+import { JsonLd } from "@/components/seo/json-ld";
+import { prisma } from "@/lib/db/prisma";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import {
+  breadcrumbJsonLd,
+  itemListJsonLd,
+  organizationJsonLd,
+} from "@/lib/seo/jsonld";
+import { absoluteUrl, localizedPath } from "@/lib/seo/site";
+import type { AppLocale } from "@/i18n/routing";
+
+export const dynamic = "force-dynamic";
+
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const locale = localeParam as AppLocale;
+  return buildPageMetadata({
+    locale,
+    title:
+      locale === "en"
+        ? "Best Amazon product lists & comparisons"
+        : "Amazon Bestenlisten & Produktvergleiche",
+    description:
+      locale === "en"
+        ? "Browse category best lists with winners, value picks and budget tips."
+        : "Bestenlisten nach Kategorie mit Testsieger, Preis-Leistungs-Tipp und Budget-Empfehlung.",
+    pathWithoutLocale: "/bestenlisten",
+  });
+}
+
+export default async function BestListsPage({ params }: Props) {
+  const { locale: localeParam } = await params;
+  const locale = localeParam as AppLocale;
+  setRequestLocale(locale);
+  const t = await getTranslations();
+  const isDe = locale === "de";
+  const pageUrl = absoluteUrl(localizedPath(locale, "/bestenlisten"));
+
+  const categories = await prisma.category
+    .findMany({
+      include: {
+        _count: { select: { products: true } },
+        comparisons: {
+          include: { winnerProduct: true },
+        },
+      },
+      orderBy: { nameDe: "asc" },
+    })
+    .catch(() => []);
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-12">
+      <JsonLd
+        data={[
+          organizationJsonLd(locale),
+          breadcrumbJsonLd([
+            { name: t("nav.home"), url: absoluteUrl(localizedPath(locale)) },
+            {
+              name: isDe ? "Bestenlisten" : "Best lists",
+              url: pageUrl,
+            },
+          ]),
+          itemListJsonLd({
+            name: isDe ? "Amazon Bestenlisten" : "Amazon best lists",
+            url: pageUrl,
+            items: categories.map((category, index) => ({
+              position: index + 1,
+              name: locale === "en" ? category.nameEn : category.nameDe,
+              url: absoluteUrl(
+                localizedPath(locale, `/kategorie/${category.slug}`),
+              ),
+            })),
+          }),
+        ]}
+      />
+
+      <Breadcrumbs
+        items={[
+          { label: t("nav.home"), href: `/${locale}` },
+          { label: isDe ? "Bestenlisten" : "Best lists" },
+        ]}
+      />
+
+      <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">
+        {isDe
+          ? "Amazon Bestenlisten & Vergleiche"
+          : "Amazon best lists & comparisons"}
+      </h1>
+      <p className="aeo-direct-answer mb-8 max-w-3xl text-lg text-zinc-700">
+        {isDe
+          ? "Hier findest du unsere aktuellen Kategorie-Vergleiche mit Testsieger, Preis-Leistungs- und Budget-Tipp – optimiert für schnelle Antworten in Suche und KI-Assistenten."
+          : "Find our latest category comparisons with overall winners, best value and budget picks — optimized for fast answers in search and AI assistants."}
+      </p>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {categories.map((category) => {
+          const name = locale === "en" ? category.nameEn : category.nameDe;
+          const winner = category.comparisons[0]?.winnerProduct;
+          return (
+            <article
+              key={category.id}
+              className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
+            >
+              <h2 className="text-xl font-semibold text-zinc-900">
+                <Link
+                  href={`/${locale}/kategorie/${category.slug}`}
+                  className="hover:text-blue-700"
+                >
+                  {isDe ? `Beste ${name}` : `Best ${name}`}
+                </Link>
+              </h2>
+              <p className="mt-2 text-sm text-zinc-600">
+                {locale === "en"
+                  ? category.descriptionEn
+                  : category.descriptionDe}
+              </p>
+              <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                {category._count.products}{" "}
+                {isDe ? "Produkte im Vergleich" : "products compared"}
+              </p>
+              {winner ? (
+                <p className="mt-3 text-sm text-zinc-800">
+                  <span className="font-semibold">
+                    {isDe ? "Testsieger:" : "Winner:"}
+                  </span>{" "}
+                  <Link
+                    href={`/${locale}/produkt/${winner.slug}`}
+                    className="text-blue-700 hover:underline"
+                  >
+                    {winner.title}
+                  </Link>
+                </p>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
