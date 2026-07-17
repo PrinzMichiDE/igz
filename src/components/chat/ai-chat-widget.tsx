@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
+import { ChatMessageContent } from "@/components/chat/chat-message-content";
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
@@ -180,7 +181,11 @@ export function AiChatWidget({
                     : "mr-8 rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-800"
                 }
               >
-                {msg.content || (busy ? labels.thinking : "")}
+                {msg.content ? (
+                  <ChatMessageContent content={msg.content} tone={msg.role} />
+                ) : busy ? (
+                  labels.thinking
+                ) : null}
               </div>
             ))}
             <div ref={endRef} />

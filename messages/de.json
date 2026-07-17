@@ -31,15 +31,15 @@
   "chat": {
     "open": "KI-Chat",
     "title": "IGZ Einkaufsassistent",
-    "subtitle": "Frag nach dem besten Produkt für deinen Use-Case",
+    "subtitle": "Wir sagen dir, welches Produkt du nehmen sollst – inkl. Amazon-Links",
     "placeholder": "z.B. Welche Kopfhörer für Pendeln unter 100€?",
     "send": "Senden",
     "thinking": "Denke nach…",
     "error": "Chat gerade nicht erreichbar. Bitte später erneut versuchen.",
     "suggestions": [
-      "Welche Bluetooth-Kopfhörer eignen sich zum Pendeln?",
-      "Was ist besser: In-Ear oder Over-Ear fürs Büro?",
-      "Zeig mir die beste Preis-Leistung unter 100€"
+      "Welches Produkt soll ich zum Pendeln nehmen?",
+      "Empfiehl mir In-Ear oder Over-Ear fürs Büro",
+      "Was ist die beste Preis-Leistung unter 100€? Mit Amazon-Links bitte"
     ]
   },
   "home": {
