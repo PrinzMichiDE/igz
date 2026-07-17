@@ -6,6 +6,7 @@ export type ComparableProduct = {
   title: string;
   asin: string;
   imageUrl?: string | null;
+  imageMimeType?: string | null;
   price?: { toString(): string } | number | string | null;
   currency: string;
   rating?: number | null;

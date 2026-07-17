@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertCronAuthorized } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
 import { getQuotaStatus } from "@/lib/amazon/quota";
-import { syncCategoryDetails, syncCategorySearch } from "@/lib/amazon/sync";
+import {
+  backfillMissingProductImages,
+  syncCategoryDetails,
+  syncCategorySearch,
+} from "@/lib/amazon/sync";
 import { QuotaExceededError } from "@/lib/amazon/quota";
 
 export const runtime = "nodejs";
@@ -38,6 +42,7 @@ export async function GET(req: NextRequest) {
       if (!(error instanceof QuotaExceededError)) throw error;
     }
 
+    const imageBackfill = await backfillMissingProductImages(50);
     const quotaAfter = await getQuotaStatus();
 
     return NextResponse.json({
@@ -45,6 +50,7 @@ export async function GET(req: NextRequest) {
       category: category.slug,
       searchResult,
       detailsResult,
+      imageBackfill,
       quota: {
         before: quotaBefore,
         after: quotaAfter,

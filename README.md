@@ -11,9 +11,10 @@ Next.js-Plattform für automatisierte Amazon-Produktvergleiche und Testberichte.
 ## Architektur (kurz)
 
 1. Cron synct Produkte via RapidAPI (`/search`, optional `/product-details`)
-2. QuotaGuard begrenzt auf 100 Requests/Monat (BASIC)
-3. OpenRouter generiert DE/EN-Inhalte aus DB-Daten (ausführliche Tests + UX-Kommentare)
-4. Public Pages lesen **nur Postgres** (cache-first, kein Live-API-Call pro Pageview)
+2. Produktbilder werden beim Sync als Binärdaten in Postgres gespeichert (`imageData`/`imageMimeType`) und über `/api/product-image/[id]` ausgeliefert
+3. QuotaGuard begrenzt auf 100 Requests/Monat (BASIC)
+4. OpenRouter generiert DE/EN-Inhalte aus DB-Daten (ausführliche Tests + UX-Kommentare)
+5. Public Pages lesen **nur Postgres** (cache-first, kein Live-API-Call pro Pageview)
 
 ## SEO & AEO
 

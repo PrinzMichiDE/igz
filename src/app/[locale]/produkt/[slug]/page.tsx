@@ -18,6 +18,7 @@ import { CompareLauncher } from "@/components/comparison/compare-launcher";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { InternalLinks } from "@/components/seo/internal-links";
 import { JsonLd } from "@/components/seo/json-ld";
+import { resolveProductImageSrc } from "@/lib/amazon/product-image";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -82,12 +83,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     content.verdict ||
     product.title;
 
+  const imagePath = resolveProductImageSrc(product);
   return buildPageMetadata({
     locale,
     title,
     description,
     pathWithoutLocale: `/produkt/${product.slug}`,
-    image: product.imageUrl,
+    image: imagePath ? absoluteUrl(imagePath) : product.imageUrl,
     type: "article",
     publishedTime: article?.publishedAt,
     modifiedTime: article?.updatedAt || product.updatedAt,
@@ -107,6 +109,8 @@ export default async function ProductPage({ params }: Props) {
   const content = asReviewContent(article?.contentJson);
   const aeo = extractAeoFields(content);
   const ctaHref = product.affiliateUrl || product.productUrl || "#";
+  const imageSrc = resolveProductImageSrc(product);
+  const imageAbsolute = imageSrc ? absoluteUrl(imageSrc) : product.imageUrl;
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
   const categoryName =
     locale === "en" ? product.category.nameEn : product.category.nameDe;
@@ -193,7 +197,7 @@ export default async function ProductPage({ params }: Props) {
               content.verdict ||
               article?.excerpt ||
               product.title,
-            image: product.imageUrl,
+            image: imageAbsolute,
             asin: product.asin,
             price: product.price?.toString(),
             currency: product.currency,
@@ -236,9 +240,9 @@ export default async function ProductPage({ params }: Props) {
         <div>
           <div className="mb-6 flex flex-col gap-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm md:flex-row">
             <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-xl bg-zinc-50 md:mx-0">
-              {product.imageUrl ? (
+              {imageSrc ? (
                 <Image
-                  src={product.imageUrl}
+                  src={imageSrc}
                   alt={product.title}
                   fill
                   className="object-contain p-3"
@@ -432,7 +436,9 @@ export default async function ProductPage({ params }: Props) {
               key={item.id}
               href={`/${locale}/produkt/${item.slug}`}
               title={item.title}
+              productId={item.id}
               imageUrl={item.imageUrl}
+              imageMimeType={item.imageMimeType}
               score={item.editorialScore ?? item.rating}
               price={item.price?.toString()}
               currency={item.currency}

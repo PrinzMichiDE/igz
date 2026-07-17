@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CtaButton } from "@/components/affiliate/cta-button";
+import { resolveProductImageSrc } from "@/lib/amazon/product-image";
 import { formatPrice } from "@/lib/utils";
 import type {
   ComparableProduct,
@@ -30,12 +31,14 @@ function ProductColumn({
   cta: string;
   numberLocale: string;
 }) {
+  const imageSrc = resolveProductImageSrc(product);
+
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
       <div className="relative mx-auto mb-3 h-28 w-28 overflow-hidden rounded-lg bg-zinc-50">
-        {product.imageUrl ? (
+        {imageSrc ? (
           <Image
-            src={product.imageUrl}
+            src={imageSrc}
             alt={product.title}
             fill
             className="object-contain p-2"

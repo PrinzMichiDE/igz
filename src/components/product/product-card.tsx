@@ -2,12 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { ScoreBadge } from "@/components/product/score-badge";
 import { CtaButton } from "@/components/affiliate/cta-button";
+import { resolveProductImageSrc } from "@/lib/amazon/product-image";
 import { formatPrice } from "@/lib/utils";
 
 type Props = {
   href: string;
   title: string;
+  productId?: string;
   imageUrl?: string | null;
+  imageMimeType?: string | null;
   score?: number | null;
   price?: number | string | null;
   currency?: string;
@@ -20,7 +23,9 @@ type Props = {
 export function ProductCard({
   href,
   title,
+  productId,
   imageUrl,
+  imageMimeType,
   score,
   price,
   currency = "EUR",
@@ -29,13 +34,19 @@ export function ProductCard({
   ctaHref,
   readLabel,
 }: Props) {
+  const src = resolveProductImageSrc({
+    id: productId,
+    imageUrl,
+    imageMimeType,
+  });
+
   return (
     <article className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="relative h-24 w-24 overflow-hidden rounded-lg bg-zinc-50">
-          {imageUrl ? (
+          {src ? (
             <Image
-              src={imageUrl}
+              src={src}
               alt={title}
               fill
               className="object-contain p-2"

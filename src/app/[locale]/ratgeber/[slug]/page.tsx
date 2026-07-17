@@ -171,7 +171,9 @@ export default async function RatgeberPage({ params }: Props) {
                 key={product.id}
                 href={`/${locale}/produkt/${product.slug}`}
                 title={product.title}
+                productId={product.id}
                 imageUrl={product.imageUrl}
+                imageMimeType={product.imageMimeType}
                 score={product.editorialScore ?? product.rating}
                 price={product.price?.toString()}
                 currency={product.currency}

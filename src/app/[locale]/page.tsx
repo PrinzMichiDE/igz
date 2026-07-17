@@ -128,7 +128,9 @@ export default async function HomePage({ params }: Props) {
                 key={product.id}
                 href={`/${locale}/produkt/${product.slug}`}
                 title={product.title}
+                productId={product.id}
                 imageUrl={product.imageUrl}
+                imageMimeType={product.imageMimeType}
                 score={product.editorialScore ?? product.rating}
                 price={product.price?.toString()}
                 currency={product.currency}
@@ -155,7 +157,9 @@ export default async function HomePage({ params }: Props) {
                 key={product.id}
                 href={`/${locale}/produkt/${product.slug}`}
                 title={product.title}
+                productId={product.id}
                 imageUrl={product.imageUrl}
+                imageMimeType={product.imageMimeType}
                 score={product.editorialScore ?? product.rating}
                 price={product.price?.toString()}
                 currency={product.currency}

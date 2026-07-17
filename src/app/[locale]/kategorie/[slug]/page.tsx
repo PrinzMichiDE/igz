@@ -115,7 +115,9 @@ export default async function CategoryPage({ params }: Props) {
     rank: index + 1,
     title: product.title,
     href: `/${locale}/produkt/${product.slug}`,
+    productId: product.id,
     imageUrl: product.imageUrl,
+    imageMimeType: product.imageMimeType,
     score: product.editorialScore ?? product.rating,
     price: product.price?.toString(),
     currency: product.currency,
@@ -269,7 +271,9 @@ export default async function CategoryPage({ params }: Props) {
             <ProductCard
               href={`/${locale}/produkt/${comparison.winnerProduct.slug}`}
               title={comparison.winnerProduct.title}
+              productId={comparison.winnerProduct.id}
               imageUrl={comparison.winnerProduct.imageUrl}
+              imageMimeType={comparison.winnerProduct.imageMimeType}
               score={
                 comparison.winnerProduct.editorialScore ??
                 comparison.winnerProduct.rating
@@ -293,7 +297,9 @@ export default async function CategoryPage({ params }: Props) {
             <ProductCard
               href={`/${locale}/produkt/${comparison.priceWinner.slug}`}
               title={comparison.priceWinner.title}
+              productId={comparison.priceWinner.id}
               imageUrl={comparison.priceWinner.imageUrl}
+              imageMimeType={comparison.priceWinner.imageMimeType}
               score={
                 comparison.priceWinner.editorialScore ??
                 comparison.priceWinner.rating
@@ -317,7 +323,9 @@ export default async function CategoryPage({ params }: Props) {
             <ProductCard
               href={`/${locale}/produkt/${comparison.budgetWinner.slug}`}
               title={comparison.budgetWinner.title}
+              productId={comparison.budgetWinner.id}
               imageUrl={comparison.budgetWinner.imageUrl}
+              imageMimeType={comparison.budgetWinner.imageMimeType}
               score={
                 comparison.budgetWinner.editorialScore ??
                 comparison.budgetWinner.rating
