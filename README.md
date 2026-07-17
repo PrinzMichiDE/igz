@@ -39,20 +39,31 @@ cp .env.example .env
 # DATABASE_URL, RAPIDAPI_KEY, OPENROUTER_API_KEY, CRON_SECRET, NEXTAUTH_SECRET setzen
 
 npm install
-npx prisma db push
 npm run db:seed
 npm run dev
 ```
 
 App: [http://localhost:3000/de](http://localhost:3000/de)
 
+Prisma läuft automatisch über `db:prepare` bei:
+- `npm run dev` (`predev`)
+- `npm run build` (`prebuild`) – auch auf Vercel
+- `npm start` (`prestart`)
+
+`db:prepare` führt `prisma generate` + `prisma migrate deploy` aus (Fallback: `prisma db push`).
+Optional überspringen: `PRISMA_SKIP_SCHEMA_SYNC=1`.
+
+Auf Vercel muss `DATABASE_URL` als Environment Variable gesetzt sein (Build + Runtime).
+
 ## Wichtige Scripts
 
-- `npm run dev` – lokaler Dev-Server
-- `npm run build` / `npm start` – Production
+- `npm run dev` – lokaler Dev-Server (+ automatisches Prisma-Prepare)
+- `npm run build` / `npm start` – Production (+ automatisches Prisma-Prepare)
+- `npm run db:prepare` – Prisma Client + Schema-Sync
 - `npm run db:generate` – Prisma Client
+- `npm run db:deploy` – Migrationen in Production anwenden
 - `npm run db:push` – Schema ohne Migration-History pushen
-- `npm run db:migrate` – Migrationen
+- `npm run db:migrate` – lokale Migration erzeugen
 - `npm run db:seed` – Demo-Kategorien + Dummy-Products
 
 ## Cron Endpoints
