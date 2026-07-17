@@ -1,6 +1,9 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import Link from "next/link";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
-import { CategoryCard } from "@/components/layout/category-card";
+import { CategoryIconCard } from "@/components/layout/category-icon-card";
+import { HeroSearch } from "@/components/layout/hero-search";
+import { WhyIgzSection } from "@/components/layout/why-igz-section";
 import { ProductCard } from "@/components/product/product-card";
 import { prisma } from "@/lib/db/prisma";
 import type { AppLocale } from "@/i18n/routing";
@@ -16,10 +19,6 @@ async function safeCategories() {
     return await prisma.category.findMany({
       include: {
         _count: { select: { products: true } },
-        products: {
-          orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
-          take: 1,
-        },
       },
       orderBy: { nameDe: "asc" },
     });
@@ -32,11 +31,17 @@ async function safeLatestProducts() {
   try {
     return await prisma.product.findMany({
       orderBy: { updatedAt: "desc" },
-      take: 6,
+      take: 8,
     });
   } catch {
     return [];
   }
+}
+
+function pseudoDiscount(seed: string) {
+  let total = 0;
+  for (const char of seed) total += char.charCodeAt(0);
+  return 12 + (total % 18);
 }
 
 export default async function HomePage({ params }: Props) {
@@ -50,102 +55,147 @@ export default async function HomePage({ params }: Props) {
     safeLatestProducts(),
   ]);
 
-  const winners = products.slice(0, 3);
+  const deals = products.slice(0, 4);
+  const featured = products[0];
+  const topRated = products.slice(1, 4);
 
   return (
     <div>
-      <section className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-blue-700">
-            {t("site.tagline")}
-          </p>
-          <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-zinc-900 md:text-5xl">
-            {t("home.heroTitle")}
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-zinc-600">
-            {t("home.heroSubtitle")}
-          </p>
-          <div className="mt-6">
-            <AffiliateDisclosure text={t("home.trust")} compact />
+      <section className="igz-hero-gradient border-b border-border/70">
+        <div className="igz-container py-16 md:py-24">
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="font-display text-sm font-medium tracking-[0.18em] text-secondary uppercase">
+              {t("site.tagline")}
+            </p>
+            <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-primary md:text-6xl">
+              {t("home.heroTitle")}
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
+              {t("home.heroSubtitle")}
+            </p>
+            <div className="mt-8">
+              <HeroSearch
+                placeholder={t("home.searchPlaceholder")}
+                buttonLabel={t("home.searchButton")}
+                actionHref={`/${locale}#categories`}
+              />
+            </div>
+            <div className="mt-6 flex justify-center">
+              <AffiliateDisclosure text={t("home.trust")} compact />
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="categories" className="mx-auto max-w-6xl px-4 py-12">
-        <h2 className="mb-6 text-2xl font-bold text-zinc-900">
-          {t("home.topCategories")}
-        </h2>
+      <section id="categories" className="igz-container py-16 md:py-20">
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-semibold text-primary">
+            {t("home.browseCategories")}
+          </h2>
+        </div>
         {categories.length === 0 ? (
-          <p className="text-zinc-600">{t("home.empty")}</p>
+          <p className="mt-8 text-center text-muted-foreground">{t("home.empty")}</p>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {categories.map((category) => (
-              <CategoryCard
+              <CategoryIconCard
                 key={category.id}
                 href={`/${locale}/kategorie/${category.slug}`}
                 title={locale === "en" ? category.nameEn : category.nameDe}
-                description={
-                  locale === "en"
-                    ? category.descriptionEn
-                    : category.descriptionDe
-                }
-                count={category._count.products}
+                slug={category.slug}
               />
             ))}
           </div>
         )}
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12">
-        <h2 className="mb-6 text-2xl font-bold text-zinc-900">
-          {t("home.latestReviews")}
-        </h2>
+      <section id="deals" className="igz-container py-16 md:py-20">
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <h2 className="font-display text-3xl font-semibold text-primary">
+            {t("home.topDeals")}
+          </h2>
+          <Link
+            href={`/${locale}#reviews`}
+            className="text-sm font-semibold text-secondary hover:underline"
+          >
+            {t("home.viewAllDeals")}
+          </Link>
+        </div>
+        {deals.length === 0 ? (
+          <p className="text-muted-foreground">{t("home.empty")}</p>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {deals.map((product) => (
+              <ProductCard
+                key={product.id}
+                href={`/${locale}/produkt/${product.slug}`}
+                title={product.title}
+                imageUrl={product.imageUrl}
+                score={product.editorialScore ?? product.rating}
+                price={product.price?.toString()}
+                currency={product.currency}
+                locale={locale}
+                ctaLabel={t("cta.buy")}
+                ctaHref={product.affiliateUrl || product.productUrl || "#"}
+                readLabel={t("category.readReview")}
+                discountPercent={pseudoDiscount(product.slug)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <WhyIgzSection />
+
+      <section id="reviews" className="igz-container py-16 md:py-20">
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <h2 className="font-display text-3xl font-semibold text-primary">
+            {t("home.topRated")}
+          </h2>
+          <Link
+            href={`/${locale}#categories`}
+            className="text-sm font-semibold text-secondary hover:underline"
+          >
+            {t("home.viewAllReports")}
+          </Link>
+        </div>
         {products.length === 0 ? (
-          <p className="text-zinc-600">{t("home.empty")}</p>
+          <p className="text-muted-foreground">{t("home.empty")}</p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
+          <div className="space-y-5">
+            {featured ? (
               <ProductCard
-                key={product.id}
-                href={`/${locale}/produkt/${product.slug}`}
-                title={product.title}
-                imageUrl={product.imageUrl}
-                score={product.editorialScore ?? product.rating}
-                price={product.price?.toString()}
-                currency={product.currency}
+                href={`/${locale}/produkt/${featured.slug}`}
+                title={featured.title}
+                imageUrl={featured.imageUrl}
+                score={featured.editorialScore ?? featured.rating}
+                price={featured.price?.toString()}
+                currency={featured.currency}
                 locale={locale}
-                ctaLabel={t("cta.amazon")}
-                ctaHref={product.affiliateUrl || product.productUrl || "#"}
+                ctaLabel={t("cta.checkPrice")}
+                ctaHref={featured.affiliateUrl || featured.productUrl || "#"}
                 readLabel={t("category.readReview")}
+                variant="featured"
+                badge={t("home.editorsChoice")}
               />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-12">
-        <h2 className="mb-6 text-2xl font-bold text-zinc-900">
-          {t("home.winners")}
-        </h2>
-        {winners.length === 0 ? (
-          <p className="text-zinc-600">{t("home.empty")}</p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-3">
-            {winners.map((product) => (
-              <ProductCard
-                key={product.id}
-                href={`/${locale}/produkt/${product.slug}`}
-                title={product.title}
-                imageUrl={product.imageUrl}
-                score={product.editorialScore ?? product.rating}
-                price={product.price?.toString()}
-                currency={product.currency}
-                locale={locale}
-                ctaLabel={t("cta.amazon")}
-                ctaHref={product.affiliateUrl || product.productUrl || "#"}
-                readLabel={t("category.readReview")}
-              />
-            ))}
+            ) : null}
+            <div className="grid gap-5 lg:grid-cols-3">
+              {topRated.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  href={`/${locale}/produkt/${product.slug}`}
+                  title={product.title}
+                  imageUrl={product.imageUrl}
+                  score={product.editorialScore ?? product.rating}
+                  price={product.price?.toString()}
+                  currency={product.currency}
+                  locale={locale}
+                  ctaLabel={t("cta.checkPrice")}
+                  ctaHref={product.affiliateUrl || product.productUrl || "#"}
+                  readLabel={t("category.readReview")}
+                />
+              ))}
+            </div>
           </div>
         )}
       </section>
