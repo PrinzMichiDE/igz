@@ -6,6 +6,7 @@ import { HeroSearch } from "@/components/layout/hero-search";
 import { WhyIgzSection } from "@/components/layout/why-igz-section";
 import { ProductCard } from "@/components/product/product-card";
 import { prisma } from "@/lib/db/prisma";
+import { productOutHref } from "@/lib/product-links";
 import type { AppLocale } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,7 @@ export default async function HomePage({ params }: Props) {
   const deals = products.slice(0, 4);
   const featured = products[0];
   const topRated = products.slice(1, 4);
+  const homePath = `/${locale}`;
 
   return (
     <div>
@@ -136,7 +138,7 @@ export default async function HomePage({ params }: Props) {
                 currency={product.currency}
                 locale={locale}
                 ctaLabel={t("cta.buy")}
-                ctaHref={product.affiliateUrl || product.productUrl || "#"}
+                ctaHref={productOutHref(product, locale, homePath)}
                 readLabel={t("category.readReview")}
                 discountPercent={pseudoDiscount(product.slug)}
               />
@@ -173,7 +175,7 @@ export default async function HomePage({ params }: Props) {
                 currency={featured.currency}
                 locale={locale}
                 ctaLabel={t("cta.checkPrice")}
-                ctaHref={featured.affiliateUrl || featured.productUrl || "#"}
+                ctaHref={productOutHref(featured, locale, homePath)}
                 readLabel={t("category.readReview")}
                 variant="featured"
                 badge={t("home.editorsChoice")}
@@ -191,7 +193,7 @@ export default async function HomePage({ params }: Props) {
                   currency={product.currency}
                   locale={locale}
                   ctaLabel={t("cta.checkPrice")}
-                  ctaHref={product.affiliateUrl || product.productUrl || "#"}
+                  ctaHref={productOutHref(product, locale, homePath)}
                   readLabel={t("category.readReview")}
                 />
               ))}

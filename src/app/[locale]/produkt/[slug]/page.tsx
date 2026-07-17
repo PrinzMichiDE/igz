@@ -10,9 +10,17 @@ import { ProductCard } from "@/components/product/product-card";
 import { ProsCons } from "@/components/content/pros-cons";
 import { ReviewToc } from "@/components/content/review-toc";
 import { ScoreBadge } from "@/components/product/score-badge";
-import { UserExperienceComments } from "@/components/content/user-experience-comments";
+import { ExperienceCommentExplorer } from "@/components/content/experience-comment-explorer";
+import { AmazonTrustBadges } from "@/components/product/amazon-trust-badges";
+import { ScenarioTags } from "@/components/product/scenario-tags";
+import { ValueIndicators } from "@/components/product/value-indicators";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
+import {
+  averageNumeric,
+  extractTrustSignals,
+} from "@/lib/product-metadata";
+import { numericPrice, productOutHref } from "@/lib/product-links";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 
@@ -27,6 +35,7 @@ export default async function ProductPage({ params }: Props) {
   const locale = localeParam as AppLocale;
   setRequestLocale(locale);
   const t = await getTranslations();
+  const pagePath = `/${locale}/produkt/${slug}`;
 
   const product = await prisma.product
     .findUnique({
@@ -49,20 +58,37 @@ export default async function ProductPage({ params }: Props) {
 
   const article = product.articles[0];
   const content = asReviewContent(article?.contentJson);
-  const ctaHref = product.affiliateUrl || product.productUrl || "#";
+  const ctaHref = productOutHref(product, locale, pagePath);
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
   const score = content.score ?? product.editorialScore ?? product.rating;
+  const trustSignals = extractTrustSignals(
+    product.rawSearchJson,
+    product.price?.toString(),
+  );
 
-  const related = await prisma.product
-    .findMany({
-      where: {
-        categoryId: product.categoryId,
-        id: { not: product.id },
-      },
-      take: 3,
-      orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
-    })
-    .catch(() => []);
+  const [related, categoryPrices] = await Promise.all([
+    prisma.product
+      .findMany({
+        where: {
+          categoryId: product.categoryId,
+          id: { not: product.id },
+        },
+        take: 3,
+        orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
+      })
+      .catch(() => []),
+    prisma.product
+      .findMany({
+        where: { categoryId: product.categoryId },
+        select: { price: true },
+      })
+      .catch(() => []),
+  ]);
+
+  const categoryAveragePrice = averageNumeric(
+    categoryPrices.map((item) => numericPrice(item.price)),
+  );
+  const currentPrice = numericPrice(product.price);
 
   const features = Array.isArray(product.features)
     ? (product.features as string[])
@@ -108,6 +134,32 @@ export default async function ProductPage({ params }: Props) {
           <h1 className="font-display text-4xl font-bold tracking-tight text-primary md:text-5xl">
             {article?.title || product.title}
           </h1>
+
+          <AmazonTrustBadges
+            signals={trustSignals}
+            labels={{
+              bestSeller: t("product.trustBestSeller"),
+              amazonChoice: t("product.trustAmazonChoice"),
+              salesVolume: trustSignals.salesVolume || "",
+            }}
+          />
+
+          <div className="mt-4">
+            <ValueIndicators
+              price={currentPrice}
+              categoryAveragePrice={categoryAveragePrice}
+              savingsPercent={trustSignals.savingsPercent}
+              lastSyncedAt={product.lastSyncedAt}
+              locale={locale}
+              labels={{
+                belowAverage: t("product.valueBelowAverage"),
+                aboveAverage: t("product.valueAboveAverage"),
+                onPar: t("product.valueOnPar"),
+                savings: t("product.valueSavings"),
+                updated: t("product.valueUpdated"),
+              }}
+            />
+          </div>
 
           <div className="mt-6 overflow-hidden rounded-xl border border-border bg-surface-muted">
             {product.imageUrl ? (
@@ -250,6 +302,14 @@ export default async function ProductPage({ params }: Props) {
             </div>
           </section>
 
+          <ScenarioTags
+            title={t("product.scenarioTagsTitle")}
+            tags={content.bestFor || []}
+            locale={locale}
+            categorySlug={product.category.slug}
+            hint={t("product.scenarioTagsHint")}
+          />
+
           <section id="details" className="mt-10">
             <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
               {t("product.details")}
@@ -266,11 +326,20 @@ export default async function ProductPage({ params }: Props) {
             </div>
           </section>
 
-          <UserExperienceComments
-            title={t("product.experiences")}
-            disclaimer={t("product.experiencesDisclaimer")}
-            weeksLabel={t("product.usageWeeks")}
-            emptyLabel={t("product.experiencesEmpty")}
+          <ExperienceCommentExplorer
+            labels={{
+              title: t("product.experiences"),
+              disclaimer: t("product.experiencesDisclaimer"),
+              weeksLabel: t("product.usageWeeks"),
+              emptyLabel: t("product.experiencesEmpty"),
+              filterAll: t("product.experienceFilterAll"),
+              filterPositive: t("product.experienceFilterPositive"),
+              filterCritical: t("product.experienceFilterCritical"),
+              sortRecent: t("product.experienceSortRecent"),
+              sortRating: t("product.experienceSortRating"),
+              averageRating: t("product.experienceAverageRating"),
+              countLabel: t("product.experienceCount"),
+            }}
             comments={product.experienceComments}
           />
 
@@ -318,7 +387,7 @@ export default async function ProductPage({ params }: Props) {
               currency={item.currency}
               locale={locale}
               ctaLabel={t("cta.checkPrice")}
-              ctaHref={item.affiliateUrl || item.productUrl || "#"}
+              ctaHref={productOutHref(item, locale, pagePath)}
               readLabel={t("category.readReview")}
             />
           ))}

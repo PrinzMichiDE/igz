@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertCronAuthorized, resolveCronCategory } from "@/lib/cron";
-import { prisma } from "@/lib/db/prisma";
 import { getQuotaStatus } from "@/lib/amazon/quota";
 import { syncCategoryDetails, syncCategorySearch } from "@/lib/amazon/sync";
 import { QuotaExceededError } from "@/lib/amazon/quota";
