@@ -7,10 +7,40 @@
     "home": "Home",
     "categories": "Kategorien",
     "bestLists": "Bestenlisten",
+    "compare": "Vergleich",
     "methodology": "Methodik",
     "about": "Über uns",
     "imprint": "Impressum",
     "privacy": "Datenschutz"
+  },
+  "compare": {
+    "launcherTitle": "Zwei Produkte gegeneinander vergleichen",
+    "select": "Produkt",
+    "cta": "Direktvergleich öffnen",
+    "helper": "Wähle zwei unterschiedliche Produkte für den Side-by-Side-Vergleich.",
+    "winner": "führt",
+    "tie": "gleichauf",
+    "aiTitle": "KI-Fazit zum Duell",
+    "aiButton": "KI-Vergleich erstellen",
+    "aiLoading": "KI analysiert…",
+    "aiError": "KI-Vergleich derzeit nicht verfügbar. Bitte OpenRouter-Key prüfen.",
+    "forProduct": "Stärken von Produkt",
+    "bottomLine": "Fazit",
+    "withThis": "Mit diesem Produkt vergleichen"
+  },
+  "chat": {
+    "open": "KI-Chat",
+    "title": "IGZ Einkaufsassistent",
+    "subtitle": "Frag nach dem besten Produkt für deinen Use-Case",
+    "placeholder": "z.B. Welche Kopfhörer für Pendeln unter 100€?",
+    "send": "Senden",
+    "thinking": "Denke nach…",
+    "error": "Chat gerade nicht erreichbar. Bitte später erneut versuchen.",
+    "suggestions": [
+      "Welche Bluetooth-Kopfhörer eignen sich zum Pendeln?",
+      "Was ist besser: In-Ear oder Over-Ear fürs Büro?",
+      "Zeig mir die beste Preis-Leistung unter 100€"
+    ]
   },
   "home": {
     "heroTitle": "Unabhängige Produktvergleiche – klar bewertet",

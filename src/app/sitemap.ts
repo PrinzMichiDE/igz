@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db/prisma";
 import { routing } from "@/i18n/routing";
+import { buildComparePairSlug } from "@/lib/compare/pair";
 import { BLUETOOTH_HEADPHONES_PAGES } from "@/lib/seo/niche/bluetooth-headphones";
 import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 
@@ -8,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     "",
     "/bestenlisten",
+    "/vergleich",
     "/methodik",
     "/ueber-uns",
     "/impressum",
@@ -72,6 +74,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: "weekly",
           priority: 0.75,
         });
+      }
+
+      const topForPairs = products.slice(0, 5);
+      for (let i = 0; i < topForPairs.length; i += 1) {
+        for (let j = i + 1; j < topForPairs.length; j += 1) {
+          const pair = buildComparePairSlug(
+            topForPairs[i].slug,
+            topForPairs[j].slug,
+          );
+          entries.push({
+            url: absoluteUrl(localizedPath(locale, `/vergleich/${pair}`)),
+            lastModified: new Date(),
+            changeFrequency: "weekly",
+            priority: 0.7,
+          });
+        }
       }
     }
   } catch {

@@ -22,11 +22,11 @@ export async function SiteHeader({ locale }: Props) {
           <Link href={`/${locale}/bestenlisten`} className="hover:text-zinc-900">
             {t("nav.bestLists")}
           </Link>
+          <Link href={`/${locale}/vergleich`} className="hover:text-zinc-900">
+            {t("nav.compare")}
+          </Link>
           <Link href={`/${locale}/methodik`} className="hover:text-zinc-900">
             {t("nav.methodology")}
-          </Link>
-          <Link href={`/${locale}/ueber-uns`} className="hover:text-zinc-900">
-            {t("nav.about")}
           </Link>
         </nav>
         <LocaleSwitcher />

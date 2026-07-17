@@ -14,6 +14,7 @@ import { DecisionGuide } from "@/components/product/decision-guide";
 import { ScoreBadge } from "@/components/product/score-badge";
 import { ScoreBreakdown } from "@/components/product/score-breakdown";
 import { UserExperienceComments } from "@/components/content/user-experience-comments";
+import { CompareLauncher } from "@/components/comparison/compare-launcher";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { InternalLinks } from "@/components/seo/internal-links";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -111,7 +112,7 @@ export default async function ProductPage({ params }: Props) {
     locale === "en" ? product.category.nameEn : product.category.nameDe;
   const pageUrl = absoluteUrl(localizedPath(locale, `/produkt/${product.slug}`));
 
-  const [related, otherCategories] = await Promise.all([
+  const [related, compareCandidates, otherCategories] = await Promise.all([
     prisma.product
       .findMany({
         where: {
@@ -120,6 +121,17 @@ export default async function ProductPage({ params }: Props) {
         },
         take: 3,
         orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
+      })
+      .catch(() => []),
+    prisma.product
+      .findMany({
+        where: {
+          categoryId: product.categoryId,
+          id: { not: product.id },
+        },
+        take: 12,
+        orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
+        select: { slug: true, title: true },
       })
       .catch(() => []),
     prisma.category
@@ -394,6 +406,23 @@ export default async function ProductPage({ params }: Props) {
           <p className="mt-3 text-xs text-zinc-500">{t("product.scoreHint")}</p>
         </div>
       </div>
+
+      <section className="mt-10">
+        <CompareLauncher
+          locale={locale}
+          currentSlug={product.slug}
+          options={[
+            { slug: product.slug, title: product.title },
+            ...compareCandidates,
+          ]}
+          labels={{
+            title: t("compare.withThis"),
+            select: t("compare.select"),
+            cta: t("compare.cta"),
+            helper: t("compare.helper"),
+          }}
+        />
+      </section>
 
       <section className="mt-14">
         <h2 className="mb-6 text-2xl font-bold">{t("product.related")}</h2>
