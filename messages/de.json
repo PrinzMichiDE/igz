@@ -1,0 +1,53 @@
+{
+  "site": {
+    "name": "IGZ Vergleich",
+    "tagline": "Unabhängige Produktvergleiche – klar bewertet"
+  },
+  "nav": {
+    "home": "Home",
+    "categories": "Kategorien",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz"
+  },
+  "home": {
+    "heroTitle": "Unabhängige Produktvergleiche – klar bewertet",
+    "heroSubtitle": "Automatisch aktualisierte Amazon-Tests und Kategorie-Vergleiche, damit du schneller die richtige Kaufentscheidung triffst.",
+    "trust": "Affiliate-Hinweis · KI-gestützte Redaktion · regelmäßig aktualisiert",
+    "topCategories": "Top-Kategorien",
+    "latestReviews": "Aktuelle Testberichte",
+    "winners": "Testsieger der Woche",
+    "empty": "Noch keine Inhalte – bitte Seed oder Sync starten."
+  },
+  "category": {
+    "comparison": "Vergleich",
+    "winner": "Testsieger",
+    "priceWinner": "Preis-Leistungs-Sieger",
+    "budgetWinner": "Budget-Tipp",
+    "tableTitle": "Vergleichstabelle",
+    "ctaWinner": "Zum Testsieger bei Amazon",
+    "readReview": "Testbericht lesen"
+  },
+  "product": {
+    "score": "Redaktioneller Score",
+    "scoreHint": "Redaktioneller Score auf Basis von Specs, Preis und Nutzerfeedback",
+    "pros": "Vorteile",
+    "cons": "Nachteile",
+    "bestFor": "Für wen geeignet",
+    "notFor": "Weniger geeignet für",
+    "verdict": "Fazit",
+    "details": "Details",
+    "priceNote": "Preis kann variieren · Stand",
+    "related": "Ähnliche Produkte"
+  },
+  "cta": {
+    "amazon": "Bei Amazon ansehen",
+    "readMore": "Mehr erfahren"
+  },
+  "disclosure": {
+    "short": "Affiliate-Hinweis: Mit Sternchen (*) markierte Links sind Affiliate-Links. Wenn du darüber einkaufst, erhalten wir ggf. eine Provision – ohne Mehrkosten für dich.",
+    "inline": "Affiliate-Link"
+  },
+  "footer": {
+    "rights": "Alle Rechte vorbehalten."
+  }
+}

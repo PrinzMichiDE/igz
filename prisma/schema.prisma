@@ -1,0 +1,175 @@
+// Prisma schema for Amazon affiliate comparison platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ArticleType {
+  review
+  comparison
+  buying_guide
+}
+
+enum ArticleStatus {
+  draft
+  published
+  needs_review
+}
+
+enum Locale {
+  de
+  en
+}
+
+enum JobType {
+  sync_search
+  sync_details
+  generate_review
+  generate_comparison
+}
+
+enum JobStatus {
+  pending
+  running
+  succeeded
+  failed
+  skipped
+}
+
+model Category {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  nameDe           String
+  nameEn           String
+  descriptionDe    String?
+  descriptionEn    String?
+  searchKeywords   String[]
+  amazonCategoryId String?
+  countryScope     String   @default("DE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  products    Product[]
+  articles    Article[]
+  comparisons Comparison[]
+}
+
+model Product {
+  id             String    @id @default(cuid())
+  asin           String
+  country        String
+  slug           String    @unique
+  title          String
+  imageUrl       String?
+  price          Decimal?  @db.Decimal(10, 2)
+  currency       String    @default("EUR")
+  rating         Float?
+  reviewCount    Int       @default(0)
+  features       Json?
+  productUrl     String?
+  affiliateUrl   String?
+  editorialScore Float?
+  rawSearchJson  Json?
+  rawDetailsJson Json?
+  lastSyncedAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  articles             Article[]
+  comparisonWins       Comparison[] @relation("WinnerProduct")
+  comparisonPriceWins  Comparison[] @relation("PriceWinnerProduct")
+  comparisonBudgetWins Comparison[] @relation("BudgetWinnerProduct")
+
+  @@unique([asin, country])
+  @@index([categoryId])
+}
+
+model Article {
+  id             String        @id @default(cuid())
+  type           ArticleType
+  locale         Locale
+  status         ArticleStatus @default(draft)
+  title          String
+  slug           String
+  excerpt        String?
+  seoTitle       String?
+  seoDescription String?
+  contentJson    Json?
+  bodyMarkdown   String?
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  productId  String?
+  product    Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, type, locale])
+  @@unique([categoryId, type, locale])
+  @@index([slug, locale])
+  @@index([status])
+}
+
+model Comparison {
+  id             String   @id @default(cuid())
+  criteriaJson   Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  winnerProductId String?
+  winnerProduct   Product? @relation("WinnerProduct", fields: [winnerProductId], references: [id], onDelete: SetNull)
+  priceWinnerId   String?
+  priceWinner     Product? @relation("PriceWinnerProduct", fields: [priceWinnerId], references: [id], onDelete: SetNull)
+  budgetWinnerId  String?
+  budgetWinner    Product? @relation("BudgetWinnerProduct", fields: [budgetWinnerId], references: [id], onDelete: SetNull)
+
+  @@unique([categoryId])
+}
+
+model JobRun {
+  id           String    @id @default(cuid())
+  type         JobType
+  status       JobStatus @default(pending)
+  message      String?
+  error        String?
+  requestsUsed Int       @default(0)
+  metricsJson  Json?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model ApiQuotaMonth {
+  id        String   @id @default(cuid())
+  provider  String   @default("rapidapi_amazon")
+  yearMonth String
+  used      Int      @default(0)
+  softLimit Int      @default(100)
+  reserve   Int      @default(6)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([provider, yearMonth])
+}
+
+model AffiliateClick {
+  id        String   @id @default(cuid())
+  asin      String
+  locale    Locale
+  path      String?
+  referrer  String?
+  createdAt DateTime @default(now())
+
+  @@index([asin])
+  @@index([createdAt])
+}

@@ -1,0 +1,53 @@
+{
+  "site": {
+    "name": "IGZ Compare",
+    "tagline": "Independent product comparisons – clearly scored"
+  },
+  "nav": {
+    "home": "Home",
+    "categories": "Categories",
+    "imprint": "Imprint",
+    "privacy": "Privacy"
+  },
+  "home": {
+    "heroTitle": "Independent product comparisons – clearly scored",
+    "heroSubtitle": "Automatically updated Amazon reviews and category comparisons to help you decide faster.",
+    "trust": "Affiliate disclosure · AI-assisted editorial · regularly updated",
+    "topCategories": "Top categories",
+    "latestReviews": "Latest reviews",
+    "winners": "Editors' picks",
+    "empty": "No content yet – run seed or sync."
+  },
+  "category": {
+    "comparison": "Comparison",
+    "winner": "Best overall",
+    "priceWinner": "Best value",
+    "budgetWinner": "Budget pick",
+    "tableTitle": "Comparison table",
+    "ctaWinner": "View winner on Amazon",
+    "readReview": "Read review"
+  },
+  "product": {
+    "score": "Editorial score",
+    "scoreHint": "Editorial score based on specs, price and user feedback",
+    "pros": "Pros",
+    "cons": "Cons",
+    "bestFor": "Best for",
+    "notFor": "Not ideal for",
+    "verdict": "Verdict",
+    "details": "Details",
+    "priceNote": "Price may vary · as of",
+    "related": "Related products"
+  },
+  "cta": {
+    "amazon": "View on Amazon",
+    "readMore": "Learn more"
+  },
+  "disclosure": {
+    "short": "Affiliate disclosure: Links marked with an asterisk (*) are affiliate links. We may earn a commission at no extra cost to you.",
+    "inline": "Affiliate link"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  }
+}
