@@ -1,3 +1,16 @@
+export type ScoreBreakdown = {
+  overall?: number;
+  value?: number;
+  quality?: number;
+  usability?: number;
+  longevity?: number;
+};
+
+export type DecisionGuide = {
+  buyIf?: string[];
+  skipIf?: string[];
+};
+
 export type ReviewContent = {
   title?: string;
   excerpt?: string;
@@ -5,6 +18,10 @@ export type ReviewContent = {
   seoDescription?: string;
   score?: number;
   testingPeriod?: string;
+  directAnswer?: string;
+  keyTakeaways?: string[];
+  scoreBreakdown?: ScoreBreakdown;
+  decisionGuide?: DecisionGuide;
   pros?: string[];
   cons?: string[];
   bestFor?: string[];
@@ -23,6 +40,8 @@ export type ComparisonContent = {
   priceWinnerAsin?: string;
   budgetWinnerAsin?: string;
   intro?: string;
+  directAnswer?: string;
+  keyTakeaways?: string[];
   rankingNotes?: string[];
   faq?: Array<{ question: string; answer: string }>;
 };

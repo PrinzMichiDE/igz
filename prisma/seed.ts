@@ -279,6 +279,41 @@ async function main() {
             contentJson: {
               score: product.editorialScore,
               testingPeriod: locale === "de" ? "3 Wochen Alltag" : "3 weeks daily use",
+              directAnswer:
+                locale === "de"
+                  ? `${product.title} lohnt sich vor allem für Alltag und Pendeln: unkompliziert, komfortabel und preisstark – mit Abstrichen bei audiophilen Ansprüchen.`
+                  : `${product.title} is worth it mainly for daily commuting use: simple, comfortable and strong value — with tradeoffs for audiophile expectations.`,
+              keyTakeaways:
+                locale === "de"
+                  ? [
+                      "Alltagstauglicher Klang ohne Spektakel",
+                      "Starker Komfort für längere Sessions",
+                      "Gutes Preis-Leistungs-Verhältnis",
+                      "App-Funktionen eher durchschnittlich",
+                    ]
+                  : [
+                      "Practical everyday sound",
+                      "Strong comfort for longer sessions",
+                      "Good value for money",
+                      "App features are average",
+                    ],
+              scoreBreakdown: {
+                overall: product.editorialScore ?? 8,
+                value: 8.5,
+                quality: 8.0,
+                usability: 8.4,
+                longevity: 7.8,
+              },
+              decisionGuide: {
+                buyIf:
+                  locale === "de"
+                    ? ["Du pendelst täglich", "Du willst einfache Bedienung", "Komfort ist dir wichtig"]
+                    : ["You commute daily", "You want simple controls", "Comfort matters"],
+                skipIf:
+                  locale === "de"
+                    ? ["Du brauchst Studio-Qualität", "Du erwartest Profi-App-Features"]
+                    : ["You need studio quality", "You expect pro app features"],
+              },
               pros:
                 locale === "de"
                   ? [

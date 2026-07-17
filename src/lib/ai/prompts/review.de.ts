@@ -47,6 +47,12 @@ Pflicht-Abschnitte (Headings sinngemäß, Reihenfolge frei):
 6. Schwächen nach längerer Nutzung
 7. Für wen lohnt sich der Kauf wirklich?
 
+AEO-Anforderungen (für Answer Engines):
+- directAnswer: 2–3 Sätze, die die Kernfrage "Lohnt sich der Kauf?" direkt beantworten
+- keyTakeaways: 4–6 kurze, zitierfähige Bullet-Facts
+- scoreBreakdown: Teil-Scores 0–10
+- decisionGuide: buyIf / skipIf je 3–5 Punkte
+
 JSON-Schema:
 {
   "title": string,
@@ -55,6 +61,19 @@ JSON-Schema:
   "seoDescription": string,
   "score": number,
   "testingPeriod": string,
+  "directAnswer": string,
+  "keyTakeaways": string[],
+  "scoreBreakdown": {
+    "overall": number,
+    "value": number,
+    "quality": number,
+    "usability": number,
+    "longevity": number
+  },
+  "decisionGuide": {
+    "buyIf": string[],
+    "skipIf": string[]
+  },
   "pros": string[],
   "cons": string[],
   "bestFor": string[],

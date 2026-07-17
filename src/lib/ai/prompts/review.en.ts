@@ -47,6 +47,12 @@ Required themes:
 6. Weaknesses after longer use
 7. Who should actually buy it?
 
+AEO requirements (for answer engines):
+- directAnswer: 2–3 sentences answering "Is it worth buying?"
+- keyTakeaways: 4–6 short citation-friendly facts
+- scoreBreakdown: subscores 0–10
+- decisionGuide: buyIf / skipIf with 3–5 points each
+
 JSON schema:
 {
   "title": string,
@@ -55,6 +61,19 @@ JSON schema:
   "seoDescription": string,
   "score": number,
   "testingPeriod": string,
+  "directAnswer": string,
+  "keyTakeaways": string[],
+  "scoreBreakdown": {
+    "overall": number,
+    "value": number,
+    "quality": number,
+    "usability": number,
+    "longevity": number
+  },
+  "decisionGuide": {
+    "buyIf": string[],
+    "skipIf": string[]
+  },
   "pros": string[],
   "cons": string[],
   "bestFor": string[],

@@ -34,6 +34,19 @@ type ReviewContent = {
   seoDescription?: string;
   score: number;
   testingPeriod?: string;
+  directAnswer?: string;
+  keyTakeaways?: string[];
+  scoreBreakdown?: {
+    overall?: number;
+    value?: number;
+    quality?: number;
+    usability?: number;
+    longevity?: number;
+  };
+  decisionGuide?: {
+    buyIf?: string[];
+    skipIf?: string[];
+  };
   pros: string[];
   cons: string[];
   bestFor: string[];
@@ -52,6 +65,8 @@ type ComparisonContent = {
   priceWinnerAsin: string;
   budgetWinnerAsin: string;
   intro: string;
+  directAnswer?: string;
+  keyTakeaways?: string[];
   rankingNotes: string[];
   faq: Array<{ question: string; answer: string }>;
 };
@@ -90,10 +105,13 @@ function buildFullMarkdown(content: ReviewContent) {
 function passesReviewQualityGate(content: ReviewContent) {
   const sections = content.sections || [];
   const longSections = sections.filter((s) => wordCount(s.body || "") >= 80);
+  const takeaways = content.keyTakeaways || [];
 
   return (
     content.title?.length > 10 &&
     wordCount(content.verdict || "") >= 60 &&
+    wordCount(content.directAnswer || "") >= 20 &&
+    takeaways.length >= 3 &&
     Array.isArray(content.pros) &&
     content.pros.length >= 4 &&
     Array.isArray(content.cons) &&

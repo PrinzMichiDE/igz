@@ -42,7 +42,24 @@
     "experiences": "Nutzererfahrungen",
     "experiencesDisclaimer": "KI-synthetisierte Erfahrungsstimmen auf Basis typischer Nutzungsszenarien – keine verifizierten Amazon-Käufe.",
     "experiencesEmpty": "Noch keine Nutzererfahrungen generiert.",
-    "usageWeeks": "Wochen Nutzung"
+    "usageWeeks": "Wochen Nutzung",
+    "directAnswer": "Kurzantwort",
+    "keyTakeaways": "Die wichtigsten Fakten",
+    "scoreBreakdown": "Score-Aufschlüsselung",
+    "decisionGuide": "Kaufentscheidung",
+    "buyIf": "Kaufen, wenn …",
+    "skipIf": "Lieber nicht, wenn …",
+    "toc": "Inhalt",
+    "readingTime": "Min. Lesezeit",
+    "scoreValue": "Preis-Leistung",
+    "scoreQuality": "Verarbeitung",
+    "scoreUsability": "Alltagstauglichkeit",
+    "scoreLongevity": "Langzeitnutzen",
+    "scoreOverall": "Gesamt"
+  },
+  "seo": {
+    "homeTitle": "Amazon Produktvergleiche & Testberichte",
+    "homeDescription": "Unabhängige Amazon-Vergleiche, ausführliche Testberichte und klare Kaufempfehlungen – auf Deutsch und Englisch."
   },
   "cta": {
     "amazon": "Bei Amazon ansehen",

@@ -42,7 +42,24 @@
     "experiences": "User experiences",
     "experiencesDisclaimer": "AI-synthesized experience notes based on typical usage scenarios — not verified Amazon purchases.",
     "experiencesEmpty": "No user experiences generated yet.",
-    "usageWeeks": "weeks of use"
+    "usageWeeks": "weeks of use",
+    "directAnswer": "Quick answer",
+    "keyTakeaways": "Key takeaways",
+    "scoreBreakdown": "Score breakdown",
+    "decisionGuide": "Buying decision",
+    "buyIf": "Buy if …",
+    "skipIf": "Skip if …",
+    "toc": "Contents",
+    "readingTime": "min read",
+    "scoreValue": "Value",
+    "scoreQuality": "Build quality",
+    "scoreUsability": "Everyday usability",
+    "scoreLongevity": "Longevity",
+    "scoreOverall": "Overall"
+  },
+  "seo": {
+    "homeTitle": "Amazon product comparisons & reviews",
+    "homeDescription": "Independent Amazon comparisons, in-depth reviews and clear buying guidance — in German and English."
   },
   "cta": {
     "amazon": "View on Amazon",

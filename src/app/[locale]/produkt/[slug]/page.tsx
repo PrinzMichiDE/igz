@@ -1,16 +1,34 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
 import { BuyBox } from "@/components/product/buy-box";
 import { CtaButton } from "@/components/affiliate/cta-button";
+import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
+import { ArticleToc } from "@/components/content/article-toc";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { ProsCons } from "@/components/content/pros-cons";
+import { DecisionGuide } from "@/components/product/decision-guide";
 import { ScoreBadge } from "@/components/product/score-badge";
+import { ScoreBreakdown } from "@/components/product/score-breakdown";
 import { UserExperienceComments } from "@/components/content/user-experience-comments";
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import {
+  aeoAnswerJsonLd,
+  breadcrumbJsonLd,
+  extractAeoFields,
+  faqJsonLd,
+  organizationJsonLd,
+  productReviewJsonLd,
+} from "@/lib/seo/jsonld";
+import { estimateReadingTimeMinutes } from "@/lib/seo/reading-time";
+import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 
@@ -20,13 +38,8 @@ type Props = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
-export default async function ProductPage({ params }: Props) {
-  const { locale: localeParam, slug } = await params;
-  const locale = localeParam as AppLocale;
-  setRequestLocale(locale);
-  const t = await getTranslations();
-
-  const product = await prisma.product
+async function getProduct(slug: string, locale: AppLocale) {
+  return prisma.product
     .findUnique({
       where: { slug },
       include: {
@@ -42,13 +55,60 @@ export default async function ProductPage({ params }: Props) {
       },
     })
     .catch(() => null);
+}
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: localeParam, slug } = await params;
+  const locale = localeParam as AppLocale;
+  const product = await getProduct(slug, locale);
+  if (!product) {
+    return { title: "Not found" };
+  }
+
+  const article = product.articles[0];
+  const content = asReviewContent(article?.contentJson);
+  const title =
+    content.seoTitle ||
+    article?.title ||
+    (locale === "en"
+      ? `${product.title} Review`
+      : `${product.title} Testbericht`);
+  const description =
+    content.seoDescription ||
+    content.directAnswer ||
+    article?.excerpt ||
+    content.verdict ||
+    product.title;
+
+  return buildPageMetadata({
+    locale,
+    title,
+    description,
+    pathWithoutLocale: `/produkt/${product.slug}`,
+    image: product.imageUrl,
+    type: "article",
+    publishedTime: article?.publishedAt,
+    modifiedTime: article?.updatedAt || product.updatedAt,
+  });
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { locale: localeParam, slug } = await params;
+  const locale = localeParam as AppLocale;
+  setRequestLocale(locale);
+  const t = await getTranslations();
+
+  const product = await getProduct(slug, locale);
   if (!product) notFound();
 
   const article = product.articles[0];
   const content = asReviewContent(article?.contentJson);
+  const aeo = extractAeoFields(content);
   const ctaHref = product.affiliateUrl || product.productUrl || "#";
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
+  const categoryName =
+    locale === "en" ? product.category.nameEn : product.category.nameDe;
+  const pageUrl = absoluteUrl(localizedPath(locale, `/produkt/${product.slug}`));
 
   const related = await prisma.product
     .findMany({
@@ -65,8 +125,91 @@ export default async function ProductPage({ params }: Props) {
     ? (product.features as string[])
     : [];
 
+  const readingMinutes = estimateReadingTimeMinutes(
+    [
+      content.directAnswer,
+      content.verdict,
+      ...(content.sections || []).map((s) => s.body),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+
+  const toc = [
+    { id: "kurzantwort", label: t("product.directAnswer") },
+    { id: "fazit", label: t("product.verdict") },
+    { id: "score-breakdown", label: t("product.scoreBreakdown") },
+    { id: "entscheidung", label: t("product.decisionGuide") },
+    { id: "pros-cons", label: `${t("product.pros")} / ${t("product.cons")}` },
+    { id: "details", label: t("product.details") },
+    { id: "nutzererfahrungen", label: t("product.experiences") },
+  ];
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
+      <JsonLd
+        data={[
+          organizationJsonLd(locale),
+          breadcrumbJsonLd([
+            {
+              name: t("nav.home"),
+              url: absoluteUrl(localizedPath(locale)),
+            },
+            {
+              name: categoryName,
+              url: absoluteUrl(
+                localizedPath(locale, `/kategorie/${product.category.slug}`),
+              ),
+            },
+            { name: product.title, url: pageUrl },
+          ]),
+          productReviewJsonLd({
+            locale,
+            name: product.title,
+            description:
+              content.directAnswer ||
+              content.verdict ||
+              article?.excerpt ||
+              product.title,
+            image: product.imageUrl,
+            asin: product.asin,
+            price: product.price?.toString(),
+            currency: product.currency,
+            rating: product.rating,
+            reviewCount: product.reviewCount,
+            editorialScore: content.score ?? product.editorialScore,
+            url: pageUrl,
+            reviewBody: content.verdict,
+            reviewTitle: article?.title,
+            datePublished: article?.publishedAt,
+            keyTakeaways: aeo.keyTakeaways,
+          }),
+          faqJsonLd(content.faq || []),
+          aeo.directAnswer
+            ? aeoAnswerJsonLd({
+                question:
+                  locale === "en"
+                    ? `Is ${product.title} worth buying?`
+                    : `Lohnt sich ${product.title}?`,
+                answer: aeo.directAnswer,
+                url: pageUrl,
+                locale,
+              })
+            : null,
+        ]}
+      />
+
+      <Breadcrumbs
+        items={[
+          { label: t("nav.home"), href: `/${locale}` },
+          {
+            label: categoryName,
+            href: `/${locale}/kategorie/${product.category.slug}`,
+          },
+          { label: product.title },
+        ]}
+      />
+
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <div className="mb-6 flex flex-col gap-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm md:flex-row">
@@ -83,19 +226,20 @@ export default async function ProductPage({ params }: Props) {
               ) : null}
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-700">
-                {locale === "en"
-                  ? product.category.nameEn
-                  : product.category.nameDe}
-              </p>
+              <p className="text-sm font-medium text-blue-700">{categoryName}</p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">
                 {article?.title || product.title}
               </h1>
-              {content.testingPeriod ? (
-                <p className="mt-2 text-sm text-zinc-500">
-                  {t("product.testingPeriod")}: {content.testingPeriod}
-                </p>
-              ) : null}
+              <div className="mt-2 flex flex-wrap gap-3 text-sm text-zinc-500">
+                {content.testingPeriod ? (
+                  <span>
+                    {t("product.testingPeriod")}: {content.testingPeriod}
+                  </span>
+                ) : null}
+                <span>
+                  {readingMinutes} {t("product.readingTime")}
+                </span>
+              </div>
               <div className="mt-4 flex flex-wrap items-center gap-4">
                 <ScoreBadge
                   score={content.score ?? product.editorialScore ?? product.rating}
@@ -130,14 +274,16 @@ export default async function ProductPage({ params }: Props) {
             <AffiliateDisclosure text={t("disclosure.short")} />
           </div>
 
-          <nav className="mb-8 flex flex-wrap gap-3 text-sm font-medium text-blue-700">
-            <a href="#fazit">{t("product.verdict")}</a>
-            <a href="#pros-cons">
-              {t("product.pros")} / {t("product.cons")}
-            </a>
-            <a href="#details">{t("product.details")}</a>
-            <a href="#nutzererfahrungen">{t("product.experiences")}</a>
-          </nav>
+          <ArticleToc title={t("product.toc")} items={toc} />
+
+          <div id="kurzantwort">
+            <AeoAnswerBlock
+              eyebrow={t("product.directAnswer")}
+              answer={aeo.directAnswer}
+              takeawaysTitle={t("product.keyTakeaways")}
+              takeaways={aeo.keyTakeaways}
+            />
+          </div>
 
           <section id="fazit" className="prose-article mb-8 font-serif">
             <h2>{t("product.verdict")}</h2>
@@ -145,8 +291,8 @@ export default async function ProductPage({ params }: Props) {
             {content.sections?.map((section) => (
               <div key={section.heading} className="mt-6">
                 <h2>{section.heading}</h2>
-                {section.body.split("\n\n").map((paragraph) => (
-                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                {section.body.split(/\n{2,}/).map((paragraph, idx) => (
+                  <p key={`${section.heading}-${idx}`}>{paragraph}</p>
                 ))}
               </div>
             ))}
@@ -156,6 +302,34 @@ export default async function ProductPage({ params }: Props) {
             <CtaButton href={ctaHref} label={t("cta.amazon")} size="lg" />
           </div>
 
+          <div id="score-breakdown">
+            <ScoreBreakdown
+              title={t("product.scoreBreakdown")}
+              labels={{
+                overall: t("product.scoreOverall"),
+                value: t("product.scoreValue"),
+                quality: t("product.scoreQuality"),
+                usability: t("product.scoreUsability"),
+                longevity: t("product.scoreLongevity"),
+              }}
+              breakdown={
+                aeo.scoreBreakdown || {
+                  overall: content.score ?? product.editorialScore ?? undefined,
+                }
+              }
+            />
+          </div>
+
+          <div id="entscheidung">
+            <DecisionGuide
+              title={t("product.decisionGuide")}
+              buyTitle={t("product.buyIf")}
+              skipTitle={t("product.skipIf")}
+              buyIf={aeo.decisionGuide?.buyIf || content.bestFor}
+              skipIf={aeo.decisionGuide?.skipIf || content.notFor}
+            />
+          </div>
+
           <section id="pros-cons" className="mb-8">
             <ProsCons
               prosTitle={t("product.pros")}
@@ -163,29 +337,6 @@ export default async function ProductPage({ params }: Props) {
               pros={content.pros || []}
               cons={content.cons || []}
             />
-          </section>
-
-          <section className="mb-8 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold">
-                {t("product.bestFor")}
-              </h2>
-              <ul className="space-y-2 text-sm text-zinc-700">
-                {(content.bestFor || []).map((item) => (
-                  <li key={item}>• {item}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-xl border border-zinc-200 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold">
-                {t("product.notFor")}
-              </h2>
-              <ul className="space-y-2 text-sm text-zinc-700">
-                {(content.notFor || []).map((item) => (
-                  <li key={item}>• {item}</li>
-                ))}
-              </ul>
-            </div>
           </section>
 
           <section id="details" className="mb-8">
