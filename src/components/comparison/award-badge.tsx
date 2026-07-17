@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 type Award = "testsieger" | "preisLeistung" | "budget";
 
 const styles: Record<Award, string> = {
-  testsieger: "bg-amber-100 text-amber-900 border-amber-300",
-  preisLeistung: "bg-emerald-100 text-emerald-900 border-emerald-300",
-  budget: "bg-sky-100 text-sky-900 border-sky-300",
+  testsieger: "border-secondary/20 bg-secondary/5 text-secondary",
+  preisLeistung: "border-success/20 bg-success-soft text-success",
+  budget: "border-accent/30 bg-amber-50 text-amber-800",
 };
 
 type Props = {
@@ -17,7 +17,7 @@ export function AwardBadge({ type, label }: Props) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-wide uppercase",
         styles[type],
       )}
     >

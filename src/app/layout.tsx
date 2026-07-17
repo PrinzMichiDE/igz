@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-});
-
-const sourceSerif = Source_Serif_4({
-  subsets: ["latin"],
-  variable: "--font-source-serif",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <body className={`${inter.variable} ${sourceSerif.variable} antialiased`}>
+      <body className={`${inter.variable} ${GeistSans.variable} antialiased`}>
         {children}
       </body>
     </html>

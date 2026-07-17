@@ -1,24 +1,106 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafafa;
-  --foreground: #18181b;
-  --brand: #1d4ed8;
+  --background: #f8f9ff;
+  --foreground: #0b1c30;
+  --surface: #ffffff;
+  --surface-muted: #eff4ff;
+  --primary: #0f172a;
+  --primary-container: #131b2e;
+  --secondary: #3b82f6;
+  --secondary-strong: #0058be;
   --accent: #f59e0b;
-  --cta: #f97316;
+  --muted: #64748b;
+  --muted-foreground: #45464d;
+  --border: #e2e8f0;
+  --border-strong: #c6c6cd;
+  --success: #16a34a;
+  --success-soft: #f0fdf4;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --card-shadow: 0 15px 40px -24px rgba(15, 23, 42, 0.25);
+  --card-shadow-hover: 0 20px 48px -20px rgba(15, 23, 42, 0.28);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-secondary: var(--secondary);
+  --color-secondary-strong: var(--secondary-strong);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-inter);
-  --font-serif: var(--font-source-serif);
+  --font-display: var(--font-geist-sans);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-geist-sans), var(--font-inter), ui-sans-serif,
+    system-ui, sans-serif;
+}
+
+.igz-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 768px) {
+  .igz-container {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .igz-container {
+    padding-inline: 3rem;
+  }
+}
+
+.igz-card {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
+}
+
+.igz-card-hover {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.igz-card-hover:hover {
+  border-color: color-mix(in srgb, var(--secondary) 45%, var(--border));
+  box-shadow: var(--card-shadow-hover);
+}
+
+.igz-hero-gradient {
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--secondary) 12%, transparent),
+      transparent 55%
+    ),
+    var(--background);
 }
 
 .prose-article {
@@ -30,10 +112,12 @@ body {
   margin-bottom: 0.75rem;
   font-size: 1.25rem;
   font-weight: 700;
+  font-family: var(--font-geist-sans), var(--font-inter), ui-sans-serif,
+    system-ui, sans-serif;
 }
 
 .prose-article p {
   margin-bottom: 0.9rem;
   line-height: 1.7;
-  color: #3f3f46;
+  color: var(--muted-foreground);
 }

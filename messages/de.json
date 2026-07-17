@@ -6,17 +6,47 @@
   "nav": {
     "home": "Home",
     "categories": "Kategorien",
+    "reviews": "Tests",
+    "deals": "Deals",
     "imprint": "Impressum",
     "privacy": "Datenschutz"
   },
   "home": {
-    "heroTitle": "Unabhängige Produktvergleiche – klar bewertet",
+    "heroTitle": "Finde das beste Produkt zum besten Preis",
     "heroSubtitle": "Automatisch aktualisierte Amazon-Tests und Kategorie-Vergleiche, damit du schneller die richtige Kaufentscheidung triffst.",
+    "searchPlaceholder": "Produkte, Kategorien oder Tests suchen …",
+    "searchButton": "Jetzt suchen",
     "trust": "Affiliate-Hinweis · KI-gestützte Redaktion · regelmäßig aktualisiert",
-    "topCategories": "Top-Kategorien",
-    "latestReviews": "Aktuelle Testberichte",
-    "winners": "Testsieger der Woche",
-    "empty": "Noch keine Inhalte – bitte Seed oder Sync starten."
+    "browseCategories": "Nach Kategorie entdecken",
+    "topDeals": "Top Deals des Tages",
+    "viewAllDeals": "Alle Deals ansehen →",
+    "topRated": "Top bewertet",
+    "viewAllReports": "Alle Berichte ansehen →",
+    "editorsChoice": "Testsieger",
+    "empty": "Noch keine Inhalte – bitte Seed oder Sync starten.",
+    "why": {
+      "title": "Warum IGZ?",
+      "subtitle": "Wir kombinieren automatisierte Datenanalyse mit redaktioneller Expertise, um objektive Kaufempfehlungen zu liefern.",
+      "visual": {
+        "label": "Data Analysis",
+        "title": "Präzise Vergleiche in Echtzeit",
+        "body": "Spezifikationen, Preise und Nutzerfeedback werden kontinuierlich ausgewertet."
+      },
+      "items": {
+        "comparisons": {
+          "title": "Automatisierte Vergleiche",
+          "body": "Tausende Produktdaten werden strukturiert verglichen und regelmäßig aktualisiert."
+        },
+        "reviews": {
+          "title": "Experten-Testberichte",
+          "body": "Redaktionelle Bewertungen mit klaren Scores, Pros & Cons und Fazit."
+        },
+        "prices": {
+          "title": "Preis-Tracking in Echtzeit",
+          "body": "Aktuelle Amazon-Preise und Bewertungen fließen direkt in unsere Rankings ein."
+        }
+      }
+    }
   },
   "category": {
     "comparison": "Vergleich",
@@ -25,16 +55,28 @@
     "budgetWinner": "Budget-Tipp",
     "tableTitle": "Vergleichstabelle",
     "ctaWinner": "Zum Testsieger bei Amazon",
-    "readReview": "Testbericht lesen"
+    "readReview": "Testbericht lesen",
+    "filters": "Filter",
+    "filterBrand": "Marke",
+    "filterPrice": "Preisbereich",
+    "filterUseCase": "Einsatzbereich",
+    "availableOnAmazon": "Verfügbar bei Amazon",
+    "columnModel": "Modell",
+    "columnSpecs": "Kern-Specs",
+    "columnPriceAction": "Preis & Aktion"
   },
   "product": {
     "score": "Redaktioneller Score",
+    "igzScore": "IGZ Score",
     "scoreHint": "Redaktioneller Score auf Basis von Specs, Preis und Nutzerfeedback",
     "pros": "Vorteile",
     "cons": "Nachteile",
+    "theGood": "Das Gute",
+    "theBad": "Das Schwache",
     "bestFor": "Für wen geeignet",
     "notFor": "Weniger geeignet für",
     "verdict": "Fazit",
+    "verdictBreakdown": "Das Fazit im Detail",
     "details": "Details",
     "testingPeriod": "Testzeitraum",
     "priceNote": "Preis kann variieren · Stand",
@@ -42,10 +84,22 @@
     "experiences": "Nutzererfahrungen",
     "experiencesDisclaimer": "KI-synthetisierte Erfahrungsstimmen auf Basis typischer Nutzungsszenarien – keine verifizierten Amazon-Käufe.",
     "experiencesEmpty": "Noch keine Nutzererfahrungen generiert.",
-    "usageWeeks": "Wochen Nutzung"
+    "usageWeeks": "Wochen Nutzung",
+    "inThisReview": "In diesem Test",
+    "reviewBadge": "Testbericht",
+    "readTime": "12 Min. Lesezeit",
+    "analyst": "Autor",
+    "analystRole": "Senior Product Analyst",
+    "categoryBreakdown": "Kategorie-Bewertung",
+    "performance": "Performance",
+    "value": "Preis-Leistung",
+    "build": "Verarbeitung",
+    "compareRetailers": "Händler vergleichen"
   },
   "cta": {
     "amazon": "Bei Amazon ansehen",
+    "checkPrice": "Preis prüfen",
+    "buy": "Kaufen",
     "readMore": "Mehr erfahren"
   },
   "disclosure": {
@@ -53,6 +107,11 @@
     "inline": "Affiliate-Link"
   },
   "footer": {
-    "rights": "Alle Rechte vorbehalten."
+    "rights": "Alle Rechte vorbehalten.",
+    "about": "Über uns",
+    "editorial": "Redaktionelle Richtlinien",
+    "affiliate": "Affiliate-Hinweis",
+    "contact": "Kontakt",
+    "disclaimer": "IGZ ist eine unabhängige Vergleichsplattform. Preise und Verfügbarkeit können variieren. Amazon und das Amazon-Logo sind Warenzeichen von Amazon.com, Inc. oder verbundenen Unternehmen."
   }
 }

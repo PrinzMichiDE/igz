@@ -17,7 +17,7 @@ export function LocaleSwitcher() {
   }
 
   return (
-    <div className="inline-flex items-center rounded-lg border border-zinc-200 bg-white p-0.5 text-xs font-semibold">
+    <div className="inline-flex items-center rounded-lg border border-border bg-surface p-0.5 text-xs font-semibold">
       {routing.locales.map((l) => (
         <button
           key={l}
@@ -25,8 +25,8 @@ export function LocaleSwitcher() {
           onClick={() => switchTo(l)}
           className={
             l === locale
-              ? "rounded-md bg-zinc-900 px-2.5 py-1 text-white"
-              : "rounded-md px-2.5 py-1 text-zinc-600 hover:text-zinc-900"
+              ? "rounded-md bg-primary px-2.5 py-1 text-white"
+              : "rounded-md px-2.5 py-1 text-muted-foreground hover:text-primary"
           }
           aria-pressed={l === locale}
         >

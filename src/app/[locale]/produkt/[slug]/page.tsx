@@ -1,12 +1,14 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Star } from "lucide-react";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
 import { BuyBox } from "@/components/product/buy-box";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { ProsCons } from "@/components/content/pros-cons";
+import { ReviewToc } from "@/components/content/review-toc";
 import { ScoreBadge } from "@/components/product/score-badge";
 import { UserExperienceComments } from "@/components/content/user-experience-comments";
 import { prisma } from "@/lib/db/prisma";
@@ -49,6 +51,7 @@ export default async function ProductPage({ params }: Props) {
   const content = asReviewContent(article?.contentJson);
   const ctaHref = product.affiliateUrl || product.productUrl || "#";
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
+  const score = content.score ?? product.editorialScore ?? product.rating;
 
   const related = await prisma.product
     .findMany({
@@ -65,81 +68,119 @@ export default async function ProductPage({ params }: Props) {
     ? (product.features as string[])
     : [];
 
+  const tocSections = [
+    { id: "fazit", label: t("product.verdict") },
+    { id: "pros-cons", label: `${t("product.pros")} / ${t("product.cons")}` },
+    { id: "details", label: t("product.details") },
+    { id: "nutzererfahrungen", label: t("product.experiences") },
+  ];
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+    <div className="igz-container py-10 md:py-14">
+      <div className="grid gap-8 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
+        <div className="hidden xl:block">
+          <ReviewToc
+            title={t("product.inThisReview")}
+            sections={tocSections}
+            activeId="pros-cons"
+          />
+          <div className="igz-card mt-5 p-5">
+            <p className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+              {t("product.analyst")}
+            </p>
+            <p className="mt-3 font-display text-base font-semibold text-primary">
+              IGZ Editorial
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("product.analystRole")}
+            </p>
+          </div>
+        </div>
+
         <div>
-          <div className="mb-6 flex flex-col gap-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm md:flex-row">
-            <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-xl bg-zinc-50 md:mx-0">
-              {product.imageUrl ? (
+          <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
+            <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
+              {t("product.reviewBadge")}
+            </span>
+            <span className="text-muted-foreground">{t("product.readTime")}</span>
+          </div>
+
+          <h1 className="font-display text-4xl font-bold tracking-tight text-primary md:text-5xl">
+            {article?.title || product.title}
+          </h1>
+
+          <div className="mt-6 overflow-hidden rounded-xl border border-border bg-surface-muted">
+            {product.imageUrl ? (
+              <div className="relative aspect-[16/9] max-h-[420px] w-full">
                 <Image
                   src={product.imageUrl}
                   alt={product.title}
                   fill
-                  className="object-contain p-3"
-                  sizes="192px"
+                  className="object-contain p-8"
+                  sizes="(max-width: 1280px) 100vw, 70vw"
                   unoptimized
-                />
-              ) : null}
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-700">
-                {locale === "en"
-                  ? product.category.nameEn
-                  : product.category.nameDe}
-              </p>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">
-                {article?.title || product.title}
-              </h1>
-              {content.testingPeriod ? (
-                <p className="mt-2 text-sm text-zinc-500">
-                  {t("product.testingPeriod")}: {content.testingPeriod}
-                </p>
-              ) : null}
-              <div className="mt-4 flex flex-wrap items-center gap-4">
-                <ScoreBadge
-                  score={content.score ?? product.editorialScore ?? product.rating}
-                  size="lg"
-                  label={t("product.score")}
-                />
-                <div>
-                  <p className="text-xl font-bold">
-                    {formatPrice(
-                      product.price?.toString(),
-                      product.currency,
-                      numberLocale,
-                    )}
-                  </p>
-                  <p className="text-sm text-zinc-500">
-                    ★ {product.rating ?? "—"} ({product.reviewCount})
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 lg:hidden">
-                <CtaButton
-                  href={ctaHref}
-                  label={t("cta.amazon")}
-                  className="w-full"
-                  size="lg"
+                  priority
                 />
               </div>
-            </div>
+            ) : null}
           </div>
 
-          <div className="mb-6">
+          <div className="mt-6">
             <AffiliateDisclosure text={t("disclosure.short")} />
           </div>
 
-          <nav className="mb-8 flex flex-wrap gap-3 text-sm font-medium text-blue-700">
-            <a href="#fazit">{t("product.verdict")}</a>
-            <a href="#pros-cons">
-              {t("product.pros")} / {t("product.cons")}
-            </a>
-            <a href="#details">{t("product.details")}</a>
-            <a href="#nutzererfahrungen">{t("product.experiences")}</a>
-          </nav>
+          <section className="mt-8 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="igz-card flex flex-col items-center justify-center p-5 text-center">
+              <p className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+                {t("product.igzScore")}
+              </p>
+              <div className="mt-3">
+                <ScoreBadge
+                  score={score}
+                  size="lg"
+                  label={t("product.score")}
+                  showBadge
+                  badgeLabel={t("home.editorsChoice")}
+                />
+              </div>
+            </div>
+            <div className="igz-card p-5">
+              <h2 className="font-display text-base font-semibold text-primary">
+                {t("product.categoryBreakdown")}
+              </h2>
+              <div className="mt-4 space-y-4">
+                {[
+                  { label: t("product.performance"), value: score },
+                  { label: t("product.value"), value: product.rating },
+                  { label: t("product.build"), value: product.editorialScore },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-medium text-primary">
+                        {typeof item.value === "number"
+                          ? `${item.value.toFixed(1)}/10`
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-surface-muted">
+                      <div
+                        className="h-2 rounded-full bg-secondary"
+                        style={{
+                          width:
+                            typeof item.value === "number"
+                              ? `${Math.min(item.value * 10, 100)}%`
+                              : "0%",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
 
-          <section id="fazit" className="prose-article mb-8 font-serif">
+          <section id="fazit" className="prose-article mt-10">
             <h2>{t("product.verdict")}</h2>
             <p>{content.verdict || article?.excerpt || product.title}</p>
             {content.sections?.map((section) => (
@@ -152,35 +193,56 @@ export default async function ProductPage({ params }: Props) {
             ))}
           </section>
 
-          <div className="mb-8 flex justify-center">
-            <CtaButton href={ctaHref} label={t("cta.amazon")} size="lg" />
+          <div className="mt-8 flex flex-wrap items-center gap-4 lg:hidden">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Star className="h-4 w-4 fill-accent text-accent" aria-hidden />
+              <span className="font-medium text-primary">
+                {product.rating ?? "—"} ({product.reviewCount})
+              </span>
+            </div>
+            <p className="text-xl font-bold text-primary">
+              {formatPrice(
+                product.price?.toString(),
+                product.currency,
+                numberLocale,
+              )}
+            </p>
+            <CtaButton
+              href={ctaHref}
+              label={t("cta.checkPrice")}
+              className="w-full"
+              size="lg"
+            />
           </div>
 
-          <section id="pros-cons" className="mb-8">
+          <section id="pros-cons" className="mt-10">
+            <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
+              {t("product.verdictBreakdown")}
+            </h2>
             <ProsCons
-              prosTitle={t("product.pros")}
-              consTitle={t("product.cons")}
+              prosTitle={t("product.theGood")}
+              consTitle={t("product.theBad")}
               pros={content.pros || []}
               cons={content.cons || []}
             />
           </section>
 
-          <section className="mb-8 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold">
+          <section className="mt-10 grid gap-4 md:grid-cols-2">
+            <div className="igz-card p-5">
+              <h2 className="font-display text-sm font-semibold text-primary">
                 {t("product.bestFor")}
               </h2>
-              <ul className="space-y-2 text-sm text-zinc-700">
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
                 {(content.bestFor || []).map((item) => (
                   <li key={item}>• {item}</li>
                 ))}
               </ul>
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold">
+            <div className="igz-card p-5">
+              <h2 className="font-display text-sm font-semibold text-primary">
                 {t("product.notFor")}
               </h2>
-              <ul className="space-y-2 text-sm text-zinc-700">
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
                 {(content.notFor || []).map((item) => (
                   <li key={item}>• {item}</li>
                 ))}
@@ -188,13 +250,15 @@ export default async function ProductPage({ params }: Props) {
             </div>
           </section>
 
-          <section id="details" className="mb-8">
-            <h2 className="mb-3 text-xl font-bold">{t("product.details")}</h2>
-            <div className="grid gap-2 sm:grid-cols-2">
+          <section id="details" className="mt-10">
+            <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
+              {t("product.details")}
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2">
               {features.map((feature) => (
                 <div
                   key={feature}
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
+                  className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted-foreground"
                 >
                   {feature}
                 </div>
@@ -213,30 +277,36 @@ export default async function ProductPage({ params }: Props) {
           <FaqAccordion items={content.faq || []} />
 
           <div className="mt-10">
-            <CtaButton href={ctaHref} label={t("cta.amazon")} size="lg" />
+            <CtaButton href={ctaHref} label={t("cta.checkPrice")} size="lg" />
           </div>
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden xl:block">
           <BuyBox
-            score={content.score ?? product.editorialScore ?? product.rating}
+            title={product.title}
+            imageUrl={product.imageUrl}
+            score={score}
             scoreLabel={t("product.score")}
+            editorChoiceLabel={t("home.editorsChoice")}
             price={product.price?.toString()}
             currency={product.currency}
             locale={locale}
             priceNote={t("product.priceNote")}
             lastSyncedAt={product.lastSyncedAt}
             ctaHref={ctaHref}
-            ctaLabel={t("cta.amazon")}
+            ctaLabel={t("cta.checkPrice")}
+            compareLabel={t("product.compareRetailers")}
             disclosureInline={t("disclosure.inline")}
           />
-          <p className="mt-3 text-xs text-zinc-500">{t("product.scoreHint")}</p>
+          <p className="mt-3 text-xs leading-5 text-muted">{t("product.scoreHint")}</p>
         </div>
       </div>
 
-      <section className="mt-14">
-        <h2 className="mb-6 text-2xl font-bold">{t("product.related")}</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+      <section className="mt-16">
+        <h2 className="mb-6 font-display text-2xl font-semibold text-primary">
+          {t("product.related")}
+        </h2>
+        <div className="grid gap-5 md:grid-cols-3">
           {related.map((item) => (
             <ProductCard
               key={item.id}
@@ -247,7 +317,7 @@ export default async function ProductPage({ params }: Props) {
               price={item.price?.toString()}
               currency={item.currency}
               locale={locale}
-              ctaLabel={t("cta.amazon")}
+              ctaLabel={t("cta.checkPrice")}
               ctaHref={item.affiliateUrl || item.productUrl || "#"}
               readLabel={t("category.readReview")}
             />
