@@ -27,6 +27,7 @@ Next.js-Plattform für automatisierte Amazon-Produktvergleiche und Testberichte.
 - E-E-A-T: `/methodik`, `/ueber-uns`, `/bestenlisten`
 - Innovative UI: Score-Breakdown, Decision Guide, Quick Compare, Article TOC, Reading Time
 - Playbook: [`docs/seo-aeo-playbook.md`](docs/seo-aeo-playbook.md)
+- Fokus-Nische Bluetooth-Kopfhörer (10 Ranking-Seiten): [`docs/niche-bluetooth-kopfhoerer.md`](docs/niche-bluetooth-kopfhoerer.md)
 
 ## Setup
 

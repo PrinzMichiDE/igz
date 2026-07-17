@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db/prisma";
 import { routing } from "@/i18n/routing";
+import { BLUETOOTH_HEADPHONES_PAGES } from "@/lib/seo/niche/bluetooth-headphones";
 import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -31,6 +32,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: new Date(),
         changeFrequency: path === "" || path === "/bestenlisten" ? "daily" : "weekly",
         priority,
+      });
+    }
+
+    for (const page of BLUETOOTH_HEADPHONES_PAGES) {
+      if (page.kind === "pillar") continue;
+      entries.push({
+        url: absoluteUrl(localizedPath(locale, page.path)),
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.82,
       });
     }
   }

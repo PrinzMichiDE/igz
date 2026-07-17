@@ -10,6 +10,7 @@ import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+import { InternalLinks } from "@/components/seo/internal-links";
 import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
 import { asComparisonContent } from "@/lib/content-types";
@@ -21,6 +22,10 @@ import {
   itemListJsonLd,
   organizationJsonLd,
 } from "@/lib/seo/jsonld";
+import {
+  getClusterPages,
+  getNichePageBySlug,
+} from "@/lib/seo/niche/bluetooth-headphones";
 import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 import type { AppLocale } from "@/i18n/routing";
 
@@ -62,12 +67,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const article = category.articles[0];
   const content = asComparisonContent(article?.contentJson);
+  const niche = getNichePageBySlug(category.slug);
   const name = locale === "en" ? category.nameEn : category.nameDe;
   const title =
+    (locale === "en" ? niche?.titleEn : niche?.titleDe) ||
     content.seoTitle ||
     article?.title ||
     `${name} ${locale === "en" ? "Comparison" : "Vergleich"}`;
   const description =
+    (locale === "en" ? niche?.descriptionEn : niche?.descriptionDe) ||
     content.seoDescription ||
     content.directAnswer ||
     article?.excerpt ||
@@ -160,13 +168,24 @@ export default async function CategoryPage({ params }: Props) {
     currency?: string;
   }>;
 
+  const niche = getNichePageBySlug(category.slug);
   const directAnswer =
     content.directAnswer ||
+    (locale === "en" ? niche?.directAnswerEn : niche?.directAnswerDe) ||
     (comparison?.winnerProduct
       ? locale === "en"
         ? `Best overall in ${name}: ${comparison.winnerProduct.title}.`
         : `Testsieger in ${name}: ${comparison.winnerProduct.title}.`
       : content.intro || "");
+  const takeaways =
+    content.keyTakeaways ||
+    (locale === "en" ? niche?.keyTakeawaysEn : niche?.keyTakeawaysDe) ||
+    [];
+  const faq = content.faq?.length
+    ? content.faq
+    : locale === "en"
+      ? niche?.faqEn || []
+      : niche?.faqDe || [];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -189,7 +208,7 @@ export default async function CategoryPage({ params }: Props) {
               ),
             })),
           }),
-          faqJsonLd(content.faq || []),
+          faqJsonLd(faq),
           directAnswer
             ? aeoAnswerJsonLd({
                 question:
@@ -216,7 +235,9 @@ export default async function CategoryPage({ params }: Props) {
           {t("category.comparison")}
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
-          {article?.title || `${name} ${t("category.comparison")}`}
+          {(locale === "en" ? niche?.h1En : niche?.h1De) ||
+            article?.title ||
+            `${name} ${t("category.comparison")}`}
         </h1>
         <p className="mt-3 max-w-3xl text-zinc-600">
           {article?.excerpt ||
@@ -232,7 +253,7 @@ export default async function CategoryPage({ params }: Props) {
         eyebrow={t("product.directAnswer")}
         answer={directAnswer}
         takeawaysTitle={t("product.keyTakeaways")}
-        takeaways={content.keyTakeaways || []}
+        takeaways={takeaways}
       />
 
       <QuickCompareBar
@@ -347,8 +368,20 @@ export default async function CategoryPage({ params }: Props) {
       ) : null}
 
       <section>
-        <FaqAccordion items={content.faq || []} />
+        <FaqAccordion items={faq} />
       </section>
+
+      {niche ? (
+        <InternalLinks
+          title={t("product.internalLinks")}
+          items={getClusterPages().map((item) => ({
+            href: `/${locale}${item.path}`,
+            title: locale === "en" ? item.h1En : item.h1De,
+            description:
+              locale === "en" ? item.descriptionEn : item.descriptionDe,
+          }))}
+        />
+      ) : null}
     </div>
   );
 }

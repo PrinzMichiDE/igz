@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertCronAuthorized } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
 import { submitIndexNow } from "@/lib/seo/indexnow";
+import { BLUETOOTH_HEADPHONES_PAGES } from "@/lib/seo/niche/bluetooth-headphones";
 import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 import { routing } from "@/i18n/routing";
 
@@ -21,6 +22,9 @@ export async function GET(req: NextRequest) {
       urls.push(absoluteUrl(localizedPath(locale, "/bestenlisten")));
       urls.push(absoluteUrl(localizedPath(locale, "/methodik")));
       urls.push(absoluteUrl(localizedPath(locale, "/ueber-uns")));
+      for (const page of BLUETOOTH_HEADPHONES_PAGES) {
+        urls.push(absoluteUrl(localizedPath(locale, page.path)));
+      }
     }
 
     const [categories, products] = await Promise.all([

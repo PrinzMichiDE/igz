@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { buildAffiliateUrl } from "../src/lib/amazon/affiliate";
+import { NICHE_CATEGORY_KEYWORDS_DE } from "../src/lib/seo/niche/bluetooth-headphones";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -17,7 +18,7 @@ async function main() {
         "Vergleich der besten Bluetooth-Kopfhörer nach Klang, Tragekomfort und Preis-Leistung.",
       descriptionEn:
         "Comparison of the best Bluetooth headphones by sound, comfort and value.",
-      searchKeywords: ["bluetooth kopfhörer", "wireless headphones"],
+      searchKeywords: NICHE_CATEGORY_KEYWORDS_DE,
       countryScope: "DE",
     },
     create: {
@@ -28,7 +29,7 @@ async function main() {
         "Vergleich der besten Bluetooth-Kopfhörer nach Klang, Tragekomfort und Preis-Leistung.",
       descriptionEn:
         "Comparison of the best Bluetooth headphones by sound, comfort and value.",
-      searchKeywords: ["bluetooth kopfhörer", "wireless headphones"],
+      searchKeywords: NICHE_CATEGORY_KEYWORDS_DE,
       countryScope: "DE",
     },
   });

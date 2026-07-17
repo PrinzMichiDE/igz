@@ -10,6 +10,7 @@ import {
   itemListJsonLd,
   organizationJsonLd,
 } from "@/lib/seo/jsonld";
+import { BLUETOOTH_HEADPHONES_PAGES } from "@/lib/seo/niche/bluetooth-headphones";
 import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 import type { AppLocale } from "@/i18n/routing";
 
@@ -100,49 +101,81 @@ export default async function BestListsPage({ params }: Props) {
           : "Find our latest category comparisons with overall winners, best value and budget picks — optimized for fast answers in search and AI assistants."}
       </p>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {categories.map((category) => {
-          const name = locale === "en" ? category.nameEn : category.nameDe;
-          const winner = category.comparisons[0]?.winnerProduct;
-          return (
-            <article
-              key={category.id}
-              className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
+      <section className="mb-12">
+        <h2 className="mb-4 text-2xl font-bold text-zinc-900">
+          {isDe
+            ? "Fokus-Nische: Bluetooth-Kopfhörer (10 Ranking-Seiten)"
+            : "Focus niche: Bluetooth headphones (10 ranking pages)"}
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          {BLUETOOTH_HEADPHONES_PAGES.map((page) => (
+            <Link
+              key={page.id}
+              href={`/${locale}${page.path}`}
+              className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-blue-300"
             >
-              <h2 className="text-xl font-semibold text-zinc-900">
-                <Link
-                  href={`/${locale}/kategorie/${category.slug}`}
-                  className="hover:text-blue-700"
-                >
-                  {isDe ? `Beste ${name}` : `Best ${name}`}
-                </Link>
-              </h2>
-              <p className="mt-2 text-sm text-zinc-600">
-                {locale === "en"
-                  ? category.descriptionEn
-                  : category.descriptionDe}
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                #{page.priority} · {page.kind}
               </p>
-              <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {category._count.products}{" "}
-                {isDe ? "Produkte im Vergleich" : "products compared"}
+              <h3 className="mt-1 text-base font-semibold text-zinc-900">
+                {isDe ? page.h1De : page.h1En}
+              </h3>
+              <p className="mt-2 text-xs text-zinc-500">
+                {isDe ? page.primaryKeywordDe : page.primaryKeywordEn}
               </p>
-              {winner ? (
-                <p className="mt-3 text-sm text-zinc-800">
-                  <span className="font-semibold">
-                    {isDe ? "Testsieger:" : "Winner:"}
-                  </span>{" "}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-2xl font-bold text-zinc-900">
+          {isDe ? "Alle Kategorien" : "All categories"}
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {categories.map((category) => {
+            const name = locale === "en" ? category.nameEn : category.nameDe;
+            const winner = category.comparisons[0]?.winnerProduct;
+            return (
+              <article
+                key={category.id}
+                className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-zinc-900">
                   <Link
-                    href={`/${locale}/produkt/${winner.slug}`}
-                    className="text-blue-700 hover:underline"
+                    href={`/${locale}/kategorie/${category.slug}`}
+                    className="hover:text-blue-700"
                   >
-                    {winner.title}
+                    {isDe ? `Beste ${name}` : `Best ${name}`}
                   </Link>
+                </h3>
+                <p className="mt-2 text-sm text-zinc-600">
+                  {locale === "en"
+                    ? category.descriptionEn
+                    : category.descriptionDe}
                 </p>
-              ) : null}
-            </article>
-          );
-        })}
-      </div>
+                <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  {category._count.products}{" "}
+                  {isDe ? "Produkte im Vergleich" : "products compared"}
+                </p>
+                {winner ? (
+                  <p className="mt-3 text-sm text-zinc-800">
+                    <span className="font-semibold">
+                      {isDe ? "Testsieger:" : "Winner:"}
+                    </span>{" "}
+                    <Link
+                      href={`/${locale}/produkt/${winner.slug}`}
+                      className="text-blue-700 hover:underline"
+                    >
+                      {winner.title}
+                    </Link>
+                  </p>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
