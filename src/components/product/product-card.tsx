@@ -14,10 +14,12 @@ type Props = {
   locale: string;
   ctaLabel: string;
   ctaHref: string;
+  ctaSublabel?: string;
   readLabel: string;
   discountPercent?: number | null;
   variant?: "default" | "featured";
   badge?: string;
+  amazonOverlayLabel?: string;
 };
 
 export function ProductCard({
@@ -30,29 +32,46 @@ export function ProductCard({
   locale,
   ctaLabel,
   ctaHref,
+  ctaSublabel,
   readLabel,
   discountPercent,
   variant = "default",
   badge,
+  amazonOverlayLabel,
 }: Props) {
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
   const rating =
     typeof score === "number" && Number.isFinite(score) ? score : null;
 
+  const imageBlock = imageUrl ? (
+    <a
+      href={ctaHref}
+      target="_blank"
+      rel="nofollow sponsored noopener noreferrer"
+      className="group relative block h-full w-full"
+      aria-label={amazonOverlayLabel || ctaLabel}
+    >
+      <Image
+        src={imageUrl}
+        alt={title}
+        fill
+        className="object-contain p-6 transition group-hover:scale-[1.03]"
+        sizes={variant === "featured" ? "(max-width: 768px) 100vw, 50vw" : "(max-width: 768px) 100vw, 25vw"}
+        unoptimized
+      />
+      {amazonOverlayLabel ? (
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-amazon-dark/85 to-transparent px-3 py-2 text-center text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+          {amazonOverlayLabel}
+        </div>
+      ) : null}
+    </a>
+  ) : null;
+
   if (variant === "featured") {
     return (
       <article className="igz-card igz-card-hover grid overflow-hidden md:grid-cols-[1.1fr_1fr]">
         <div className="relative min-h-56 bg-surface-muted">
-          {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={title}
-              fill
-              className="object-contain p-8"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              unoptimized
-            />
-          ) : null}
+          {imageBlock}
           {badge ? (
             <span className="absolute top-4 left-4 rounded-full border border-secondary/20 bg-white px-3 py-1 text-xs font-semibold text-secondary">
               {badge}
@@ -73,11 +92,22 @@ export function ProductCard({
               </>
             ) : null}
           </div>
-          <p className="mt-auto pt-6 text-2xl font-bold text-primary">
+          <a
+            href={ctaHref}
+            target="_blank"
+            rel="nofollow sponsored noopener noreferrer"
+            className="mt-auto block pt-6 text-2xl font-bold text-primary transition hover:text-amazon-hover"
+          >
             {formatPrice(price, currency, numberLocale)}
-          </p>
+          </a>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <CtaButton href={ctaHref} label={ctaLabel} className="flex-1" />
+            <CtaButton
+              href={ctaHref}
+              label={ctaLabel}
+              sublabel={ctaSublabel}
+              variant="amazon"
+              className="flex-1"
+            />
             <Link
               href={href}
               className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-primary transition hover:border-secondary hover:text-secondary"
@@ -93,16 +123,7 @@ export function ProductCard({
   return (
     <article className="igz-card igz-card-hover flex h-full flex-col overflow-hidden">
       <div className="relative aspect-[4/3] bg-surface-muted">
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={title}
-            fill
-            className="object-contain p-6"
-            sizes="(max-width: 768px) 100vw, 25vw"
-            unoptimized
-          />
-        ) : null}
+        {imageBlock}
         {typeof discountPercent === "number" ? (
           <span className="absolute top-3 right-3 rounded-md bg-danger px-2 py-1 text-xs font-bold text-white">
             -{discountPercent}%
@@ -123,15 +144,21 @@ export function ProductCard({
             {title}
           </Link>
         </h3>
-        <p className="mt-3 text-xl font-bold text-primary">
+        <a
+          href={ctaHref}
+          target="_blank"
+          rel="nofollow sponsored noopener noreferrer"
+          className="mt-3 text-xl font-bold text-primary transition hover:text-amazon-hover"
+        >
           {formatPrice(price, currency, numberLocale)}
-        </p>
+        </a>
         <div className="mt-auto flex flex-col gap-2 pt-5">
           <CtaButton
             href={ctaHref}
             label={ctaLabel}
+            sublabel={ctaSublabel}
+            variant="amazon"
             size="sm"
-            showCart
             className="w-full"
           />
           <Link

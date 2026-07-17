@@ -84,7 +84,7 @@ export function rankProductsForMatch(
 }
 
 export function buildFeatureMatrix(
-  products: Array<{ id: string; title: string; features: string[] }>,
+  products: Array<{ id: string; title: string; features: string[]; ctaHref?: string }>,
 ) {
   const featureSet = new Set<string>();
 
@@ -101,6 +101,7 @@ export function buildFeatureMatrix(
     rows: products.map((product) => ({
       id: product.id,
       title: product.title,
+      ctaHref: product.ctaHref,
       values: features.map((feature) => product.features.includes(feature)),
     })),
   };

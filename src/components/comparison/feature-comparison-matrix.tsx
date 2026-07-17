@@ -1,6 +1,9 @@
+import { CtaButton } from "@/components/affiliate/cta-button";
+
 type MatrixRow = {
   id: string;
   title: string;
+  ctaHref?: string;
   values: boolean[];
 };
 
@@ -9,6 +12,7 @@ type Props = {
   featureLabel: string;
   yesLabel: string;
   noLabel: string;
+  ctaLabel: string;
   features: string[];
   rows: MatrixRow[];
 };
@@ -18,6 +22,7 @@ export function FeatureComparisonMatrix({
   featureLabel,
   yesLabel,
   noLabel,
+  ctaLabel,
   features,
   rows,
 }: Props) {
@@ -32,7 +37,7 @@ export function FeatureComparisonMatrix({
         <table className="min-w-full text-sm">
           <thead className="bg-surface-muted text-left">
             <tr>
-              <th className="px-4 py-3 font-semibold text-muted uppercase tracking-wide">
+              <th className="px-4 py-3 font-semibold tracking-wide text-muted uppercase">
                 {featureLabel}
               </th>
               {rows.map((row) => (
@@ -40,7 +45,29 @@ export function FeatureComparisonMatrix({
                   key={row.id}
                   className="px-4 py-3 font-semibold text-primary"
                 >
-                  {row.title}
+                  <div className="space-y-2">
+                    {row.ctaHref ? (
+                      <a
+                        href={row.ctaHref}
+                        target="_blank"
+                        rel="nofollow sponsored noopener noreferrer"
+                        className="block hover:text-amazon-hover"
+                      >
+                        {row.title}
+                      </a>
+                    ) : (
+                      row.title
+                    )}
+                    {row.ctaHref ? (
+                      <CtaButton
+                        href={row.ctaHref}
+                        label={ctaLabel}
+                        size="sm"
+                        variant="amazon"
+                        className="w-full"
+                      />
+                    ) : null}
+                  </div>
                 </th>
               ))}
             </tr>

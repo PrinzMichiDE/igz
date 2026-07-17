@@ -18,6 +18,9 @@
   --success-soft: #f0fdf4;
   --danger: #dc2626;
   --danger-soft: #fef2f2;
+  --amazon: #ff9900;
+  --amazon-hover: #e88b00;
+  --amazon-dark: #232f3e;
   --card-shadow: 0 15px 40px -24px rgba(15, 23, 42, 0.25);
   --card-shadow-hover: 0 20px 48px -20px rgba(15, 23, 42, 0.28);
 }
@@ -40,6 +43,9 @@
   --color-success-soft: var(--success-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-amazon: var(--amazon);
+  --color-amazon-hover: var(--amazon-hover);
+  --color-amazon-dark: var(--amazon-dark);
   --font-sans: var(--font-inter);
   --font-display: var(--font-geist-sans);
 }

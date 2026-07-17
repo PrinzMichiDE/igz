@@ -7,6 +7,7 @@ type Props = {
   savingsPercent: number | null;
   lastSyncedAt?: Date | string | null;
   locale: string;
+  href?: string;
   labels: {
     belowAverage: string;
     aboveAverage: string;
@@ -22,10 +23,12 @@ export function ValueIndicators({
   savingsPercent,
   lastSyncedAt,
   locale,
+  href,
   labels,
 }: Props) {
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
-  const items: Array<{ key: string; icon: typeof PiggyBank; text: string }> = [];
+  const items: Array<{ key: string; icon: typeof PiggyBank; text: string; highlight?: boolean }> =
+    [];
 
   if (
     price !== null &&
@@ -40,6 +43,7 @@ export function ValueIndicators({
         key: "below",
         icon: PiggyBank,
         text: labels.belowAverage.replace("{percent}", String(Math.abs(delta))),
+        highlight: true,
       });
     } else if (delta >= 5) {
       items.push({
@@ -61,6 +65,7 @@ export function ValueIndicators({
       key: "savings",
       icon: TrendingDown,
       text: labels.savings.replace("{percent}", String(savingsPercent)),
+      highlight: true,
     });
   }
 
@@ -74,17 +79,43 @@ export function ValueIndicators({
 
   if (items.length === 0) return null;
 
+  const baseClass =
+    "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition";
+
   return (
     <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <span
-          key={item.key}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs text-muted-foreground"
-        >
-          <item.icon className="h-3.5 w-3.5 shrink-0 text-secondary" aria-hidden />
-          {item.text}
-        </span>
-      ))}
+      {items.map((item) => {
+        const className = item.highlight
+          ? `${baseClass} border-amazon/30 bg-amber-50 font-medium text-amazon-dark hover:border-amazon/50 hover:bg-amber-100`
+          : `${baseClass} border-border bg-surface-muted text-muted-foreground hover:border-secondary/30`;
+
+        const content = (
+          <>
+            <item.icon className="h-3.5 w-3.5 shrink-0 text-secondary" aria-hidden />
+            {item.text}
+          </>
+        );
+
+        if (href && item.highlight) {
+          return (
+            <a
+              key={item.key}
+              href={href}
+              target="_blank"
+              rel="nofollow sponsored noopener noreferrer"
+              className={className}
+            >
+              {content}
+            </a>
+          );
+        }
+
+        return (
+          <span key={item.key} className={className}>
+            {content}
+          </span>
+        );
+      })}
     </div>
   );
 }

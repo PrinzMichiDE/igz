@@ -1,10 +1,12 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Star } from "lucide-react";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
+import { AmazonImageLink } from "@/components/affiliate/amazon-image-link";
+import { AmazonInlineCta } from "@/components/affiliate/amazon-inline-cta";
 import { BuyBox } from "@/components/product/buy-box";
 import { CtaButton } from "@/components/affiliate/cta-button";
+import { StickyAmazonBar } from "@/components/affiliate/sticky-amazon-bar";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { ProsCons } from "@/components/content/pros-cons";
@@ -102,7 +104,7 @@ export default async function ProductPage({ params }: Props) {
   ];
 
   return (
-    <div className="igz-container py-10 md:py-14">
+    <div className="igz-container py-10 pb-24 md:py-14 md:pb-24 xl:pb-14">
       <div className="grid gap-8 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
         <div className="hidden xl:block">
           <ReviewToc
@@ -137,6 +139,7 @@ export default async function ProductPage({ params }: Props) {
 
           <AmazonTrustBadges
             signals={trustSignals}
+            href={ctaHref}
             labels={{
               bestSeller: t("product.trustBestSeller"),
               amazonChoice: t("product.trustAmazonChoice"),
@@ -151,6 +154,7 @@ export default async function ProductPage({ params }: Props) {
               savingsPercent={trustSignals.savingsPercent}
               lastSyncedAt={product.lastSyncedAt}
               locale={locale}
+              href={ctaHref}
               labels={{
                 belowAverage: t("product.valueBelowAverage"),
                 aboveAverage: t("product.valueAboveAverage"),
@@ -161,21 +165,17 @@ export default async function ProductPage({ params }: Props) {
             />
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-xl border border-border bg-surface-muted">
-            {product.imageUrl ? (
-              <div className="relative aspect-[16/9] max-h-[420px] w-full">
-                <Image
-                  src={product.imageUrl}
-                  alt={product.title}
-                  fill
-                  className="object-contain p-8"
-                  sizes="(max-width: 1280px) 100vw, 70vw"
-                  unoptimized
-                  priority
-                />
-              </div>
-            ) : null}
-          </div>
+          {product.imageUrl ? (
+            <AmazonImageLink
+              href={ctaHref}
+              src={product.imageUrl}
+              alt={product.title}
+              overlayLabel={t("product.imageOverlay")}
+              className="mt-6"
+              sizes="(max-width: 1280px) 100vw, 70vw"
+              priority
+            />
+          ) : null}
 
           <div className="mt-6">
             <AffiliateDisclosure text={t("disclosure.short")} />
@@ -245,6 +245,19 @@ export default async function ProductPage({ params }: Props) {
             ))}
           </section>
 
+          <AmazonInlineCta
+            title={t("product.inlineCtaTitle")}
+            body={t("product.inlineCtaAfterVerdict")}
+            ctaHref={ctaHref}
+            ctaLabel={t("cta.buyOnAmazon")}
+            ctaSublabel={t("cta.amazonSubline")}
+            priceLabel={formatPrice(
+              product.price?.toString(),
+              product.currency,
+              numberLocale,
+            )}
+          />
+
           <div className="mt-8 flex flex-wrap items-center gap-4 lg:hidden">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Star className="h-4 w-4 fill-accent text-accent" aria-hidden />
@@ -252,18 +265,25 @@ export default async function ProductPage({ params }: Props) {
                 {product.rating ?? "—"} ({product.reviewCount})
               </span>
             </div>
-            <p className="text-xl font-bold text-primary">
+            <a
+              href={ctaHref}
+              target="_blank"
+              rel="nofollow sponsored noopener noreferrer"
+              className="text-xl font-bold text-primary transition hover:text-amazon-hover"
+            >
               {formatPrice(
                 product.price?.toString(),
                 product.currency,
                 numberLocale,
               )}
-            </p>
+            </a>
             <CtaButton
               href={ctaHref}
-              label={t("cta.checkPrice")}
+              label={t("cta.buyOnAmazon")}
+              sublabel={t("cta.amazonSubline")}
               className="w-full"
               size="lg"
+              variant="amazon"
             />
           </div>
 
@@ -278,6 +298,14 @@ export default async function ProductPage({ params }: Props) {
               cons={content.cons || []}
             />
           </section>
+
+          <AmazonInlineCta
+            title={t("product.inlineCtaTitle")}
+            body={t("product.inlineCtaBody")}
+            ctaHref={ctaHref}
+            ctaLabel={t("cta.amazon")}
+            ctaSublabel={t("cta.amazonSubline")}
+          />
 
           <section className="mt-10 grid gap-4 md:grid-cols-2">
             <div className="igz-card p-5">
@@ -346,7 +374,13 @@ export default async function ProductPage({ params }: Props) {
           <FaqAccordion items={content.faq || []} />
 
           <div className="mt-10">
-            <CtaButton href={ctaHref} label={t("cta.checkPrice")} size="lg" />
+            <CtaButton
+              href={ctaHref}
+              label={t("cta.buyOnAmazon")}
+              sublabel={t("cta.amazonSubline")}
+              size="lg"
+              variant="amazon"
+            />
           </div>
         </div>
 
@@ -363,8 +397,10 @@ export default async function ProductPage({ params }: Props) {
             priceNote={t("product.priceNote")}
             lastSyncedAt={product.lastSyncedAt}
             ctaHref={ctaHref}
-            ctaLabel={t("cta.checkPrice")}
-            compareLabel={t("product.compareRetailers")}
+            ctaLabel={t("cta.buyOnAmazon")}
+            ctaSublabel={t("cta.amazonSubline")}
+            imageOverlayLabel={t("product.imageOverlay")}
+            amazonHint={t("product.amazonHint")}
             disclosureInline={t("disclosure.inline")}
           />
           <p className="mt-3 text-xs leading-5 text-muted">{t("product.scoreHint")}</p>
@@ -386,13 +422,25 @@ export default async function ProductPage({ params }: Props) {
               price={item.price?.toString()}
               currency={item.currency}
               locale={locale}
-              ctaLabel={t("cta.checkPrice")}
+              ctaLabel={t("cta.amazon")}
+              ctaSublabel={t("cta.amazonSubline")}
               ctaHref={productOutHref(item, locale, pagePath)}
               readLabel={t("category.readReview")}
+              amazonOverlayLabel={t("product.imageOverlay")}
             />
           ))}
         </div>
       </section>
+
+      <StickyAmazonBar
+        title={product.title}
+        price={product.price?.toString()}
+        currency={product.currency}
+        locale={locale}
+        ctaHref={ctaHref}
+        ctaLabel={t("cta.buyOnAmazon")}
+        ctaSublabel={t("cta.amazonSubline")}
+      />
     </div>
   );
 }

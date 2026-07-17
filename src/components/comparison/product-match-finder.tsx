@@ -26,6 +26,7 @@ type Labels = {
   resultEmpty: string;
   readReview: string;
   ctaLabel: string;
+  ctaSublabel?: string;
 };
 
 type Props = {
@@ -161,7 +162,9 @@ export function ProductMatchFinder({ candidates, locale, labels }: Props) {
                     <CtaButton
                       href={candidate.ctaHref}
                       label={labels.ctaLabel}
+                      sublabel={labels.ctaSublabel}
                       size="sm"
+                      variant="amazon"
                       className="w-full"
                     />
                     <Link

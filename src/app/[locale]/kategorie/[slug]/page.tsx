@@ -122,6 +122,7 @@ export default async function CategoryPage({ params }: Props) {
       id: product.id,
       title: product.title,
       features: collectFeatureList(product.features),
+      ctaHref: productOutHref(product, locale, pagePath),
     })),
   );
 
@@ -213,7 +214,8 @@ export default async function CategoryPage({ params }: Props) {
             resultTitle: t("category.matchResultTitle"),
             resultEmpty: t("category.matchResultEmpty"),
             readReview: t("category.readReview"),
-            ctaLabel: t("cta.checkPrice"),
+            ctaLabel: t("cta.amazon"),
+            ctaSublabel: t("cta.amazonSubline"),
           }}
         />
       </div>
@@ -225,7 +227,8 @@ export default async function CategoryPage({ params }: Props) {
           labels={{
             title: t("category.awardPickerTitle"),
             subtitle: t("category.awardPickerSubtitle"),
-            ctaLabel: t("cta.checkPrice"),
+            ctaLabel: t("cta.buyOnAmazon"),
+            ctaSublabel: t("cta.amazonSubline"),
             readReview: t("category.readReview"),
           }}
         />
@@ -250,13 +253,15 @@ export default async function CategoryPage({ params }: Props) {
                   price={comparison.winnerProduct.price?.toString()}
                   currency={comparison.winnerProduct.currency}
                   locale={locale}
-                  ctaLabel={t("cta.checkPrice")}
+                  ctaLabel={t("cta.buyOnAmazon")}
+                  ctaSublabel={t("cta.amazonSubline")}
                   ctaHref={productOutHref(
                     comparison.winnerProduct,
                     locale,
                     pagePath,
                   )}
                   readLabel={t("category.readReview")}
+                  amazonOverlayLabel={t("product.imageOverlay")}
                 />
               </div>
             ) : null}
@@ -277,13 +282,15 @@ export default async function CategoryPage({ params }: Props) {
                   price={comparison.priceWinner.price?.toString()}
                   currency={comparison.priceWinner.currency}
                   locale={locale}
-                  ctaLabel={t("cta.checkPrice")}
+                  ctaLabel={t("cta.amazon")}
+                  ctaSublabel={t("cta.amazonSubline")}
                   ctaHref={productOutHref(
                     comparison.priceWinner,
                     locale,
                     pagePath,
                   )}
                   readLabel={t("category.readReview")}
+                  amazonOverlayLabel={t("product.imageOverlay")}
                 />
               </div>
             ) : null}
@@ -301,25 +308,29 @@ export default async function CategoryPage({ params }: Props) {
                   price={comparison.budgetWinner.price?.toString()}
                   currency={comparison.budgetWinner.currency}
                   locale={locale}
-                  ctaLabel={t("cta.checkPrice")}
+                  ctaLabel={t("cta.amazon")}
+                  ctaSublabel={t("cta.amazonSubline")}
                   ctaHref={productOutHref(
                     comparison.budgetWinner,
                     locale,
                     pagePath,
                   )}
                   readLabel={t("category.readReview")}
+                  amazonOverlayLabel={t("product.imageOverlay")}
                 />
               </div>
             ) : null}
           </div>
 
           {comparison?.winnerProduct ? (
-            <div className="mb-8 xl:hidden">
+            <div className="mb-8">
               <CtaButton
                 href={productOutHref(comparison.winnerProduct, locale, pagePath)}
                 label={t("category.ctaWinner")}
+                sublabel={t("cta.amazonSubline")}
                 className="w-full"
                 size="lg"
+                variant="amazon"
               />
             </div>
           ) : null}
@@ -329,6 +340,7 @@ export default async function CategoryPage({ params }: Props) {
             featureLabel={t("category.featureColumn")}
             yesLabel={t("category.featureYes")}
             noLabel={t("category.featureNo")}
+            ctaLabel={t("cta.amazon")}
             features={featureMatrix.features}
             rows={featureMatrix.rows}
           />
@@ -340,7 +352,8 @@ export default async function CategoryPage({ params }: Props) {
             <ComparisonTable
               rows={rows}
               locale={locale}
-              ctaLabel={t("cta.checkPrice")}
+              ctaLabel={t("cta.amazon")}
+              ctaSublabel={t("cta.amazonSubline")}
               readLabel={t("category.readReview")}
               availableOnAmazonLabel={t("category.availableOnAmazon")}
               columns={{

@@ -21,6 +21,7 @@ type Labels = {
   title: string;
   subtitle: string;
   ctaLabel: string;
+  ctaSublabel?: string;
   readReview: string;
 };
 
@@ -73,7 +74,13 @@ export function AwardPicker({ options, locale, labels }: Props) {
           {formatPrice(active.price, active.currency || "EUR", numberLocale)}
         </p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <CtaButton href={active.ctaHref} label={labels.ctaLabel} />
+          <CtaButton
+            href={active.ctaHref}
+            label={labels.ctaLabel}
+            sublabel={labels.ctaSublabel}
+            variant="amazon"
+            className="flex-1"
+          />
           <a
             href={active.href}
             className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-primary transition hover:border-secondary hover:text-secondary"

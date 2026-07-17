@@ -116,6 +116,11 @@
     "value": "Value",
     "build": "Build quality",
     "compareRetailers": "Compare retailers",
+    "imageOverlay": "View on Amazon",
+    "amazonHint": "Fast delivery & secure checkout via Amazon",
+    "inlineCtaTitle": "Ready to buy?",
+    "inlineCtaBody": "Check the current price and availability directly on Amazon — at no extra cost to you.",
+    "inlineCtaAfterVerdict": "Our verdict: this model is worth it — check the price on Amazon now.",
     "trustBestSeller": "Best seller",
     "trustAmazonChoice": "Amazon's Choice",
     "valueBelowAverage": "{percent}% below category average",
@@ -135,8 +140,10 @@
   },
   "cta": {
     "amazon": "View on Amazon",
+    "amazonSubline": "Go to the offer",
+    "buyOnAmazon": "Buy now on Amazon",
     "checkPrice": "Check price",
-    "buy": "Buy",
+    "buy": "Buy on Amazon",
     "readMore": "Learn more"
   },
   "disclosure": {

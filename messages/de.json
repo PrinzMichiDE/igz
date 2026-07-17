@@ -116,6 +116,11 @@
     "value": "Preis-Leistung",
     "build": "Verarbeitung",
     "compareRetailers": "Händler vergleichen",
+    "imageOverlay": "Bei Amazon ansehen",
+    "amazonHint": "Schnelle Lieferung & sichere Bestellung über Amazon",
+    "inlineCtaTitle": "Bereit zum Kauf?",
+    "inlineCtaBody": "Prüfe den aktuellen Preis und die Verfügbarkeit direkt bei Amazon – ohne Mehrkosten für dich.",
+    "inlineCtaAfterVerdict": "Unser Fazit: Dieses Modell lohnt sich – jetzt Preis auf Amazon prüfen.",
     "trustBestSeller": "Bestseller",
     "trustAmazonChoice": "Amazon's Choice",
     "valueBelowAverage": "{percent}% unter Kategorie-Durchschnitt",
@@ -135,8 +140,10 @@
   },
   "cta": {
     "amazon": "Bei Amazon ansehen",
+    "amazonSubline": "Direkt zum Angebot",
+    "buyOnAmazon": "Jetzt bei Amazon kaufen",
     "checkPrice": "Preis prüfen",
-    "buy": "Kaufen",
+    "buy": "Bei Amazon kaufen",
     "readMore": "Mehr erfahren"
   },
   "disclosure": {
