@@ -269,41 +269,80 @@ async function main() {
             status: "published",
             title:
               locale === "de"
-                ? `Testbericht: ${product.title}`
-                : `Review: ${product.title}`,
+                ? `Ausführlicher Testbericht: ${product.title}`
+                : `In-depth review: ${product.title}`,
             slug: `${product.slug}-review-${locale}`,
             excerpt:
               locale === "de"
-                ? "Demo-Testbericht für UI und SEO-Preview."
-                : "Demo review for UI and SEO preview.",
+                ? "Ausführlicher Demo-Testbericht für UI und SEO-Preview."
+                : "Detailed demo review for UI and SEO preview.",
             contentJson: {
               score: product.editorialScore,
+              testingPeriod: locale === "de" ? "3 Wochen Alltag" : "3 weeks daily use",
               pros:
                 locale === "de"
-                  ? ["Solider Klang", "Gutes Preis-Leistungs-Verhältnis"]
-                  : ["Solid sound", "Good value"],
+                  ? [
+                      "Solider Klang für die Preisklasse",
+                      "Angenehmer Tragekomfort",
+                      "Zuverlässige Verbindung",
+                      "Gute Akkulaufzeit im Pendelalltag",
+                      "Einfache Bedienung",
+                    ]
+                  : [
+                      "Solid sound for the price",
+                      "Comfortable fit",
+                      "Reliable connection",
+                      "Good battery for commuting",
+                      "Simple controls",
+                    ],
               cons:
                 locale === "de"
-                  ? ["Demo-Daten, keine echten Labormessungen"]
-                  : ["Demo data, no real lab measurements"],
+                  ? [
+                      "Demo-Daten, keine echten Labormessungen",
+                      "App-Funktionen nur durchschnittlich",
+                      "Bei sehr lauter Umgebung Limit spürbar",
+                    ]
+                  : [
+                      "Demo data, no real lab measurements",
+                      "Average app features",
+                      "Limits show in very loud environments",
+                    ],
               bestFor:
-                locale === "de" ? ["Alltag", "Pendeln"] : ["Daily use", "Commuting"],
+                locale === "de" ? ["Alltag", "Pendeln", "Homeoffice"] : ["Daily use", "Commuting", "Remote work"],
               notFor:
-                locale === "de" ? ["Studio-Produktion"] : ["Studio production"],
+                locale === "de" ? ["Studio-Produktion", "HiFi-Puristen"] : ["Studio production", "HiFi purists"],
               verdict:
                 locale === "de"
-                  ? `${product.title} ist ein starker Demo-Kandidat für die UI-Vorschau.`
-                  : `${product.title} is a strong demo candidate for the UI preview.`,
+                  ? `${product.title} wirkt im Demo-Szenario wie ein alltagstauglicher Begleiter: unkompliziert, angenehm zu tragen und mit einem ausgewogenen Klangprofil. Für Pendler und Homeoffice klar empfehlenswert, für Studioarbeit eher nicht die erste Wahl.`
+                  : `${product.title} feels like a practical daily companion in this demo scenario: easy to use, comfortable, and balanced in sound. Great for commuting and remote work, less ideal for studio work.`,
               sections: [
                 {
-                  heading: locale === "de" ? "Praxis" : "In practice",
+                  heading: locale === "de" ? "Erster Eindruck" : "First impressions",
                   body:
                     locale === "de"
-                      ? "Dieser Abschnitt wird später durch OpenRouter ersetzt."
-                      : "This section will later be replaced by OpenRouter output.",
+                      ? "Direkt nach dem Auspacken wirkt das Setup unkompliziert. Sitz und Passform lassen sich schnell finden, und schon die ersten Minuten im Alltag zeigen, wohin die Reise geht: weniger Spektakel, mehr verlässliche Routine. Genau das braucht man oft im echten Nutzungsalltag."
+                      : "Out of the box the setup feels straightforward. Fit is easy to dial in, and the first minutes of daily use already hint at the product's character: less spectacle, more reliable routine. That is often what real-world use needs.",
+                },
+                {
+                  heading: locale === "de" ? "Alltagstest" : "Daily use",
+                  body:
+                    locale === "de"
+                      ? "Im Pendelverkehr, bei Calls und abends auf dem Sofa bleibt der Eindruck konstant. Die Bedienung sitzt nach kurzer Eingewöhnung, und kleine Schwächen fallen erst bei längerer Nutzung auf – genau dort, wo authentische Testberichte ehrlich bleiben sollten."
+                      : "Across commuting, calls and evening downtime the impression stays consistent. Controls become second nature quickly, and smaller weaknesses only appear with longer use — exactly where authentic reviews should stay honest.",
                 },
               ],
-              faq: [],
+              faq: [
+                {
+                  question:
+                    locale === "de"
+                      ? "Für wen lohnt sich der Kauf?"
+                      : "Who should buy it?",
+                  answer:
+                    locale === "de"
+                      ? "Vor allem für Alltag und Pendeln mit Fokus auf Komfort und einfache Nutzung."
+                      : "Mainly for everyday and commuting use with a focus on comfort and simplicity.",
+                },
+              ],
             },
             publishedAt: new Date(),
           },
@@ -313,37 +352,125 @@ async function main() {
             status: "published",
             title:
               locale === "de"
-                ? `Testbericht: ${product.title}`
-                : `Review: ${product.title}`,
+                ? `Ausführlicher Testbericht: ${product.title}`
+                : `In-depth review: ${product.title}`,
             slug: `${product.slug}-review-${locale}`,
             excerpt:
               locale === "de"
-                ? "Demo-Testbericht für UI und SEO-Preview."
-                : "Demo review for UI and SEO preview.",
+                ? "Ausführlicher Demo-Testbericht für UI und SEO-Preview."
+                : "Detailed demo review for UI and SEO preview.",
             contentJson: {
               score: product.editorialScore,
+              testingPeriod: locale === "de" ? "3 Wochen Alltag" : "3 weeks daily use",
               pros:
                 locale === "de"
-                  ? ["Solider Klang", "Gutes Preis-Leistungs-Verhältnis"]
-                  : ["Solid sound", "Good value"],
+                  ? ["Solider Klang", "Gutes Preis-Leistungs-Verhältnis", "Komfortabel", "Alltagstauglich"]
+                  : ["Solid sound", "Good value", "Comfortable", "Practical"],
               cons:
                 locale === "de"
-                  ? ["Demo-Daten, keine echten Labormessungen"]
-                  : ["Demo data, no real lab measurements"],
+                  ? ["Demo-Daten, keine echten Labormessungen", "App nur durchschnittlich"]
+                  : ["Demo data, no real lab measurements", "Average app"],
               bestFor:
                 locale === "de" ? ["Alltag", "Pendeln"] : ["Daily use", "Commuting"],
               notFor:
                 locale === "de" ? ["Studio-Produktion"] : ["Studio production"],
               verdict:
                 locale === "de"
-                  ? `${product.title} ist ein starker Demo-Kandidat für die UI-Vorschau.`
-                  : `${product.title} is a strong demo candidate for the UI preview.`,
-              sections: [],
+                  ? `${product.title} ist ein starker Demo-Kandidat für ausführliche Testberichte.`
+                  : `${product.title} is a strong demo candidate for long-form reviews.`,
+              sections: [
+                {
+                  heading: locale === "de" ? "Praxis" : "In practice",
+                  body:
+                    locale === "de"
+                      ? "Dieser Abschnitt wird später durch OpenRouter mit einem ausführlichen Alltagstest ersetzt."
+                      : "This section will later be replaced by OpenRouter with a detailed daily-use report.",
+                },
+              ],
               faq: [],
             },
             publishedAt: new Date(),
             productId: product.id,
           },
+        });
+
+        await prisma.productExperienceComment.deleteMany({
+          where: { productId: product.id, locale },
+        });
+
+        await prisma.productExperienceComment.createMany({
+          data:
+            locale === "de"
+              ? [
+                  {
+                    productId: product.id,
+                    locale,
+                    authorName: "Anna K.",
+                    authorContext: "Pendlerin, Homeoffice",
+                    rating: 5,
+                    title: "Endlich entspannt in der Bahn",
+                    body: "Nach zwei Wochen Alltagstest bin ich überrascht, wie unkompliziert sich das Teil anfühlt. Morgens in der S-Bahn bleibt der Klang klar genug für Podcasts, und bei Calls wirkt die Bedienung intuitiv. Nicht perfekt bei sehr lautem Umfeld, aber für meinen Alltag genau richtig.",
+                    usageWeeks: 2,
+                    source: "seed_demo",
+                  },
+                  {
+                    productId: product.id,
+                    locale,
+                    authorName: "Markus W.",
+                    authorContext: "Sport & Abendroutine",
+                    rating: 4,
+                    title: "Gut, mit kleinen Abstrichen",
+                    body: "Sitzt beim Joggen stabil und nervt nicht mit ständigen Verbindungsabbrüchen. Der Klang ist alltagstauglich, nicht audiophil. Nach längeren Sessions wünsche ich mir etwas mehr Feinschliff bei den Höhen – trotzdem würde ich es weiterempfehlen.",
+                    usageWeeks: 5,
+                    source: "seed_demo",
+                  },
+                  {
+                    productId: product.id,
+                    locale,
+                    authorName: "Lea S.",
+                    authorContext: "Preisbewusst, mobil",
+                    rating: 3,
+                    title: "Solide, aber nicht spektakulär",
+                    body: "Für den Preis okay, ohne Wow-Effekt. Die Akkulaufzeit reicht mir fürs Pendeln, die App wirkt jedoch etwas nüchtern. Wer einfache Nutzung will, kommt klar – wer Features sucht, sollte genauer vergleichen.",
+                    usageWeeks: 3,
+                    source: "seed_demo",
+                  },
+                ]
+              : [
+                  {
+                    productId: product.id,
+                    locale,
+                    authorName: "James R.",
+                    authorContext: "Commuter, remote work",
+                    rating: 5,
+                    title: "Easy daily driver",
+                    body: "After two weeks of commuting and calls, this feels refreshingly simple. Podcast clarity is solid on the train and controls are intuitive. Not perfect in very loud spaces, but for my routine it hits the mark.",
+                    usageWeeks: 2,
+                    source: "seed_demo",
+                  },
+                  {
+                    productId: product.id,
+                    locale,
+                    authorName: "Maya L.",
+                    authorContext: "Workouts and evenings",
+                    rating: 4,
+                    title: "Reliable with minor tradeoffs",
+                    body: "Stays put while running and does not drop connection every few minutes. Sound is practical rather than audiophile. After longer sessions I want a bit more treble polish, but I would still recommend it.",
+                    usageWeeks: 5,
+                    source: "seed_demo",
+                  },
+                  {
+                    productId: product.id,
+                    locale,
+                    authorName: "Chris P.",
+                    authorContext: "Budget-minded",
+                    rating: 3,
+                    title: "Fine, not spectacular",
+                    body: "Decent for the price without a wow moment. Battery covers my commute, though the app feels basic. Great if you want simplicity; compare more carefully if you need advanced features.",
+                    usageWeeks: 3,
+                    source: "seed_demo",
+                  },
+                ],
         });
       }
     }

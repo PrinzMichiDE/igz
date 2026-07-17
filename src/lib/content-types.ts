@@ -4,6 +4,7 @@ export type ReviewContent = {
   seoTitle?: string;
   seoDescription?: string;
   score?: number;
+  testingPeriod?: string;
   pros?: string[];
   cons?: string[];
   bestFor?: string[];

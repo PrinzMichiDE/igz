@@ -36,8 +36,13 @@
     "notFor": "Not ideal for",
     "verdict": "Verdict",
     "details": "Details",
+    "testingPeriod": "Testing period",
     "priceNote": "Price may vary · as of",
-    "related": "Related products"
+    "related": "Related products",
+    "experiences": "User experiences",
+    "experiencesDisclaimer": "AI-synthesized experience notes based on typical usage scenarios — not verified Amazon purchases.",
+    "experiencesEmpty": "No user experiences generated yet.",
+    "usageWeeks": "weeks of use"
   },
   "cta": {
     "amazon": "View on Amazon",

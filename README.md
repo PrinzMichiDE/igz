@@ -43,7 +43,12 @@ App: [http://localhost:3000/de](http://localhost:3000/de)
 Header: `Authorization: Bearer $CRON_SECRET`
 
 - `GET /api/cron/sync-products?category=bluetooth-kopfhoerer&top=5`
-- `GET /api/cron/generate-content?category=bluetooth-kopfhoerer&locales=de,en`
+- `GET /api/cron/generate-content?category=bluetooth-kopfhoerer&locales=de,en&comments=6`
+
+`generate-content` erzeugt:
+1. ausführliche authentische Testberichte (OpenRouter)
+2. KI-synthetisierte Nutzererfahrungs-Kommentare je Produkt/Locale
+3. Kategorie-Vergleiche
 
 Weekly schedules are defined in `vercel.json`.
 

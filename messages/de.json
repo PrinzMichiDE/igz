@@ -36,8 +36,13 @@
     "notFor": "Weniger geeignet für",
     "verdict": "Fazit",
     "details": "Details",
+    "testingPeriod": "Testzeitraum",
     "priceNote": "Preis kann variieren · Stand",
-    "related": "Ähnliche Produkte"
+    "related": "Ähnliche Produkte",
+    "experiences": "Nutzererfahrungen",
+    "experiencesDisclaimer": "KI-synthetisierte Erfahrungsstimmen auf Basis typischer Nutzungsszenarien – keine verifizierten Amazon-Käufe.",
+    "experiencesEmpty": "Noch keine Nutzererfahrungen generiert.",
+    "usageWeeks": "Wochen Nutzung"
   },
   "cta": {
     "amazon": "Bei Amazon ansehen",

@@ -8,6 +8,7 @@ import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { ProsCons } from "@/components/content/pros-cons";
 import { ScoreBadge } from "@/components/product/score-badge";
+import { UserExperienceComments } from "@/components/content/user-experience-comments";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
 import { formatPrice } from "@/lib/utils";
@@ -33,6 +34,10 @@ export default async function ProductPage({ params }: Props) {
         articles: {
           where: { type: "review", locale, status: "published" },
           take: 1,
+        },
+        experienceComments: {
+          where: { locale },
+          orderBy: { createdAt: "desc" },
         },
       },
     })
@@ -86,6 +91,11 @@ export default async function ProductPage({ params }: Props) {
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">
                 {article?.title || product.title}
               </h1>
+              {content.testingPeriod ? (
+                <p className="mt-2 text-sm text-zinc-500">
+                  {t("product.testingPeriod")}: {content.testingPeriod}
+                </p>
+              ) : null}
               <div className="mt-4 flex flex-wrap items-center gap-4">
                 <ScoreBadge
                   score={content.score ?? product.editorialScore ?? product.rating}
@@ -126,15 +136,18 @@ export default async function ProductPage({ params }: Props) {
               {t("product.pros")} / {t("product.cons")}
             </a>
             <a href="#details">{t("product.details")}</a>
+            <a href="#nutzererfahrungen">{t("product.experiences")}</a>
           </nav>
 
           <section id="fazit" className="prose-article mb-8 font-serif">
             <h2>{t("product.verdict")}</h2>
             <p>{content.verdict || article?.excerpt || product.title}</p>
             {content.sections?.map((section) => (
-              <div key={section.heading}>
+              <div key={section.heading} className="mt-6">
                 <h2>{section.heading}</h2>
-                <p>{section.body}</p>
+                {section.body.split("\n\n").map((paragraph) => (
+                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                ))}
               </div>
             ))}
           </section>
@@ -188,6 +201,14 @@ export default async function ProductPage({ params }: Props) {
               ))}
             </div>
           </section>
+
+          <UserExperienceComments
+            title={t("product.experiences")}
+            disclaimer={t("product.experiencesDisclaimer")}
+            weeksLabel={t("product.usageWeeks")}
+            emptyLabel={t("product.experiencesEmpty")}
+            comments={product.experienceComments}
+          />
 
           <FaqAccordion items={content.faq || []} />
 

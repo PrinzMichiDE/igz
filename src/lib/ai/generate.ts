@@ -16,6 +16,14 @@ import {
   buildComparisonUserPromptEn,
   comparisonSystemPromptEn,
 } from "@/lib/ai/prompts/comparison.en";
+import {
+  buildCommentsUserPromptDe,
+  commentsSystemPromptDe,
+} from "@/lib/ai/prompts/comments.de";
+import {
+  buildCommentsUserPromptEn,
+  commentsSystemPromptEn,
+} from "@/lib/ai/prompts/comments.en";
 import { slugify } from "@/lib/utils";
 import type { Locale } from "@prisma/client";
 
@@ -25,6 +33,7 @@ type ReviewContent = {
   seoTitle?: string;
   seoDescription?: string;
   score: number;
+  testingPeriod?: string;
   pros: string[];
   cons: string[];
   bestFor: string[];
@@ -47,14 +56,50 @@ type ComparisonContent = {
   faq: Array<{ question: string; answer: string }>;
 };
 
+type ExperienceCommentsResponse = {
+  comments: Array<{
+    authorName: string;
+    authorContext?: string;
+    rating: number;
+    title?: string;
+    body: string;
+    usageWeeks?: number;
+  }>;
+};
+
+function wordCount(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function buildFullMarkdown(content: ReviewContent) {
+  const parts = [
+    `# ${content.title}`,
+    "",
+    content.verdict,
+    "",
+    ...(content.sections || []).flatMap((section) => [
+      `## ${section.heading}`,
+      "",
+      section.body,
+      "",
+    ]),
+  ];
+  return parts.join("\n");
+}
+
 function passesReviewQualityGate(content: ReviewContent) {
+  const sections = content.sections || [];
+  const longSections = sections.filter((s) => wordCount(s.body || "") >= 80);
+
   return (
     content.title?.length > 10 &&
-    content.verdict?.length > 40 &&
+    wordCount(content.verdict || "") >= 60 &&
     Array.isArray(content.pros) &&
-    content.pros.length >= 2 &&
+    content.pros.length >= 4 &&
     Array.isArray(content.cons) &&
-    content.cons.length >= 1 &&
+    content.cons.length >= 2 &&
+    sections.length >= 5 &&
+    longSections.length >= 4 &&
     typeof content.score === "number" &&
     content.score >= 0 &&
     content.score <= 10
@@ -72,7 +117,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
       type: "generate_review",
       status: "running",
       startedAt: new Date(),
-      message: `Review ${locale} for ${product.asin}`,
+      message: `Detailed review ${locale} for ${product.asin}`,
     },
   });
 
@@ -109,11 +154,13 @@ export async function generateProductReview(productId: string, locale: Locale) {
         { role: "system", content: system },
         { role: "user", content: user },
       ],
+      temperature: 0.55,
     });
 
     const ok = passesReviewQualityGate(content);
     const status = ok ? "published" : "needs_review";
     const slug = `${slugify(content.title) || product.slug}-${locale}`;
+    const bodyMarkdown = buildFullMarkdown(content);
 
     const article = await prisma.article.upsert({
       where: {
@@ -133,7 +180,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
         seoTitle: content.seoTitle,
         seoDescription: content.seoDescription,
         contentJson: content,
-        bodyMarkdown: content.verdict,
+        bodyMarkdown,
         publishedAt: ok ? new Date() : null,
         productId: product.id,
       },
@@ -145,7 +192,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
         seoTitle: content.seoTitle,
         seoDescription: content.seoDescription,
         contentJson: content,
-        bodyMarkdown: content.verdict,
+        bodyMarkdown,
         publishedAt: ok ? new Date() : null,
       },
     });
@@ -161,11 +208,139 @@ export async function generateProductReview(productId: string, locale: Locale) {
         status: "succeeded",
         finishedAt: new Date(),
         message: `Review ${status}`,
-        metricsJson: { articleId: article.id, score: content.score },
+        metricsJson: {
+          articleId: article.id,
+          score: content.score,
+          sections: content.sections?.length ?? 0,
+          words: wordCount(bodyMarkdown),
+        },
       },
     });
 
     return article;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    await prisma.jobRun.update({
+      where: { id: job.id },
+      data: {
+        status: "failed",
+        finishedAt: new Date(),
+        error: message,
+      },
+    });
+    throw error;
+  }
+}
+
+export async function generateProductExperienceComments(
+  productId: string,
+  locale: Locale,
+  count = 6,
+) {
+  const product = await prisma.product.findUniqueOrThrow({
+    where: { id: productId },
+    include: { category: true },
+  });
+
+  const job = await prisma.jobRun.create({
+    data: {
+      type: "generate_comments",
+      status: "running",
+      startedAt: new Date(),
+      message: `Experience comments ${locale} for ${product.asin}`,
+    },
+  });
+
+  try {
+    const features = Array.isArray(product.features)
+      ? (product.features as string[])
+      : [];
+
+    const system =
+      locale === "de" ? commentsSystemPromptDe : commentsSystemPromptEn;
+    const user =
+      locale === "de"
+        ? buildCommentsUserPromptDe({
+            title: product.title,
+            asin: product.asin,
+            price: product.price?.toString(),
+            rating: product.rating,
+            features,
+            categoryName: product.category.nameDe,
+            count,
+          })
+        : buildCommentsUserPromptEn({
+            title: product.title,
+            asin: product.asin,
+            price: product.price?.toString(),
+            rating: product.rating,
+            features,
+            categoryName: product.category.nameEn,
+            count,
+          });
+
+    const payload = await openRouterChatJson<ExperienceCommentsResponse>({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature: 0.75,
+    });
+
+    const comments = (payload.comments || [])
+      .filter((c) => c.authorName && c.body && wordCount(c.body) >= 40)
+      .map((c) => ({
+        authorName: c.authorName.slice(0, 80),
+        authorContext: c.authorContext?.slice(0, 120),
+        rating: Math.min(5, Math.max(1, Math.round(c.rating || 4))),
+        title: c.title?.slice(0, 140),
+        body: c.body.trim(),
+        usageWeeks:
+          typeof c.usageWeeks === "number"
+            ? Math.min(104, Math.max(1, Math.round(c.usageWeeks)))
+            : null,
+      }));
+
+    if (comments.length < 3) {
+      throw new Error("OpenRouter returned too few usable experience comments");
+    }
+
+    await prisma.$transaction([
+      prisma.productExperienceComment.deleteMany({
+        where: { productId: product.id, locale },
+      }),
+      prisma.productExperienceComment.createMany({
+        data: comments.map((c) => ({
+          productId: product.id,
+          locale,
+          authorName: c.authorName,
+          authorContext: c.authorContext,
+          rating: c.rating,
+          title: c.title,
+          body: c.body,
+          usageWeeks: c.usageWeeks ?? undefined,
+          source: "openrouter_synth",
+          verifiedStyle: true,
+        })),
+      }),
+    ]);
+
+    const saved = await prisma.productExperienceComment.findMany({
+      where: { productId: product.id, locale },
+      orderBy: { createdAt: "desc" },
+    });
+
+    await prisma.jobRun.update({
+      where: { id: job.id },
+      data: {
+        status: "succeeded",
+        finishedAt: new Date(),
+        message: `Stored ${saved.length} experience comments`,
+        metricsJson: { count: saved.length, locale },
+      },
+    });
+
+    return saved;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     await prisma.jobRun.update({

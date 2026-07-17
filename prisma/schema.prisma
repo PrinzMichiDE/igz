@@ -30,6 +30,7 @@ enum JobType {
   sync_details
   generate_review
   generate_comparison
+  generate_comments
 }
 
 enum JobStatus {
@@ -83,12 +84,33 @@ model Product {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   articles             Article[]
+  experienceComments   ProductExperienceComment[]
   comparisonWins       Comparison[] @relation("WinnerProduct")
   comparisonPriceWins  Comparison[] @relation("PriceWinnerProduct")
   comparisonBudgetWins Comparison[] @relation("BudgetWinnerProduct")
 
   @@unique([asin, country])
   @@index([categoryId])
+}
+
+model ProductExperienceComment {
+  id           String   @id @default(cuid())
+  locale       Locale
+  authorName   String
+  authorContext String?
+  rating       Int
+  title        String?
+  body         String
+  usageWeeks   Int?
+  verifiedStyle Boolean @default(true)
+  source       String   @default("openrouter_synth")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, locale])
 }
 
 model Article {

@@ -3,6 +3,7 @@ import { assertCronAuthorized } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
 import {
   generateCategoryComparison,
+  generateProductExperienceComments,
   generateProductReview,
 } from "@/lib/ai/generate";
 import type { Locale } from "@prisma/client";
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
     .split(",")
     .map((v) => v.trim())
     .filter((v): v is Locale => v === "de" || v === "en");
+  const commentCount = Number(req.nextUrl.searchParams.get("comments") || 6);
 
   try {
     const category = slug
@@ -41,6 +43,11 @@ export async function GET(req: NextRequest) {
 
     const reviews: Array<{ productId: string; locale: Locale; id: string }> =
       [];
+    const comments: Array<{
+      productId: string;
+      locale: Locale;
+      count: number;
+    }> = [];
 
     for (const product of products) {
       for (const locale of locales) {
@@ -49,6 +56,17 @@ export async function GET(req: NextRequest) {
           productId: product.id,
           locale,
           id: article.id,
+        });
+
+        const savedComments = await generateProductExperienceComments(
+          product.id,
+          locale,
+          commentCount,
+        );
+        comments.push({
+          productId: product.id,
+          locale,
+          count: savedComments.length,
         });
       }
     }
@@ -63,8 +81,10 @@ export async function GET(req: NextRequest) {
       ok: true,
       category: category.slug,
       reviewsCreated: reviews.length,
+      commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
       comparisonsCreated: comparisons.length,
       reviews,
+      comments,
       comparisons,
     });
   } catch (error) {
