@@ -1,11 +1,13 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
+import { CtaButton } from "@/components/affiliate/cta-button";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
 import { CategoryIconCard } from "@/components/layout/category-icon-card";
 import { HeroSearch } from "@/components/layout/hero-search";
 import { WhyIgzSection } from "@/components/layout/why-igz-section";
 import { ProductCard } from "@/components/product/product-card";
 import { prisma } from "@/lib/db/prisma";
+import { productOutHref } from "@/lib/product-links";
 import type { AppLocale } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +60,7 @@ export default async function HomePage({ params }: Props) {
   const deals = products.slice(0, 4);
   const featured = products[0];
   const topRated = products.slice(1, 4);
+  const homePath = `/${locale}`;
 
   return (
     <div>
@@ -83,6 +86,20 @@ export default async function HomePage({ params }: Props) {
             <div className="mt-6 flex justify-center">
               <AffiliateDisclosure text={t("home.trust")} compact />
             </div>
+            {featured ? (
+              <div className="mt-8 flex flex-col items-center gap-3">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {t("home.editorsChoice")}: {featured.title}
+                </p>
+                <CtaButton
+                  href={productOutHref(featured, locale, homePath)}
+                  label={t("cta.buyOnAmazon")}
+                  sublabel={t("cta.amazonSubline")}
+                  variant="amazon"
+                  size="lg"
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -136,8 +153,10 @@ export default async function HomePage({ params }: Props) {
                 currency={product.currency}
                 locale={locale}
                 ctaLabel={t("cta.buy")}
-                ctaHref={product.affiliateUrl || product.productUrl || "#"}
+                ctaSublabel={t("cta.amazonSubline")}
+                ctaHref={productOutHref(product, locale, homePath)}
                 readLabel={t("category.readReview")}
+                amazonOverlayLabel={t("product.imageOverlay")}
                 discountPercent={pseudoDiscount(product.slug)}
               />
             ))}
@@ -172,11 +191,13 @@ export default async function HomePage({ params }: Props) {
                 price={featured.price?.toString()}
                 currency={featured.currency}
                 locale={locale}
-                ctaLabel={t("cta.checkPrice")}
-                ctaHref={featured.affiliateUrl || featured.productUrl || "#"}
+                ctaLabel={t("cta.buyOnAmazon")}
+                ctaSublabel={t("cta.amazonSubline")}
+                ctaHref={productOutHref(featured, locale, homePath)}
                 readLabel={t("category.readReview")}
                 variant="featured"
                 badge={t("home.editorsChoice")}
+                amazonOverlayLabel={t("product.imageOverlay")}
               />
             ) : null}
             <div className="grid gap-5 lg:grid-cols-3">
@@ -190,9 +211,11 @@ export default async function HomePage({ params }: Props) {
                   price={product.price?.toString()}
                   currency={product.currency}
                   locale={locale}
-                  ctaLabel={t("cta.checkPrice")}
-                  ctaHref={product.affiliateUrl || product.productUrl || "#"}
+                  ctaLabel={t("cta.amazon")}
+                  ctaSublabel={t("cta.amazonSubline")}
+                  ctaHref={productOutHref(product, locale, homePath)}
                   readLabel={t("category.readReview")}
+                  amazonOverlayLabel={t("product.imageOverlay")}
                 />
               ))}
             </div>

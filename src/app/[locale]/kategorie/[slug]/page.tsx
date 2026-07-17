@@ -3,13 +3,19 @@ import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
 import { AwardBadge } from "@/components/comparison/award-badge";
+import { AwardPicker } from "@/components/comparison/award-picker";
 import { CategoryFilterSidebar } from "@/components/comparison/category-filter-sidebar";
 import { ComparisonTable } from "@/components/comparison/comparison-table";
+import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
+import { ProductMatchFinder } from "@/components/comparison/product-match-finder";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { prisma } from "@/lib/db/prisma";
-import { asComparisonContent } from "@/lib/content-types";
+import { asComparisonContent, asReviewContent } from "@/lib/content-types";
+import { buildFeatureMatrix } from "@/lib/product-ranking";
+import { collectFeatureList } from "@/lib/product-metadata";
+import { numericPrice, productOutHref } from "@/lib/product-links";
 import type { AppLocale } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +29,7 @@ export default async function CategoryPage({ params }: Props) {
   const locale = localeParam as AppLocale;
   setRequestLocale(locale);
   const t = await getTranslations();
+  const pagePath = `/${locale}/kategorie/${slug}`;
 
   const category = await prisma.category
     .findUnique({
@@ -48,6 +55,24 @@ export default async function CategoryPage({ params }: Props) {
 
   if (!category) notFound();
 
+  const reviewArticles = await prisma.article
+    .findMany({
+      where: {
+        productId: { in: category.products.map((product) => product.id) },
+        type: "review",
+        locale,
+        status: "published",
+      },
+    })
+    .catch(() => []);
+
+  const reviewContentByProductId = new Map(
+    reviewArticles.map((article) => [
+      article.productId,
+      asReviewContent(article.contentJson),
+    ]),
+  );
+
   const comparison = category.comparisons[0];
   const article = category.articles[0];
   const content = asComparisonContent(article?.contentJson ?? comparison?.criteriaJson);
@@ -64,7 +89,7 @@ export default async function CategoryPage({ params }: Props) {
     score: product.editorialScore ?? product.rating,
     price: product.price?.toString(),
     currency: product.currency,
-    ctaHref: product.affiliateUrl || product.productUrl || "#",
+    ctaHref: productOutHref(product, locale, pagePath),
     excerpt: description,
     badge:
       comparison?.winnerProductId === product.id
@@ -73,6 +98,75 @@ export default async function CategoryPage({ params }: Props) {
           ? t("category.priceWinner")
           : null,
   }));
+
+  const matchCandidates = category.products.map((product) => {
+    const review = reviewContentByProductId.get(product.id);
+    return {
+      id: product.id,
+      slug: product.slug,
+      title: product.title,
+      href: `/${locale}/produkt/${product.slug}`,
+      imageUrl: product.imageUrl,
+      price: numericPrice(product.price),
+      currency: product.currency,
+      score: product.editorialScore ?? null,
+      rating: product.rating ?? null,
+      bestFor: review?.bestFor ?? [],
+      notFor: review?.notFor ?? [],
+      ctaHref: productOutHref(product, locale, pagePath),
+    };
+  });
+
+  const featureMatrix = buildFeatureMatrix(
+    category.products.map((product) => ({
+      id: product.id,
+      title: product.title,
+      features: collectFeatureList(product.features),
+      ctaHref: productOutHref(product, locale, pagePath),
+    })),
+  );
+
+  const awardOptions = [
+    comparison?.winnerProduct
+      ? {
+          key: "winner" as const,
+          badgeType: "testsieger" as const,
+          label: t("category.winner"),
+          title: comparison.winnerProduct.title,
+          reason: t("category.awardReasonWinner"),
+          price: comparison.winnerProduct.price?.toString(),
+          currency: comparison.winnerProduct.currency,
+          href: `/${locale}/produkt/${comparison.winnerProduct.slug}`,
+          ctaHref: productOutHref(comparison.winnerProduct, locale, pagePath),
+        }
+      : null,
+    comparison?.priceWinner
+      ? {
+          key: "price" as const,
+          badgeType: "preisLeistung" as const,
+          label: t("category.priceWinner"),
+          title: comparison.priceWinner.title,
+          reason: t("category.awardReasonPrice"),
+          price: comparison.priceWinner.price?.toString(),
+          currency: comparison.priceWinner.currency,
+          href: `/${locale}/produkt/${comparison.priceWinner.slug}`,
+          ctaHref: productOutHref(comparison.priceWinner, locale, pagePath),
+        }
+      : null,
+    comparison?.budgetWinner
+      ? {
+          key: "budget" as const,
+          badgeType: "budget" as const,
+          label: t("category.budgetWinner"),
+          title: comparison.budgetWinner.title,
+          reason: t("category.awardReasonBudget"),
+          price: comparison.budgetWinner.price?.toString(),
+          currency: comparison.budgetWinner.currency,
+          href: `/${locale}/produkt/${comparison.budgetWinner.slug}`,
+          ctaHref: productOutHref(comparison.budgetWinner, locale, pagePath),
+        }
+      : null,
+  ].filter((option): option is NonNullable<typeof option> => option !== null);
 
   return (
     <div className="igz-container py-10 md:py-14">
@@ -102,7 +196,45 @@ export default async function CategoryPage({ params }: Props) {
         <AffiliateDisclosure text={t("disclosure.short")} />
       </div>
 
-      <div className="mt-10 grid gap-8 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="mt-10">
+        <ProductMatchFinder
+          candidates={matchCandidates}
+          locale={locale}
+          labels={{
+            title: t("category.matchFinderTitle"),
+            subtitle: t("category.matchFinderSubtitle"),
+            budget: t("category.matchBudget"),
+            priority: t("category.matchPriority"),
+            priorityScore: t("category.matchPriorityScore"),
+            priorityPrice: t("category.matchPriorityPrice"),
+            priorityRating: t("category.matchPriorityRating"),
+            useCase: t("category.matchUseCase"),
+            useCasePlaceholder: t("category.matchUseCasePlaceholder"),
+            submit: t("category.matchSubmit"),
+            resultTitle: t("category.matchResultTitle"),
+            resultEmpty: t("category.matchResultEmpty"),
+            readReview: t("category.readReview"),
+            ctaLabel: t("cta.amazon"),
+            ctaSublabel: t("cta.amazonSubline"),
+          }}
+        />
+      </div>
+
+      {awardOptions.length > 0 ? (
+        <AwardPicker
+          options={awardOptions}
+          locale={locale}
+          labels={{
+            title: t("category.awardPickerTitle"),
+            subtitle: t("category.awardPickerSubtitle"),
+            ctaLabel: t("cta.buyOnAmazon"),
+            ctaSublabel: t("cta.amazonSubline"),
+            readReview: t("category.readReview"),
+          }}
+        />
+      ) : null}
+
+      <div className="grid gap-8 xl:grid-cols-[280px_minmax(0,1fr)]">
         <CategoryFilterSidebar locale={locale} />
 
         <div>
@@ -121,13 +253,15 @@ export default async function CategoryPage({ params }: Props) {
                   price={comparison.winnerProduct.price?.toString()}
                   currency={comparison.winnerProduct.currency}
                   locale={locale}
-                  ctaLabel={t("cta.checkPrice")}
-                  ctaHref={
-                    comparison.winnerProduct.affiliateUrl ||
-                    comparison.winnerProduct.productUrl ||
-                    "#"
-                  }
+                  ctaLabel={t("cta.buyOnAmazon")}
+                  ctaSublabel={t("cta.amazonSubline")}
+                  ctaHref={productOutHref(
+                    comparison.winnerProduct,
+                    locale,
+                    pagePath,
+                  )}
                   readLabel={t("category.readReview")}
+                  amazonOverlayLabel={t("product.imageOverlay")}
                 />
               </div>
             ) : null}
@@ -148,13 +282,15 @@ export default async function CategoryPage({ params }: Props) {
                   price={comparison.priceWinner.price?.toString()}
                   currency={comparison.priceWinner.currency}
                   locale={locale}
-                  ctaLabel={t("cta.checkPrice")}
-                  ctaHref={
-                    comparison.priceWinner.affiliateUrl ||
-                    comparison.priceWinner.productUrl ||
-                    "#"
-                  }
+                  ctaLabel={t("cta.amazon")}
+                  ctaSublabel={t("cta.amazonSubline")}
+                  ctaHref={productOutHref(
+                    comparison.priceWinner,
+                    locale,
+                    pagePath,
+                  )}
                   readLabel={t("category.readReview")}
+                  amazonOverlayLabel={t("product.imageOverlay")}
                 />
               </div>
             ) : null}
@@ -172,28 +308,42 @@ export default async function CategoryPage({ params }: Props) {
                   price={comparison.budgetWinner.price?.toString()}
                   currency={comparison.budgetWinner.currency}
                   locale={locale}
-                  ctaLabel={t("cta.checkPrice")}
-                  ctaHref={
-                    comparison.budgetWinner.affiliateUrl ||
-                    comparison.budgetWinner.productUrl ||
-                    "#"
-                  }
+                  ctaLabel={t("cta.amazon")}
+                  ctaSublabel={t("cta.amazonSubline")}
+                  ctaHref={productOutHref(
+                    comparison.budgetWinner,
+                    locale,
+                    pagePath,
+                  )}
                   readLabel={t("category.readReview")}
+                  amazonOverlayLabel={t("product.imageOverlay")}
                 />
               </div>
             ) : null}
           </div>
 
-          {comparison?.winnerProduct?.affiliateUrl ? (
-            <div className="mb-8 xl:hidden">
+          {comparison?.winnerProduct ? (
+            <div className="mb-8">
               <CtaButton
-                href={comparison.winnerProduct.affiliateUrl}
+                href={productOutHref(comparison.winnerProduct, locale, pagePath)}
                 label={t("category.ctaWinner")}
+                sublabel={t("cta.amazonSubline")}
                 className="w-full"
                 size="lg"
+                variant="amazon"
               />
             </div>
           ) : null}
+
+          <FeatureComparisonMatrix
+            title={t("category.featureMatrixTitle")}
+            featureLabel={t("category.featureColumn")}
+            yesLabel={t("category.featureYes")}
+            noLabel={t("category.featureNo")}
+            ctaLabel={t("cta.amazon")}
+            features={featureMatrix.features}
+            rows={featureMatrix.rows}
+          />
 
           <section className="mb-10">
             <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
@@ -202,7 +352,8 @@ export default async function CategoryPage({ params }: Props) {
             <ComparisonTable
               rows={rows}
               locale={locale}
-              ctaLabel={t("cta.checkPrice")}
+              ctaLabel={t("cta.amazon")}
+              ctaSublabel={t("cta.amazonSubline")}
               readLabel={t("category.readReview")}
               availableOnAmazonLabel={t("category.availableOnAmazon")}
               columns={{

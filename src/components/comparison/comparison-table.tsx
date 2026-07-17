@@ -22,6 +22,7 @@ type Props = {
   rows: ComparisonRow[];
   locale: string;
   ctaLabel: string;
+  ctaSublabel?: string;
   readLabel: string;
   availableOnAmazonLabel: string;
   columns: {
@@ -35,6 +36,7 @@ export function ComparisonTable({
   rows,
   locale,
   ctaLabel,
+  ctaSublabel,
   readLabel,
   availableOnAmazonLabel,
   columns,
@@ -56,18 +58,24 @@ export function ComparisonTable({
               className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)] items-center gap-6 px-6 py-5 transition hover:bg-surface-muted/60"
             >
               <div className="flex items-start gap-4">
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+                <a
+                  href={row.ctaHref}
+                  target="_blank"
+                  rel="nofollow sponsored noopener noreferrer"
+                  className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted"
+                  aria-label={ctaLabel}
+                >
                   {row.imageUrl ? (
                     <Image
                       src={row.imageUrl}
                       alt=""
                       fill
-                      className="object-contain p-2"
+                      className="object-contain p-2 transition group-hover:scale-105"
                       sizes="80px"
                       unoptimized
                     />
                   ) : null}
-                </div>
+                </a>
                 <div>
                   {row.badge ? (
                     <span className="mb-2 inline-flex rounded-full border border-secondary/20 bg-secondary/5 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-secondary uppercase">
@@ -114,11 +122,22 @@ export function ComparisonTable({
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-display text-2xl font-bold text-primary">
+                <a
+                  href={row.ctaHref}
+                  target="_blank"
+                  rel="nofollow sponsored noopener noreferrer"
+                  className="font-display text-2xl font-bold text-primary transition hover:text-amazon-hover"
+                >
                   {formatPrice(row.price, row.currency || "EUR", numberLocale)}
-                </p>
+                </a>
                 <div className="mt-3 flex flex-col items-end gap-2">
-                  <CtaButton href={row.ctaHref} label={ctaLabel} size="sm" />
+                  <CtaButton
+                    href={row.ctaHref}
+                    label={ctaLabel}
+                    sublabel={ctaSublabel}
+                    size="sm"
+                    variant="amazon"
+                  />
                   <p className="text-xs text-muted">{availableOnAmazonLabel}</p>
                 </div>
               </div>
@@ -133,7 +152,13 @@ export function ComparisonTable({
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-bold text-muted">#{row.rank}</span>
-                <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-surface-muted">
+                <a
+                  href={row.ctaHref}
+                  target="_blank"
+                  rel="nofollow sponsored noopener noreferrer"
+                  className="relative h-16 w-16 overflow-hidden rounded-lg bg-surface-muted"
+                  aria-label={ctaLabel}
+                >
                   {row.imageUrl ? (
                     <Image
                       src={row.imageUrl}
@@ -144,7 +169,7 @@ export function ComparisonTable({
                       unoptimized
                     />
                   ) : null}
-                </div>
+                </a>
               </div>
               <ScoreBadge score={row.score} size="sm" />
             </div>
@@ -153,16 +178,26 @@ export function ComparisonTable({
                 {row.title}
               </Link>
             </h3>
-            <p className="mt-2 text-lg font-bold text-primary">
+            <a
+              href={row.ctaHref}
+              target="_blank"
+              rel="nofollow sponsored noopener noreferrer"
+              className="mt-2 block text-lg font-bold text-primary transition hover:text-amazon-hover"
+            >
               {formatPrice(row.price, row.currency || "EUR", numberLocale)}
-            </p>
+            </a>
             <div className="mt-4 flex flex-col gap-2">
               <CtaButton
                 href={row.ctaHref}
                 label={ctaLabel}
+                sublabel={ctaSublabel}
                 size="sm"
+                variant="amazon"
                 className="w-full"
               />
+              <p className="text-center text-xs text-muted">
+                {availableOnAmazonLabel}
+              </p>
               <Link
                 href={row.href}
                 className="text-center text-sm font-medium text-secondary hover:underline"
