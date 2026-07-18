@@ -61,8 +61,8 @@ On deploy, `npm run build` runs `prisma db push` so the schema stays in sync.
 
 ## Vercel / Postgres
 
-- Link **Vercel Postgres** in the project or set `DATABASE_URL` to a real connection string (not the `.env.example` placeholder `host`).
-- If Vercel injects `POSTGRES_PRISMA_URL`, the app uses it automatically when `DATABASE_URL` is missing.
+- Link **Vercel Postgres** in the project or set `DATABASE_URL` to a real `postgresql://...` connection string.
+- Build uses `scripts/prisma-db-push.mjs`, which skips invalid/placeholder/`prisma+postgres://` values and falls back to `POSTGRES_PRISMA_URL` / `POSTGRES_URL` / `POSTGRES_URL_NON_POOLING`.
 - Cron jobs need the database env vars on the **Production** environment.
 
 ## Env
