@@ -104,6 +104,18 @@ export async function GET() {
       }
     }
 
+    let purgedDemo: Awaited<
+      ReturnType<typeof import("@/lib/db/purge-demo-data").purgeDemoData>
+    > | null = null;
+    let purgeDemoError: string | null = null;
+    try {
+      const { purgeDemoData } = await import("@/lib/db/purge-demo-data");
+      purgedDemo = await purgeDemoData();
+    } catch (error) {
+      purgeDemoError =
+        error instanceof Error ? error.message : "Unknown demo purge error";
+    }
+
     let topCategories: Awaited<
       ReturnType<
         typeof import("@/lib/amazon/sync-categories").ensureTopAmazonCategories
@@ -137,9 +149,12 @@ export async function GET() {
       schemaPushError,
       schemaPushLog,
       seeded,
+      purgedDemo,
+      purgeDemoError,
       topCategories,
       topCategoriesError,
       categoryCount: await prisma.category.count(),
+      productCount: await prisma.product.count(),
       quotaMonth: quota?.yearMonth ?? null,
       databaseHost: new URL(databaseUrl).hostname,
     });
