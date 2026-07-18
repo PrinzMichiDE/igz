@@ -9,31 +9,12 @@ type Row = {
 type Props = {
   title: string;
   subtitle?: string;
-  emptyLabel: string;
   rows: Row[];
   sourceNote?: string | null;
 };
 
-export function TechDatasheet({
-  title,
-  subtitle,
-  emptyLabel,
-  rows,
-  sourceNote,
-}: Props) {
-  if (rows.length === 0) {
-    return (
-      <section id="datenblatt" className="mt-10">
-        <h2 className="mb-2 font-display text-2xl font-semibold text-primary">
-          {title}
-        </h2>
-        {subtitle ? (
-          <p className="mb-4 text-sm text-muted-foreground">{subtitle}</p>
-        ) : null}
-        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
-      </section>
-    );
-  }
+export function TechDatasheet({ title, subtitle, rows, sourceNote }: Props) {
+  if (rows.length === 0) return null;
 
   const groups = new Map<string, Row[]>();
   for (const row of rows) {
@@ -54,7 +35,10 @@ export function TechDatasheet({
 
       <div className="space-y-5">
         {[...groups.entries()].map(([group, groupRows]) => (
-          <div key={group || "default"} className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div
+            key={group || "default"}
+            className="overflow-hidden rounded-xl border border-border bg-surface"
+          >
             {group ? (
               <div className="border-b border-border bg-surface-muted px-4 py-2 text-xs font-semibold tracking-[0.14em] text-muted uppercase">
                 {group}
