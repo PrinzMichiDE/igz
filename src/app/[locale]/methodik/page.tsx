@@ -102,7 +102,23 @@ export default async function MethodologyPage({ params }: Props) {
           </p>
         </section>
         <section>
-          <h2>{isDe ? "4. Nutzererfahrungen" : "4. User experiences"}</h2>
+          <h2>{isDe ? "4. Technisches Datenblatt" : "4. Technical datasheet"}</h2>
+          <p>
+            {isDe
+              ? "Amazon-Details werden per KI in einheitliche Spec-Felder normalisiert (identische Keys je Kategorie). So sind Vergleiche spaltenweise vergleichbar. Unbekannte Werte werden weggelassen – keine erfundenen Labormessungen."
+              : "Amazon details are AI-normalized into identical spec fields (stable keys per category) so comparisons line up column by column. Unknown values are omitted — no invented lab measurements."}
+          </p>
+        </section>
+        <section>
+          <h2>{isDe ? "5. Bekannte Fehler & Fehlercodes" : "5. Known issues & error codes"}</h2>
+          <p>
+            {isDe
+              ? "Zusätzlich recherchiert die Redaktion/KI öffentlich berichtete Probleme und typische Fehlercodes inkl. erster Schritte. Quellen werden verlinkt, wenn verfügbar. Keine Garantie auf Vollständigkeit."
+              : "We also research publicly reported issues and typical error codes with first remediation steps. Sources are linked when available. Completeness is not guaranteed."}
+          </p>
+        </section>
+        <section>
+          <h2>{isDe ? "6. Nutzererfahrungen" : "6. User experiences"}</h2>
           <p>
             {isDe
               ? "Nutzer können eigene Erfahrungsberichte einreichen. Diese werden vor der Veröffentlichung geprüft und als Nutzerbericht gekennzeichnet. Zusätzlich erscheinen redaktionelle Erfahrungsberichte aus typischen Nutzungsszenarien. Keine verifizierten Amazon-Käufe."
@@ -110,7 +126,7 @@ export default async function MethodologyPage({ params }: Props) {
           </p>
         </section>
         <section>
-          <h2>{isDe ? "5. Transparenz & Affiliate" : "5. Transparency & affiliates"}</h2>
+          <h2>{isDe ? "7. Transparenz & Affiliate" : "7. Transparency & affiliates"}</h2>
           <p>
             {isDe
               ? "Amazon-Links sind Affiliate-Links. Provisionen beeinflussen nicht die Rangfolge in Vergleichstabellen. Aktualisierungsdaten werden je Produkt ausgewiesen."
