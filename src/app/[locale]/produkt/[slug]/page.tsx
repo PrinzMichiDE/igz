@@ -25,12 +25,43 @@ import {
 import { numericPrice, productOutHref } from "@/lib/product-links";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
+import type { Metadata } from "next";
+import { ProductJsonLd } from "@/components/seo/product-json-ld";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const appLocale = locale as AppLocale;
+
+  const product = await prisma.product
+    .findUnique({
+      where: { slug },
+      include: {
+        articles: {
+          where: { type: "review", locale: appLocale, status: "published" },
+          take: 1,
+        },
+      },
+    })
+    .catch(() => null);
+
+  if (!product) {
+    return { title: "Product" };
+  }
+
+  const article = product.articles[0];
+
+  return {
+    title: article?.seoTitle || article?.title || product.title,
+    description:
+      article?.seoDescription || article?.excerpt || product.title,
+  };
+}
 
 export default async function ProductPage({ params }: Props) {
   const { locale: localeParam, slug } = await params;
@@ -105,6 +136,19 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <div className="igz-container py-10 pb-24 md:py-14 md:pb-24 xl:pb-14">
+      <ProductJsonLd
+        locale={locale}
+        productTitle={article?.title || product.title}
+        productSlug={product.slug}
+        imageUrl={product.imageUrl}
+        description={article?.excerpt || content.verdict || undefined}
+        price={product.price?.toString()}
+        currency={product.currency}
+        rating={product.rating ?? undefined}
+        reviewCount={product.reviewCount}
+        score={score ?? undefined}
+        faq={content.faq}
+      />
       <div className="grid gap-8 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
         <div className="hidden xl:block">
           <ReviewToc
