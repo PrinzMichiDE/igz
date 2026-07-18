@@ -68,7 +68,7 @@ Auf Vercel muss `DATABASE_URL` als Environment Variable gesetzt sein (Build + Ru
 
 ## Cron Endpoints
 
-- `GET /api/cron/setup` — DB health check, schema push, seed if empty
+- `GET /api/cron/setup` — DB health check + seed if empty (schema sync runs at build; set `SCHEMA_PUSH_AT_RUNTIME=1` only if you must push from the cron)
 - `GET /api/cron/sync-products?category=bluetooth-kopfhoerer&top=5`
 - `GET /api/cron/generate-content?category=bluetooth-kopfhoerer&locales=de,en&comments=6`
 

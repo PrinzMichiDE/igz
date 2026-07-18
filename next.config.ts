@@ -4,17 +4,22 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  // Keep Prisma schema/CLI available to the setup cron on Vercel serverless.
+  // Optional: only needed if SCHEMA_PUSH_AT_RUNTIME=1 on Vercel.
   outputFileTracingIncludes: {
     "/api/cron/setup": [
       "./prisma/**/*",
       "./prisma.config.ts",
       "./node_modules/prisma/**/*",
-      "./node_modules/@prisma/engines/**/*",
-      "./node_modules/@prisma/config/**/*",
+      "./node_modules/@prisma/**/*",
     ],
   },
-  serverExternalPackages: ["prisma", "@prisma/client", "@prisma/engines", "pg"],
+  serverExternalPackages: [
+    "prisma",
+    "@prisma/client",
+    "@prisma/engines",
+    "@prisma/debug",
+    "pg",
+  ],
   images: {
     remotePatterns: [
       {
