@@ -197,16 +197,32 @@ export default async function ProductPage({ params }: Props) {
       severity: code.severity,
     })) ?? [];
 
+  const detailItems =
+    datasheetRows.length > 0
+      ? datasheetRows.map(
+          (row) =>
+            `${row.label}: ${row.value}${row.unit ? ` ${row.unit}` : ""}`,
+        )
+      : features;
+
   const tocSections = [
     { id: "fazit", label: t("product.verdict") },
     { id: "pros-cons", label: `${t("product.pros")} / ${t("product.cons")}` },
     ...(manualLinks.length > 0
       ? [{ id: "anleitungen", label: t("product.manualsTitle") }]
       : []),
-    { id: "datenblatt", label: t("product.datasheetTitle") },
-    { id: "bekannte-fehler", label: t("product.knownIssuesTitle") },
-    { id: "fehlercodes", label: t("product.errorCodesTitle") },
-    { id: "details", label: t("product.details") },
+    ...(datasheetRows.length > 0
+      ? [{ id: "datenblatt", label: t("product.datasheetTitle") }]
+      : []),
+    ...(issueRows.length > 0
+      ? [{ id: "bekannte-fehler", label: t("product.knownIssuesTitle") }]
+      : []),
+    ...(errorCodeRows.length > 0
+      ? [{ id: "fehlercodes", label: t("product.errorCodesTitle") }]
+      : []),
+    ...(detailItems.length > 0
+      ? [{ id: "details", label: t("product.details") }]
+      : []),
     { id: "nutzererfahrungen", label: t("product.experiences") },
   ];
 
@@ -482,78 +498,78 @@ export default async function ProductPage({ params }: Props) {
             }}
           />
 
-          <TechDatasheet
-            title={t("product.datasheetTitle")}
-            subtitle={t("product.datasheetSubtitle")}
-            emptyLabel={t("product.datasheetEmpty")}
-            rows={datasheetRows}
-            sourceNote={
-              locale === "en"
-                ? datasheet?.sourceNotesEn
-                : datasheet?.sourceNotesDe
-            }
-          />
+          {datasheetRows.length > 0 ? (
+            <TechDatasheet
+              title={t("product.datasheetTitle")}
+              subtitle={t("product.datasheetSubtitle")}
+              rows={datasheetRows}
+              sourceNote={
+                locale === "en"
+                  ? datasheet?.sourceNotesEn
+                  : datasheet?.sourceNotesDe
+              }
+            />
+          ) : null}
 
-          <KnownIssuesList
-            title={t("product.knownIssuesTitle")}
-            disclaimer={
-              (locale === "en"
-                ? knownIssues?.disclaimerEn
-                : knownIssues?.disclaimerDe) || t("product.knownIssuesDisclaimer")
-            }
-            emptyLabel={t("product.knownIssuesEmpty")}
-            sourcesLabel={t("product.knownIssuesSources")}
-            severityLabels={{
-              low: t("product.severityLow"),
-              medium: t("product.severityMedium"),
-              high: t("product.severityHigh"),
-            }}
-            statusLabels={{
-              reported: t("product.issueStatusReported"),
-              widespread: t("product.issueStatusWidespread"),
-              fixed_in_update: t("product.issueStatusFixed"),
-              unconfirmed: t("product.issueStatusUnconfirmed"),
-            }}
-            issues={issueRows}
-          />
+          {issueRows.length > 0 ? (
+            <KnownIssuesList
+              title={t("product.knownIssuesTitle")}
+              disclaimer={
+                (locale === "en"
+                  ? knownIssues?.disclaimerEn
+                  : knownIssues?.disclaimerDe) ||
+                t("product.knownIssuesDisclaimer")
+              }
+              sourcesLabel={t("product.knownIssuesSources")}
+              severityLabels={{
+                low: t("product.severityLow"),
+                medium: t("product.severityMedium"),
+                high: t("product.severityHigh"),
+              }}
+              statusLabels={{
+                reported: t("product.issueStatusReported"),
+                widespread: t("product.issueStatusWidespread"),
+                fixed_in_update: t("product.issueStatusFixed"),
+                unconfirmed: t("product.issueStatusUnconfirmed"),
+              }}
+              issues={issueRows}
+            />
+          ) : null}
 
-          <ErrorCodesList
-            title={t("product.errorCodesTitle")}
-            note={
-              (locale === "en" ? errorCodes?.noteEn : errorCodes?.noteDe) ||
-              t("product.errorCodesNote")
-            }
-            emptyLabel={t("product.errorCodesEmpty")}
-            stepsLabel={t("product.errorCodesSteps")}
-            severityLabels={{
-              low: t("product.severityLow"),
-              medium: t("product.severityMedium"),
-              high: t("product.severityHigh"),
-            }}
-            codes={errorCodeRows}
-          />
+          {errorCodeRows.length > 0 ? (
+            <ErrorCodesList
+              title={t("product.errorCodesTitle")}
+              note={
+                (locale === "en" ? errorCodes?.noteEn : errorCodes?.noteDe) ||
+                t("product.errorCodesNote")
+              }
+              stepsLabel={t("product.errorCodesSteps")}
+              severityLabels={{
+                low: t("product.severityLow"),
+                medium: t("product.severityMedium"),
+                high: t("product.severityHigh"),
+              }}
+              codes={errorCodeRows}
+            />
+          ) : null}
 
-          <section id="details" className="mt-10">
-            <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
-              {t("product.details")}
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(datasheetRows.length > 0
-                ? datasheetRows.map(
-                    (row) =>
-                      `${row.label}: ${row.value}${row.unit ? ` ${row.unit}` : ""}`,
-                  )
-                : features
-              ).map((feature) => (
-                <div
-                  key={feature}
-                  className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted-foreground"
-                >
-                  {feature}
-                </div>
-              ))}
-            </div>
-          </section>
+          {detailItems.length > 0 ? (
+            <section id="details" className="mt-10">
+              <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
+                {t("product.details")}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {detailItems.map((feature) => (
+                  <div
+                    key={feature}
+                    className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted-foreground"
+                  >
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <ExperienceCommentExplorer
             productSlug={product.slug}
