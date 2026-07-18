@@ -1,8 +1,6 @@
 import { serve } from "@upstash/workflow/nextjs";
 import {
   failJob,
-  generateBuyingGuide,
-  generateCategoryComparison,
   persistProductExperienceComments,
   persistProductReview,
   prepareProductExperienceComments,
@@ -17,7 +15,7 @@ import {
 } from "@/lib/ai/openrouter-request";
 import { resolveCronCategory } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
-import { enrichCategoryManuals } from "@/lib/product-manuals";
+import { getWorkflowBaseUrl } from "@/lib/upstash/qstash";
 import { releaseLock } from "@/lib/upstash/redis";
 import type { Locale } from "@prisma/client";
 
@@ -36,9 +34,16 @@ type Payload = {
   skipGuides?: boolean;
 };
 
+type ReviewContent = Parameters<typeof persistProductReview>[0]["content"];
+
 export const { POST } = serve<Payload>(
   async (context) => {
-    const payload = context.requestPayload || {};
+    // Must read payload inside a step — otherwise context.call can stall
+    // (Upstash caveat: requestPayload becomes undefined around call steps).
+    const payload = await context.run("get-payload", () => {
+      return context.requestPayload || {};
+    });
+
     const lockKey = payload.lockKey || "cron:generate-content";
     const locales = (
       payload.locales?.length ? payload.locales : (["de"] as Locale[])
@@ -105,7 +110,6 @@ export const { POST } = serve<Payload>(
     const products = await context.run("list-products", async () => {
       if (category.productIds) return category.productIds;
 
-      // Prefer products that still miss a published review for the first locale.
       const primaryLocale = locales[0] ?? "de";
       const missing = await prisma.product.findMany({
         where: {
@@ -147,18 +151,24 @@ export const { POST } = serve<Payload>(
           async () => prepareProductReview(product.id, locale),
         );
 
+        const callConfig = await context.run(
+          `cfg-review-${product.asin}-${locale}`,
+          async () => ({
+            headers: getOpenRouterAuthHeaders(),
+            body: buildOpenRouterJsonBody({
+              messages: prepared.messages,
+              temperature: prepared.temperature,
+            }),
+          }),
+        );
+
         const ai = await context.call<OpenRouterChatCompletionResponse>(
           `ai-review-${product.asin}-${locale}`,
           {
             url: OPENROUTER_CHAT_URL,
             method: "POST",
-            headers: getOpenRouterAuthHeaders(),
-            body: JSON.stringify(
-              buildOpenRouterJsonBody({
-                messages: prepared.messages,
-                temperature: prepared.temperature,
-              }),
-            ),
+            headers: callConfig.headers,
+            body: JSON.stringify(callConfig.body),
             retries: 2,
             timeout: 180,
           },
@@ -170,26 +180,24 @@ export const { POST } = serve<Payload>(
               prepared.jobId,
               new Error(`OpenRouter HTTP ${ai.status}`),
             );
+            return { failed: true, status: ai.status };
           });
-          continue;
+        } else {
+          const savedReview = await context.run(
+            `save-review-${product.asin}-${locale}`,
+            async () => {
+              const content = parseOpenRouterJsonContent<ReviewContent>(ai.body);
+              const article = await persistProductReview({
+                productId: prepared.productId,
+                locale: prepared.locale,
+                jobId: prepared.jobId,
+                content,
+              });
+              return { id: article.id, productId: product.id, locale };
+            },
+          );
+          reviews.push(savedReview);
         }
-
-        const savedReview = await context.run(
-          `save-review-${product.asin}-${locale}`,
-          async () => {
-            const content = parseOpenRouterJsonContent<
-              Parameters<typeof persistProductReview>[0]["content"]
-            >(ai.body);
-            const article = await persistProductReview({
-              productId: prepared.productId,
-              locale: prepared.locale,
-              jobId: prepared.jobId,
-              content,
-            });
-            return { id: article.id, productId: product.id, locale };
-          },
-        );
-        reviews.push(savedReview);
 
         const preparedComments = await context.run(
           `prep-comments-${product.asin}-${locale}`,
@@ -197,18 +205,24 @@ export const { POST } = serve<Payload>(
             prepareProductExperienceComments(product.id, locale, commentCount),
         );
 
+        const commentsConfig = await context.run(
+          `cfg-comments-${product.asin}-${locale}`,
+          async () => ({
+            headers: getOpenRouterAuthHeaders(),
+            body: buildOpenRouterJsonBody({
+              messages: preparedComments.messages,
+              temperature: preparedComments.temperature,
+            }),
+          }),
+        );
+
         const commentsAi = await context.call<OpenRouterChatCompletionResponse>(
           `ai-comments-${product.asin}-${locale}`,
           {
             url: OPENROUTER_CHAT_URL,
             method: "POST",
-            headers: getOpenRouterAuthHeaders(),
-            body: JSON.stringify(
-              buildOpenRouterJsonBody({
-                messages: preparedComments.messages,
-                temperature: preparedComments.temperature,
-              }),
-            ),
+            headers: commentsConfig.headers,
+            body: JSON.stringify(commentsConfig.body),
             retries: 1,
             timeout: 120,
           },
@@ -250,47 +264,12 @@ export const { POST } = serve<Payload>(
                 preparedComments.jobId,
                 new Error(`OpenRouter HTTP ${commentsAi.status}`),
               );
+              return { failed: true, status: commentsAi.status };
             },
           );
         }
       }
     }
-
-    const comparisons = [];
-    const buyingGuides = [];
-    if (!payload.skipGuides) {
-      for (const locale of locales) {
-        try {
-          const comparison = await context.run(
-            `comparison-${locale}`,
-            async () => {
-              const article = await generateCategoryComparison(
-                category.id,
-                locale,
-              );
-              return { locale, id: article.id };
-            },
-          );
-          comparisons.push(comparison);
-        } catch {
-          // Guides are secondary — don't fail the whole workflow.
-        }
-
-        try {
-          const guide = await context.run(`buying-guide-${locale}`, async () => {
-            const article = await generateBuyingGuide(category.id, locale);
-            return { locale, id: article.id };
-          });
-          buyingGuides.push(guide);
-        } catch {
-          // ignore
-        }
-      }
-    }
-
-    await context.run("manuals", async () => {
-      return enrichCategoryManuals(category.id, locales[0] ?? "de");
-    });
 
     await context.run("release-lock", async () => {
       await releaseLock(lockKey);
@@ -302,13 +281,13 @@ export const { POST } = serve<Payload>(
       category: category.slug,
       reviewsCreated: reviews.length,
       commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
-      comparisonsCreated: comparisons.length,
-      buyingGuidesCreated: buyingGuides.length,
       reviews,
       comments,
     };
   },
   {
+    // Prevent URL inference issues that stall workflows after the first steps.
+    baseUrl: getWorkflowBaseUrl(),
     failureFunction: async ({ context }) => {
       const lockKey =
         context.requestPayload?.lockKey || "cron:generate-content";
