@@ -12,6 +12,35 @@
     "imprint": "Imprint",
     "privacy": "Privacy"
   },
+  "compare": {
+    "launcherTitle": "Compare two products head-to-head",
+    "select": "Product",
+    "cta": "Open comparison",
+    "helper": "Pick two different products for a side-by-side comparison.",
+    "winner": "leads",
+    "tie": "tie",
+    "aiTitle": "AI verdict for this matchup",
+    "aiButton": "Generate AI comparison",
+    "aiLoading": "AI analyzing…",
+    "aiError": "AI comparison unavailable. Check OpenRouter key.",
+    "forProduct": "Strengths of product",
+    "bottomLine": "Bottom line",
+    "withThis": "Compare with this product"
+  },
+  "chat": {
+    "open": "AI Chat",
+    "title": "IGZ shopping assistant",
+    "subtitle": "We'll tell you which product to buy — with Amazon links",
+    "placeholder": "e.g. Best headphones for commuting under €100?",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "error": "Chat unavailable right now. Please try again later.",
+    "suggestions": [
+      "Which product should I buy for commuting?",
+      "Recommend in-ear or over-ear for office work",
+      "Best value under €100? Please include Amazon links"
+    ]
+  },
   "home": {
     "heroTitle": "Find the best product at the best price",
     "heroSubtitle": "Automatically updated Amazon reviews and category comparisons to help you decide faster.",

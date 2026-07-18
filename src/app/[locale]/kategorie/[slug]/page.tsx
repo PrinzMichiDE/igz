@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -8,8 +9,12 @@ import { FilteredComparisonSection } from "@/components/comparison/filtered-comp
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
 import { ProductMatchFinder } from "@/components/comparison/product-match-finder";
 import { CtaButton } from "@/components/affiliate/cta-button";
+import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+import { InternalLinks } from "@/components/seo/internal-links";
+import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
 import { asComparisonContent, asReviewContent } from "@/lib/content-types";
 import { buildFeatureMatrix } from "@/lib/product-ranking";
@@ -87,7 +92,48 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       },
     })
     .catch(() => null);
+}
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: localeParam, slug } = await params;
+  const locale = localeParam as AppLocale;
+  const category = await getCategory(slug, locale);
+  if (!category) return { title: "Not found" };
+
+  const article = category.articles[0];
+  const content = asComparisonContent(article?.contentJson);
+  const niche = getNichePageBySlug(category.slug);
+  const name = locale === "en" ? category.nameEn : category.nameDe;
+  const title =
+    (locale === "en" ? niche?.titleEn : niche?.titleDe) ||
+    content.seoTitle ||
+    article?.title ||
+    `${name} ${locale === "en" ? "Comparison" : "Vergleich"}`;
+  const description =
+    (locale === "en" ? niche?.descriptionEn : niche?.descriptionDe) ||
+    content.seoDescription ||
+    content.directAnswer ||
+    article?.excerpt ||
+    (locale === "en" ? category.descriptionEn : category.descriptionDe) ||
+    title;
+
+  return buildPageMetadata({
+    locale,
+    title,
+    description,
+    pathWithoutLocale: `/kategorie/${category.slug}`,
+    type: "article",
+    modifiedTime: article?.updatedAt || category.updatedAt,
+  });
+}
+
+export default async function CategoryPage({ params }: Props) {
+  const { locale: localeParam, slug } = await params;
+  const locale = localeParam as AppLocale;
+  setRequestLocale(locale);
+  const t = await getTranslations();
+
+  const category = await getCategory(slug, locale);
   if (!category) notFound();
 
   const buyingGuide = await prisma.article
@@ -121,7 +167,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   const comparison = category.comparisons[0];
   const article = category.articles[0];
-  const content = asComparisonContent(article?.contentJson ?? comparison?.criteriaJson);
+  const content = asComparisonContent(
+    article?.contentJson ?? comparison?.criteriaJson,
+  );
   const name = locale === "en" ? category.nameEn : category.nameDe;
   const description =
     article?.excerpt ||
@@ -234,6 +282,71 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         }
       : null,
   ].filter((option): option is NonNullable<typeof option> => option !== null);
+
+  const quickItems = [
+    comparison?.winnerProduct
+      ? {
+          label: t("category.winner"),
+          title: comparison.winnerProduct.title,
+          href: `/${locale}/produkt/${comparison.winnerProduct.slug}`,
+          score:
+            comparison.winnerProduct.editorialScore ??
+            comparison.winnerProduct.rating,
+          price: comparison.winnerProduct.price?.toString(),
+          currency: comparison.winnerProduct.currency,
+        }
+      : null,
+    comparison?.priceWinner
+      ? {
+          label: t("category.priceWinner"),
+          title: comparison.priceWinner.title,
+          href: `/${locale}/produkt/${comparison.priceWinner.slug}`,
+          score:
+            comparison.priceWinner.editorialScore ??
+            comparison.priceWinner.rating,
+          price: comparison.priceWinner.price?.toString(),
+          currency: comparison.priceWinner.currency,
+        }
+      : null,
+    comparison?.budgetWinner
+      ? {
+          label: t("category.budgetWinner"),
+          title: comparison.budgetWinner.title,
+          href: `/${locale}/produkt/${comparison.budgetWinner.slug}`,
+          score:
+            comparison.budgetWinner.editorialScore ??
+            comparison.budgetWinner.rating,
+          price: comparison.budgetWinner.price?.toString(),
+          currency: comparison.budgetWinner.currency,
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    label: string;
+    title: string;
+    href: string;
+    score?: number | null;
+    price?: string | null;
+    currency?: string;
+  }>;
+
+  const niche = getNichePageBySlug(category.slug);
+  const directAnswer =
+    content.directAnswer ||
+    (locale === "en" ? niche?.directAnswerEn : niche?.directAnswerDe) ||
+    (comparison?.winnerProduct
+      ? locale === "en"
+        ? `Best overall in ${name}: ${comparison.winnerProduct.title}.`
+        : `Testsieger in ${name}: ${comparison.winnerProduct.title}.`
+      : content.intro || "");
+  const takeaways =
+    content.keyTakeaways ||
+    (locale === "en" ? niche?.keyTakeawaysEn : niche?.keyTakeawaysDe) ||
+    [];
+  const faq = content.faq?.length
+    ? content.faq
+    : locale === "en"
+      ? niche?.faqEn || []
+      : niche?.faqDe || [];
 
   return (
     <div className="igz-container py-10 md:py-14">

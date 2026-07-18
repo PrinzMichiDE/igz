@@ -31,6 +31,8 @@ JSON schema:
   "priceWinnerAsin": string,
   "budgetWinnerAsin": string,
   "intro": string,
+  "directAnswer": string,
+  "keyTakeaways": string[],
   "rankingNotes": string[],
   "faq": [ { "question": string, "answer": string } ]
 }`;

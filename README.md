@@ -11,9 +11,26 @@ Next.js-Plattform für automatisierte Amazon-Produktvergleiche und Testberichte.
 ## Architektur (kurz)
 
 1. Cron synct Produkte via RapidAPI (`/search`, optional `/product-details`)
-2. QuotaGuard begrenzt auf 100 Requests/Monat (BASIC)
-3. OpenRouter generiert DE/EN-Inhalte aus DB-Daten
-4. Public Pages lesen **nur Postgres** (cache-first, kein Live-API-Call pro Pageview)
+2. Produktbilder werden beim Sync als Binärdaten in Postgres gespeichert (`imageData`/`imageMimeType`) und über `/api/product-image/[id]` ausgeliefert
+3. QuotaGuard begrenzt auf 100 Requests/Monat (BASIC)
+4. OpenRouter generiert DE/EN-Inhalte aus DB-Daten (ausführliche Tests + UX-Kommentare)
+5. Public Pages lesen **nur Postgres** (cache-first, kein Live-API-Call pro Pageview)
+
+## SEO & AEO
+
+- Canonical + hreflang (`de`/`en`/`x-default`)
+- Open Graph / Twitter Cards
+- `sitemap.xml`, `robots.txt`, `feed.xml`, `llms.txt`, `ai.txt`, `humans.txt`
+- IndexNow (`INDEXNOW_KEY`, Cron `/api/cron/indexnow`)
+- Google/Bing Verification Envs
+- JSON-LD: Organization, WebSite, Breadcrumb, Product/Review, FAQ, ItemList, QAPage
+- AEO-Blöcke: Direct Answer, Key Takeaways, Speakable selectors
+- E-E-A-T: `/methodik`, `/ueber-uns`, `/bestenlisten`
+- Innovative UI: Score-Breakdown, Decision Guide, Quick Compare, Article TOC, Reading Time
+- Playbook: [`docs/seo-aeo-playbook.md`](docs/seo-aeo-playbook.md)
+- Fokus-Nische Bluetooth-Kopfhörer (10 Ranking-Seiten): [`docs/niche-bluetooth-kopfhoerer.md`](docs/niche-bluetooth-kopfhoerer.md)
+- Produkt-Duell: `/[locale]/vergleich` und `/[locale]/vergleich/[a]-vs-[b]`
+- KI-Chat (OpenRouter Streaming): Floating Widget + `/api/chat`
 
 ## Setup
 
@@ -22,20 +39,31 @@ cp .env.example .env
 # DATABASE_URL, RAPIDAPI_KEY, OPENROUTER_API_KEY, NEXTAUTH_SECRET setzen
 
 npm install
-npx prisma db push
 npm run db:seed
 npm run dev
 ```
 
 App: [http://localhost:3000/de](http://localhost:3000/de)
 
+Prisma läuft automatisch über `db:prepare` bei:
+- `npm run dev` (`predev`)
+- `npm run build` (`prebuild`) – auch auf Vercel
+- `npm start` (`prestart`)
+
+`db:prepare` führt `prisma generate` + `prisma migrate deploy` aus (Fallback: `prisma db push`).
+Optional überspringen: `PRISMA_SKIP_SCHEMA_SYNC=1`.
+
+Auf Vercel muss `DATABASE_URL` als Environment Variable gesetzt sein (Build + Runtime).
+
 ## Wichtige Scripts
 
-- `npm run dev` – lokaler Dev-Server
-- `npm run build` / `npm start` – Production
+- `npm run dev` – lokaler Dev-Server (+ automatisches Prisma-Prepare)
+- `npm run build` / `npm start` – Production (+ automatisches Prisma-Prepare)
+- `npm run db:prepare` – Prisma Client + Schema-Sync
 - `npm run db:generate` – Prisma Client
+- `npm run db:deploy` – Migrationen in Production anwenden
 - `npm run db:push` – Schema ohne Migration-History pushen
-- `npm run db:migrate` – Migrationen
+- `npm run db:migrate` – lokale Migration erzeugen
 - `npm run db:seed` – Demo-Kategorien + Dummy-Products
 
 ## Cron Endpoints

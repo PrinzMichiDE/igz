@@ -2,12 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { CtaButton } from "@/components/affiliate/cta-button";
+import { resolveProductImageSrc } from "@/lib/amazon/product-image";
 import { formatPrice } from "@/lib/utils";
 
 type Props = {
   href: string;
   title: string;
+  productId?: string;
   imageUrl?: string | null;
+  imageMimeType?: string | null;
   score?: number | null;
   price?: number | string | null;
   currency?: string;
@@ -25,7 +28,9 @@ type Props = {
 export function ProductCard({
   href,
   title,
+  productId,
   imageUrl,
+  imageMimeType,
   score,
   price,
   currency = "EUR",

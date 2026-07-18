@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { buildAffiliateUrl } from "@/lib/amazon/affiliate";
+import { downloadProductImage } from "@/lib/amazon/product-image";
 import {
   getProductDetails,
   parsePrice,
@@ -16,6 +17,69 @@ import type { JobType } from "@prisma/client";
 function productSlug(asin: string, title: string) {
   const base = slugify(title) || "product";
   return `${base}-${asin.toLowerCase()}`;
+}
+
+async function storeProductImageIfNeeded(input: {
+  productId: string;
+  imageUrl?: string | null;
+  force?: boolean;
+}) {
+  const { productId, imageUrl, force = false } = input;
+  if (!imageUrl) return false;
+
+  const existing = await prisma.product.findUnique({
+    where: { id: productId },
+    select: {
+      imageUrl: true,
+      imageData: true,
+      imageFetchedAt: true,
+    },
+  });
+
+  if (!existing) return false;
+
+  const urlChanged = existing.imageUrl !== imageUrl;
+  const missingData = !existing.imageData || existing.imageData.length === 0;
+  if (!force && !urlChanged && !missingData) return false;
+
+  const downloaded = await downloadProductImage(imageUrl);
+  if (!downloaded) return false;
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      imageUrl,
+      imageData: Uint8Array.from(downloaded.data),
+      imageMimeType: downloaded.mimeType,
+      imageFetchedAt: new Date(),
+    },
+  });
+
+  return true;
+}
+
+export async function backfillMissingProductImages(limit = 50) {
+  const products = await prisma.product.findMany({
+    where: {
+      imageUrl: { not: null },
+      imageMimeType: null,
+    },
+    select: { id: true, imageUrl: true },
+    take: limit,
+    orderBy: { updatedAt: "desc" },
+  });
+
+  let stored = 0;
+  for (const product of products) {
+    const ok = await storeProductImageIfNeeded({
+      productId: product.id,
+      imageUrl: product.imageUrl,
+      force: true,
+    });
+    if (ok) stored += 1;
+  }
+
+  return { checked: products.length, stored };
 }
 
 export async function syncCategorySearch(categoryId: string) {
@@ -52,7 +116,7 @@ export async function syncCategorySearch(categoryId: string) {
       const price = parsePrice(item.product_price);
       const rating = parseRating(item.product_star_rating);
 
-      await prisma.product.upsert({
+      const product = await prisma.product.upsert({
         where: {
           asin_country: {
             asin: item.asin,
@@ -88,6 +152,11 @@ export async function syncCategorySearch(categoryId: string) {
           lastSyncedAt: new Date(),
           categoryId: category.id,
         },
+      });
+
+      await storeProductImageIfNeeded({
+        productId: product.id,
+        imageUrl: item.product_photo || product.imageUrl,
       });
       upserted += 1;
 
@@ -180,11 +249,13 @@ export async function syncCategoryDetails(categoryId: string, topN = 5) {
           ([k, v]) => `${k}: ${v}`,
         );
 
+      const nextImageUrl = details.product_photo || product.imageUrl;
+
       await prisma.product.update({
         where: { id: product.id },
         data: {
           title: details.product_title || product.title,
-          imageUrl: details.product_photo || product.imageUrl,
+          imageUrl: nextImageUrl,
           price: price ?? undefined,
           currency:
             details.currency ||

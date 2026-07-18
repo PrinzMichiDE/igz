@@ -100,7 +100,51 @@ export default async function ProductPage({ params }: Props) {
       },
     })
     .catch(() => null);
+}
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: localeParam, slug } = await params;
+  const locale = localeParam as AppLocale;
+  const product = await getProduct(slug, locale);
+  if (!product) {
+    return { title: "Not found" };
+  }
+
+  const article = product.articles[0];
+  const content = asReviewContent(article?.contentJson);
+  const title =
+    content.seoTitle ||
+    article?.title ||
+    (locale === "en"
+      ? `${product.title} Review`
+      : `${product.title} Testbericht`);
+  const description =
+    content.seoDescription ||
+    content.directAnswer ||
+    article?.excerpt ||
+    content.verdict ||
+    product.title;
+
+  const imagePath = resolveProductImageSrc(product);
+  return buildPageMetadata({
+    locale,
+    title,
+    description,
+    pathWithoutLocale: `/produkt/${product.slug}`,
+    image: imagePath ? absoluteUrl(imagePath) : product.imageUrl,
+    type: "article",
+    publishedTime: article?.publishedAt,
+    modifiedTime: article?.updatedAt || product.updatedAt,
+  });
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { locale: localeParam, slug } = await params;
+  const locale = localeParam as AppLocale;
+  setRequestLocale(locale);
+  const t = await getTranslations();
+
+  const product = await getProduct(slug, locale);
   if (!product) notFound();
 
   const article = product.articles[0];
@@ -333,8 +377,8 @@ export default async function ProductPage({ params }: Props) {
             {content.sections?.map((section) => (
               <div key={section.heading} className="mt-6">
                 <h2>{section.heading}</h2>
-                {section.body.split("\n\n").map((paragraph) => (
-                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                {section.body.split(/\n{2,}/).map((paragraph, idx) => (
+                  <p key={`${section.heading}-${idx}`}>{paragraph}</p>
                 ))}
               </div>
             ))}
@@ -545,7 +589,9 @@ export default async function ProductPage({ params }: Props) {
               key={item.id}
               href={`/${locale}/produkt/${item.slug}`}
               title={item.title}
+              productId={item.id}
               imageUrl={item.imageUrl}
+              imageMimeType={item.imageMimeType}
               score={item.editorialScore ?? item.rating}
               price={item.price?.toString()}
               currency={item.currency}

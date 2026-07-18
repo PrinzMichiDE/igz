@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveCronCategory } from "@/lib/cron";
 import { getQuotaStatus } from "@/lib/amazon/quota";
-import { syncCategoryDetails, syncCategorySearch } from "@/lib/amazon/sync";
+import {
+  backfillMissingProductImages,
+  syncCategoryDetails,
+  syncCategorySearch,
+} from "@/lib/amazon/sync";
 import { QuotaExceededError } from "@/lib/amazon/quota";
 import { withDbRetry } from "@/lib/db/with-db-retry";
 

@@ -12,6 +12,35 @@
     "imprint": "Impressum",
     "privacy": "Datenschutz"
   },
+  "compare": {
+    "launcherTitle": "Zwei Produkte gegeneinander vergleichen",
+    "select": "Produkt",
+    "cta": "Direktvergleich öffnen",
+    "helper": "Wähle zwei unterschiedliche Produkte für den Side-by-Side-Vergleich.",
+    "winner": "führt",
+    "tie": "gleichauf",
+    "aiTitle": "KI-Fazit zum Duell",
+    "aiButton": "KI-Vergleich erstellen",
+    "aiLoading": "KI analysiert…",
+    "aiError": "KI-Vergleich derzeit nicht verfügbar. Bitte OpenRouter-Key prüfen.",
+    "forProduct": "Stärken von Produkt",
+    "bottomLine": "Fazit",
+    "withThis": "Mit diesem Produkt vergleichen"
+  },
+  "chat": {
+    "open": "KI-Chat",
+    "title": "IGZ Einkaufsassistent",
+    "subtitle": "Wir sagen dir, welches Produkt du nehmen sollst – inkl. Amazon-Links",
+    "placeholder": "z.B. Welche Kopfhörer für Pendeln unter 100€?",
+    "send": "Senden",
+    "thinking": "Denke nach…",
+    "error": "Chat gerade nicht erreichbar. Bitte später erneut versuchen.",
+    "suggestions": [
+      "Welches Produkt soll ich zum Pendeln nehmen?",
+      "Empfiehl mir In-Ear oder Over-Ear fürs Büro",
+      "Was ist die beste Preis-Leistung unter 100€? Mit Amazon-Links bitte"
+    ]
+  },
   "home": {
     "heroTitle": "Finde das beste Produkt zum besten Preis",
     "heroSubtitle": "Automatisch aktualisierte Amazon-Tests und Kategorie-Vergleiche, damit du schneller die richtige Kaufentscheidung triffst.",

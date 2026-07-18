@@ -3,13 +3,16 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { ScoreBadge } from "@/components/product/score-badge";
+import { resolveProductImageSrc } from "@/lib/amazon/product-image";
 import { formatPrice } from "@/lib/utils";
 
 export type ComparisonRow = {
   rank: number;
   title: string;
   href: string;
+  productId?: string;
   imageUrl?: string | null;
+  imageMimeType?: string | null;
   score?: number | null;
   price?: number | string | null;
   currency?: string;
@@ -110,6 +113,7 @@ export function ComparisonTable({
                     </Link>
                   </div>
                 </div>
+                <ScoreBadge score={row.score} size="sm" />
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-4">

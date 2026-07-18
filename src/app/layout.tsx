@@ -9,12 +9,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  ),
   title: {
     default: "IGZ Vergleich",
     template: "%s | IGZ Vergleich",
   },
   description:
     "Affiliate-getriebene Produktvergleiche und Testberichte für Amazon.",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

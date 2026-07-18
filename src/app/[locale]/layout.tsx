@@ -1,9 +1,10 @@
 import { NextIntlClientProvider, hasLocale } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { AiChatWidget } from "@/components/chat/ai-chat-widget";
 
 type Props = {
   children: React.ReactNode;
@@ -19,6 +20,8 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   setRequestLocale(locale);
   const messages = await getMessages();
+  const t = await getTranslations();
+  const suggestions = t.raw("chat.suggestions") as string[];
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -26,6 +29,20 @@ export default async function LocaleLayout({ children, params }: Props) {
         <SiteHeader locale={locale} />
         <main className="flex-1">{children}</main>
         <SiteFooter locale={locale} />
+        <AiChatWidget
+          locale={locale}
+          categorySlug="bluetooth-kopfhoerer"
+          labels={{
+            title: t("chat.title"),
+            subtitle: t("chat.subtitle"),
+            placeholder: t("chat.placeholder"),
+            send: t("chat.send"),
+            open: t("chat.open"),
+            thinking: t("chat.thinking"),
+            error: t("chat.error"),
+            suggestions: Array.isArray(suggestions) ? suggestions : [],
+          }}
+        />
       </div>
     </NextIntlClientProvider>
   );

@@ -67,6 +67,9 @@ model Product {
   slug           String    @unique
   title          String
   imageUrl       String?
+  imageData      Bytes?
+  imageMimeType  String?
+  imageFetchedAt DateTime?
   price          Decimal?  @db.Decimal(10, 2)
   currency       String    @default("EUR")
   rating         Float?

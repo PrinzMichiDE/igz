@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:prepare": "node scripts/prisma-prepare.mjs",
+    "predev": "npm run db:prepare",
     "dev": "next dev --turbopack",
     "build": "node scripts/prisma-db-push.mjs && next build --turbopack",
     "start": "next start",
