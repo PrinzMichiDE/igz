@@ -74,7 +74,7 @@ Vercel Cron triggert nur noch **kurze** Endpoints. Die schwere Arbeit läuft als
 - `GET /api/cron/setup` → Workflow `/api/workflows/setup`
 - `GET /api/cron/sync-categories?limit=50` → `/api/workflows/sync-categories`
 - `GET /api/cron/sync-products?category=…&top=3` → `/api/workflows/sync-products`
-- `GET /api/cron/generate-content?category=…&product=asin-or-slug&locales=de&comments=3&products=1&force=1&guides=0` → `/api/workflows/generate-content` (OpenRouter via QStash `context.call`, no Vercel 60s wait)
+- `GET /api/cron/generate-content?category=…&product=asin-or-slug&locales=de&comments=3&products=3&force=1&guides=0` → `/api/workflows/generate-content` (OpenRouter via QStash `context.call`, no Vercel 60s wait). Automatically backfills products that still lack a published review (highest Amazon rating first).
 - `GET /api/cron/indexnow` — bleibt direkt (kurz)
 
 Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal).
@@ -84,7 +84,7 @@ Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal
 2. Nutzererfahrungs-Kommentare
 3. Kategorie-Vergleiche + Kaufberatung
 
-Daily schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content 07:00 · indexnow 08:00.
+Schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content every 4h · indexnow 08:00.
 
 Benötigte Env (auch auf Vercel setzen): `QSTASH_TOKEN`, `QSTASH_URL`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `UPSTASH_WORKFLOW_URL`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
 

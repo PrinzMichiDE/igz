@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveCronCategory } from "@/lib/cron";
+import {
+  countProductsMissingReviews,
+  listProductsMissingReviews,
+} from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
 import {
@@ -25,12 +28,14 @@ export async function GET(req: NextRequest) {
     .map((v) => v.trim())
     .filter((v): v is Locale => v === "de" || v === "en");
   const commentCount = Number(req.nextUrl.searchParams.get("comments") || 3);
-  const productLimit = Number(req.nextUrl.searchParams.get("products") || 1);
+  // Default batch size for automatic backlog catch-up.
+  const productLimit = Number(req.nextUrl.searchParams.get("products") || 3);
   const force = req.nextUrl.searchParams.get("force") === "1";
   // Guides/comparisons are opt-in — reviews first (avoids extra OpenRouter timeouts).
   const skipGuides = req.nextUrl.searchParams.get("guides") !== "1";
   const forceTech =
     force || req.nextUrl.searchParams.get("tech") === "1";
+  const primaryLocale = locales[0] ?? "de";
 
   try {
     return await enqueueOrRunInline(
@@ -47,14 +52,22 @@ export async function GET(req: NextRequest) {
           productLimit,
           skipGuides,
           forceTech,
+          backfillMissing: true,
           lockKey: "cron:generate-content",
         },
       },
       async () => {
         return withDbRetry(async () => {
-          let categoryId: string;
-          let categorySlug: string;
-          let products: Array<{ id: string }> = [];
+          const backlogBefore = await countProductsMissingReviews({
+            locale: primaryLocale,
+            categoryId: null,
+          });
+
+          let products: Array<{
+            id: string;
+            categoryId: string;
+            categorySlug: string;
+          }> = [];
 
           if (product) {
             const row = await prisma.product.findFirst({
@@ -67,36 +80,42 @@ export async function GET(req: NextRequest) {
               },
             });
             if (!row) throw new Error(`Product not found: ${product}`);
-            categoryId = row.category.id;
-            categorySlug = row.category.slug;
-            products = [{ id: row.id }];
-          } else {
-            const category = await resolveCronCategory(slug);
-            if (!category) {
-              throw new Error("No category found. Run /api/cron/setup first.");
-            }
-            categoryId = category.id;
-            categorySlug = category.slug;
-            products = await prisma.product.findMany({
-              where: {
-                categoryId,
-                articles: {
-                  none: {
-                    type: "review",
-                    locale: locales[0] ?? "de",
-                    status: "published",
-                  },
-                },
+            products = [
+              {
+                id: row.id,
+                categoryId: row.category.id,
+                categorySlug: row.category.slug,
               },
-              orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-              take: productLimit,
-              select: { id: true },
+            ];
+          } else {
+            const missing = await listProductsMissingReviews({
+              locale: primaryLocale,
+              limit: productLimit,
+              categorySlug: slug,
             });
+            products = missing.map((item) => ({
+              id: item.id,
+              categoryId: item.categoryId,
+              categorySlug: item.categorySlug,
+            }));
+          }
+
+          if (products.length === 0) {
+            return {
+              ok: true,
+              mode: "backfill",
+              message: "No products missing published reviews",
+              backlogRemaining: 0,
+              reviewsCreated: 0,
+              commentsCreated: 0,
+              techProfilesCreated: 0,
+            };
           }
 
           const reviews = [];
           const comments = [];
           const techProfiles = [];
+
           for (const item of products) {
             const existing = await prisma.product.findUnique({
               where: { id: item.id },
@@ -113,6 +132,19 @@ export async function GET(req: NextRequest) {
             }
 
             for (const locale of locales) {
+              const alreadyHasReview = await prisma.article.findFirst({
+                where: {
+                  productId: item.id,
+                  type: "review",
+                  locale,
+                  status: "published",
+                },
+                select: { id: true },
+              });
+              if (alreadyHasReview && !force) {
+                continue;
+              }
+
               const article = await generateProductReview(item.id, locale);
               reviews.push({ productId: item.id, locale, id: article.id });
               const saved = await generateProductExperienceComments(
@@ -128,20 +160,34 @@ export async function GET(req: NextRequest) {
             }
           }
 
-          if (!skipGuides) {
+          // Optional guides only for the first touched category.
+          const primaryCategoryId = products[0]?.categoryId;
+          const primaryCategorySlug = products[0]?.categorySlug;
+          if (!skipGuides && primaryCategoryId) {
             for (const locale of locales) {
-              await generateCategoryComparison(categoryId, locale);
-              await generateBuyingGuide(categoryId, locale);
+              await generateCategoryComparison(primaryCategoryId, locale);
+              await generateBuyingGuide(primaryCategoryId, locale);
             }
+            await enrichCategoryManuals(primaryCategoryId, primaryLocale);
+          } else if (primaryCategoryId) {
+            await enrichCategoryManuals(primaryCategoryId, primaryLocale);
           }
 
-          await enrichCategoryManuals(categoryId, locales[0] ?? "de");
+          const backlogAfter = await countProductsMissingReviews({
+            locale: primaryLocale,
+          });
 
           return {
-            category: categorySlug,
+            ok: true,
+            mode: "backfill",
+            category: primaryCategorySlug || slug,
+            backlogBefore,
+            backlogRemaining: backlogAfter,
+            productsProcessed: products.length,
             reviewsCreated: reviews.length,
             commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
             techProfilesCreated: techProfiles.length,
+            products: products.map((p) => p.id),
           };
         });
       },

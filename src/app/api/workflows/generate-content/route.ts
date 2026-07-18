@@ -17,7 +17,10 @@ import {
   parseOpenRouterJsonContent,
   type OpenRouterChatCompletionResponse,
 } from "@/lib/ai/openrouter-request";
-import { resolveCronCategory } from "@/lib/cron";
+import {
+  countProductsMissingReviews,
+  listProductsMissingReviews,
+} from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 import type { ProductTechProfileAiResponse } from "@/lib/product-tech/types";
 import { getWorkflowBaseUrl } from "@/lib/upstash/qstash";
@@ -38,6 +41,8 @@ type Payload = {
   productLimit?: number;
   skipGuides?: boolean;
   forceTech?: boolean;
+  backfillMissing?: boolean;
+  force?: boolean;
 };
 
 type ReviewContent = Parameters<typeof persistProductReview>[0]["content"];
@@ -59,11 +64,31 @@ export const { POST } = serve<Payload>(
       Math.max(2, Number(payload.comments || 3)),
     );
     const productLimit = Math.min(
-      3,
-      Math.max(1, Number(payload.productLimit || 1)),
+      5,
+      Math.max(1, Number(payload.productLimit || 3)),
     );
+    const primaryLocale = locales[0] ?? "de";
+    const forceRegen = payload.force === true;
 
-    const category = await context.run("resolve-category", async () => {
+    const backlogBefore = await context.run("count-backlog", async () => {
+      return countProductsMissingReviews({ locale: primaryLocale });
+    });
+
+    await context.run("publish-draft-reviews", async () => {
+      const publishedBacklog = await prisma.article.updateMany({
+        where: {
+          status: "needs_review",
+          type: "review",
+        },
+        data: {
+          status: "published",
+          publishedAt: new Date(),
+        },
+      });
+      return { count: publishedBacklog.count };
+    });
+
+    const products = await context.run("list-missing-reviews", async () => {
       if (payload.product) {
         const product = await prisma.product.findFirst({
           where: {
@@ -82,65 +107,53 @@ export const { POST } = serve<Payload>(
         if (!product) {
           throw new Error(`Product not found: ${payload.product}`);
         }
-        return {
-          id: product.category.id,
-          slug: product.category.slug,
-          productIds: [
-            { id: product.id, asin: product.asin, slug: product.slug },
-          ],
-        };
-      }
-
-      const resolved = await resolveCronCategory(payload.category || null);
-      if (!resolved) {
-        throw new Error("No category found. Run setup first.");
-      }
-      return { id: resolved.id, slug: resolved.slug, productIds: null };
-    });
-
-    await context.run("publish-backlog", async () => {
-      const publishedBacklog = await prisma.article.updateMany({
-        where: {
-          status: "needs_review",
-          type: "review",
-          product: { categoryId: category.id },
-        },
-        data: {
-          status: "published",
-          publishedAt: new Date(),
-        },
-      });
-      return { count: publishedBacklog.count };
-    });
-
-    const products = await context.run("list-products", async () => {
-      if (category.productIds) return category.productIds;
-
-      const primaryLocale = locales[0] ?? "de";
-      const missing = await prisma.product.findMany({
-        where: {
-          categoryId: category.id,
-          articles: {
-            none: {
-              type: "review",
-              locale: primaryLocale,
-              status: "published",
-            },
+        return [
+          {
+            id: product.id,
+            asin: product.asin,
+            slug: product.slug,
+            categoryId: product.category.id,
+            categorySlug: product.category.slug,
           },
-        },
-        orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-        take: productLimit,
-        select: { id: true, asin: true, slug: true },
-      });
-      if (missing.length > 0) return missing;
+        ];
+      }
 
-      return prisma.product.findMany({
-        where: { categoryId: category.id },
-        orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-        take: productLimit,
-        select: { id: true, asin: true, slug: true },
+      const missing = await listProductsMissingReviews({
+        locale: primaryLocale,
+        limit: productLimit,
+        categorySlug: payload.category || null,
       });
+
+      return missing.map((item) => ({
+        id: item.id,
+        asin: item.asin,
+        slug: item.slug,
+        categoryId: item.categoryId,
+        categorySlug: item.categorySlug,
+      }));
     });
+
+    if (products.length === 0) {
+      await context.run("release-lock-empty", async () => {
+        await releaseLock(lockKey);
+        return { released: true };
+      });
+      return {
+        ok: true,
+        mode: "backfill",
+        message: "No products missing published reviews",
+        backlogBefore,
+        backlogRemaining: 0,
+        reviewsCreated: 0,
+        commentsCreated: 0,
+        techProfilesCreated: 0,
+      };
+    }
+
+    const category = {
+      id: products[0].categoryId,
+      slug: products[0].categorySlug,
+    };
 
     const reviews: Array<{ productId: string; locale: Locale; id: string }> =
       [];
@@ -281,6 +294,24 @@ export const { POST } = serve<Payload>(
       }
 
       for (const locale of locales) {
+        const shouldWriteReview = await context.run(
+          `need-review-${product.asin}-${locale}`,
+          async () => {
+            if (forceRegen) return true;
+            const existing = await prisma.article.findFirst({
+              where: {
+                productId: product.id,
+                type: "review",
+                locale,
+                status: "published",
+              },
+              select: { id: true },
+            });
+            return !existing;
+          },
+        );
+        if (!shouldWriteReview) continue;
+
         const prepared = await context.run(
           `prep-review-${product.asin}-${locale}`,
           async () => prepareProductReview(product.id, locale),
@@ -406,6 +437,10 @@ export const { POST } = serve<Payload>(
       }
     }
 
+    const backlogRemaining = await context.run("count-backlog-after", async () => {
+      return countProductsMissingReviews({ locale: primaryLocale });
+    });
+
     await context.run("release-lock", async () => {
       await releaseLock(lockKey);
       return { released: true };
@@ -413,7 +448,11 @@ export const { POST } = serve<Payload>(
 
     return {
       ok: true,
+      mode: "backfill",
       category: category.slug,
+      backlogBefore,
+      backlogRemaining,
+      productsProcessed: products.length,
       reviewsCreated: reviews.length,
       commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
       techProfilesCreated: techProfiles.length,

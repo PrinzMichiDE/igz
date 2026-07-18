@@ -5,6 +5,7 @@ import { ReviewQueueActions } from "@/components/admin/review-queue-actions";
 import { auth, signOut } from "@/lib/auth";
 import { getAffiliateAnalytics } from "@/lib/affiliate-analytics";
 import { getQuotaStatus } from "@/lib/amazon/quota";
+import { countProductsMissingReviews } from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function AdminDashboardPage() {
     pendingArticles,
     reviewCount,
     publishedReviewCount,
+    missingReviewCount,
   ] = await Promise.all([
     getQuotaStatus(),
     getAffiliateAnalytics(30),
@@ -42,6 +44,7 @@ export default async function AdminDashboardPage() {
     }),
     prisma.article.count({ where: { type: "review" } }),
     prisma.article.count({ where: { type: "review", status: "published" } }),
+    countProductsMissingReviews({ locale: "de" }),
   ]);
 
   return (
@@ -108,6 +111,17 @@ export default async function AdminDashboardPage() {
           </p>
           <p className="mt-2 text-xs text-secondary">Tests verwalten →</p>
         </Link>
+        <div className="igz-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Ohne Testbericht (DE)
+          </p>
+          <p className="mt-2 font-display text-3xl font-bold text-primary">
+            {missingReviewCount}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Wird alle 4h automatisch nachgezogen
+          </p>
+        </div>
       </div>
 
       <section className="mt-10">
