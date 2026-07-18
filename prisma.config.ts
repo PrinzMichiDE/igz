@@ -1,13 +1,15 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+import { resolveDatabaseUrl } from "./src/lib/db/database-url";
 
-function resolveDatabaseUrl() {
-  return (
-    process.env["DATABASE_URL"] ??
-    process.env["POSTGRES_PRISMA_URL"] ??
-    process.env["POSTGRES_URL"] ??
-    process.env["POSTGRES_URL_NON_POOLING"]
-  );
+function datasourceUrl() {
+  try {
+    return resolveDatabaseUrl({ forSchemaPush: true });
+  } catch {
+    // Allow `prisma generate` without a DB URL; push/migrate will fail later
+    // with a clearer error from resolveDatabaseUrl().
+    return process.env.DATABASE_URL;
+  }
 }
 
 export default defineConfig({
@@ -16,6 +18,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: resolveDatabaseUrl(),
+    url: datasourceUrl(),
   },
 });

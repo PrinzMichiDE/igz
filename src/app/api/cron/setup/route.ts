@@ -12,10 +12,10 @@ export const maxDuration = 300;
 const execFileAsync = promisify(execFile);
 
 async function pushSchema() {
-  await execFileAsync("npx", ["prisma", "db", "push", "--skip-generate"], {
+  await execFileAsync("node", ["scripts/prisma-db-push.mjs"], {
     env: {
       ...process.env,
-      DATABASE_URL: resolveDatabaseUrl(),
+      DATABASE_URL: resolveDatabaseUrl({ forSchemaPush: true }),
     },
     cwd: process.cwd(),
   });

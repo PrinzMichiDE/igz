@@ -1,0 +1,87 @@
+---
+description: Always optimize this Next.js + Prisma app for Vercel (build, serverless, Postgres, cron, env, performance)
+alwaysApply: true
+---
+
+# Vercel-first engineering rules (IGZ)
+
+This project deploys on **Vercel**. Every change must be compatible with Vercel’s build, serverless/Node runtimes, env model, and Cron.
+
+## Deploy target assumptions
+
+- Hosting: Vercel (App Router Next.js 15)
+- DB: external Postgres (Vercel Postgres / Neon / similar) via env vars
+- Jobs: Vercel Cron → `src/app/api/cron/*` (see `@vercel.json`)
+- Build already runs schema sync: `node scripts/prisma-db-push.mjs && next build --turbopack` (`@package.json`)
+- Prisma Client is generated in `postinstall`
+
+Prefer improving the existing Vercel path over introducing Docker, long-lived Node servers, or custom hosts.
+
+## Database & Prisma on Vercel
+
+- **Never import Prisma in Client Components.** DB access only in Server Components, Route Handlers, Server Actions, or scripts.
+- Reuse the singleton/pool pattern in `@src/lib/db/prisma.ts` + URL resolution in `@src/lib/db/database-url.ts`.
+- Keep `export const runtime = "nodejs"` for any route that uses Prisma, `pg`, `child_process`, file system, or heavy Node APIs. **Do not silently switch Prisma routes to Edge.**
+- Connection hygiene for serverless:
+  - small pool (`DATABASE_POOL_MAX` default 1)
+  - prefer non-pooling / direct URL for schema push when available
+  - production SSL via resolved URL (`sslmode=require`) where needed
+- URL resolution must tolerate Vercel Postgres vars:
+  - `DATABASE_URL`, `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_URL`
+  - skip placeholders, quoted junk, localhost-on-Vercel, and `prisma+postgres://` (Accelerate) for `db push`
+- Schema changes: update `@prisma/schema.prisma` and keep build/setup able to sync via `scripts/prisma-db-push.mjs` / cron setup. Don’t invent a parallel migration host process.
+- Avoid `prisma db push --skip-generate` (unsupported in Prisma 7). Generate stays in `postinstall`.
+
+## Build, env, and secrets
+
+- All secrets live in **Vercel Project Env** (Production + Preview as needed). Never commit `.env` or real keys.
+- Required for deploy: usable Postgres URL + app secrets from `@.env.example`.
+- Build must not depend on localhost services.
+- If build-time DB sync cannot run, fail with a clear message about missing/invalid Postgres URL — don’t hide broken DB config behind a successful frontend-only build unless explicitly asked.
+- Keep `prisma` available where build/runtime scripts need the CLI (dependencies, not only local-only tooling), because Vercel Cron setup may invoke it.
+
+## Cron & background work
+
+- Cron entrypoints live under `src/app/api/cron/*` and are declared in `@vercel.json`.
+- Cron routes: `runtime = "nodejs"`, `dynamic = "force-dynamic"`, set `maxDuration` appropriately (long jobs up to plan limits; currently 300s for heavy jobs).
+- Protect cron/admin triggers with `CRON_SECRET` / existing auth helpers. Do not expose unbounded sync or AI generation publicly.
+- Design jobs to be **idempotent**, budget-aware (RapidAPI monthly quota), and resumable. No assumptions about a warm always-on process.
+- Prefer cache-first public pages: **no RapidAPI / OpenRouter calls in normal page renders**.
+
+## Next.js performance on Vercel
+
+- Default to Server Components; add `"use client"` only for interactive islands (chat, locale switch, accordions, etc.).
+- Avoid unnecessary client bundles and giant dependency imports in routes.
+- Public SEO pages should stay fast:
+  - use `next/image` with configured `images.remotePatterns` in `@next.config.ts`
+  - keep layouts light; push heavy work to cron/ingest
+  - prefer stable params + caching/`revalidate` where data freshness allows; if a page must be dynamic, keep DB queries tight and select only needed columns (never select large `Bytes` image blobs in list pages — serve via `/api/product-image/[id]`)
+- Streaming/chat/AI routes must stay Node where required and bound timeouts/body sizes sensibly.
+- Middleware (`next-intl` etc.) must remain Edge-safe: no Prisma/pg there.
+
+## API Route Handler checklist
+
+When adding/changing `src/app/api/**`:
+
+1. Choose runtime explicitly (`nodejs` if Prisma/Node APIs).
+2. Set `dynamic` / `maxDuration` when not cacheable or long-running.
+3. Validate auth/secrets for mutating or expensive operations.
+4. Return JSON errors that are safe to show in Vercel logs (no secrets).
+5. Use retries/timeouts for external DB/network calls where the repo already has helpers (`withDbRetry`, quota guards).
+
+## What not to do
+
+- Don’t add Express/Fastify custom servers for production.
+- Don’t require writable local disk beyond `/tmp` for prod features.
+- Don’t call RapidAPI on every pageview.
+- Don’t hardcode absolute `localhost` URLs for production links; use `NEXT_PUBLIC_SITE_URL` / existing SEO helpers.
+- Don’t break Preview Deployments by reading only Production-only env without documenting it.
+
+## When implementing features
+
+Before shipping, sanity-check:
+
+1. Does it build on Vercel with only Vercel env vars?
+2. Does it work on a cold serverless invocation?
+3. Are Cron/auth/quota constraints respected?
+4. Are Postgres URLs resolved via the shared helper (not a one-off `process.env.DATABASE_URL` assume)?
