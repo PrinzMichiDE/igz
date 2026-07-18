@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import { CtaButton } from "@/components/affiliate/cta-button";
@@ -7,7 +6,6 @@ import { CategoryIconCard } from "@/components/layout/category-icon-card";
 import { HeroSearch } from "@/components/layout/hero-search";
 import { WhyIgzSection } from "@/components/layout/why-igz-section";
 import { ProductCard } from "@/components/product/product-card";
-import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
 import { productOutHref } from "@/lib/product-links";
 import { extractTrustSignals } from "@/lib/product-metadata";
@@ -18,19 +16,6 @@ export const dynamic = "force-dynamic";
 type Props = {
   params: Promise<{ locale: string }>;
 };
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale: localeParam } = await params;
-  const locale = localeParam as AppLocale;
-  const t = await getTranslations({ locale });
-
-  return buildPageMetadata({
-    locale,
-    title: t("seo.homeTitle"),
-    description: t("seo.homeDescription"),
-    pathWithoutLocale: "",
-  });
-}
 
 async function safeCategories() {
   try {

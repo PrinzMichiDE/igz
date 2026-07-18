@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
         if (!(error instanceof QuotaExceededError)) throw error;
       }
 
+      const imageBackfill = await backfillMissingProductImages(50);
       const quotaAfter = await getQuotaStatus();
 
       return NextResponse.json({
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
         category: category.slug,
         searchResult,
         detailsResult,
+        imageBackfill,
         quota: {
           before: quotaBefore,
           after: quotaAfter,

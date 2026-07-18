@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { buildAffiliateUrl } from "../src/lib/amazon/affiliate";
 import { resolveDatabaseUrl } from "../src/lib/db/database-url";
+import { NICHE_CATEGORY_KEYWORDS_DE } from "../src/lib/seo/niche/bluetooth-headphones";
 
 const pool = new Pool({
   connectionString: resolveDatabaseUrl(),

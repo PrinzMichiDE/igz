@@ -47,8 +47,13 @@ export function ProductCard({
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
   const rating =
     typeof score === "number" && Number.isFinite(score) ? score : null;
+  const imageSrc = resolveProductImageSrc({
+    id: productId,
+    imageUrl,
+    imageMimeType,
+  });
 
-  const imageBlock = imageUrl ? (
+  const imageBlock = imageSrc ? (
     <a
       href={ctaHref}
       target="_blank"
@@ -57,7 +62,7 @@ export function ProductCard({
       aria-label={amazonOverlayLabel || ctaLabel}
     >
       <Image
-        src={imageUrl}
+        src={imageSrc}
         alt={title}
         fill
         className="object-contain p-6 transition group-hover:scale-[1.03]"

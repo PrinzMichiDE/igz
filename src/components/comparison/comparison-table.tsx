@@ -55,7 +55,9 @@ export function ComparisonTable({
           <span className="text-right">{columns.priceAction}</span>
         </div>
         <div className="divide-y divide-border">
-          {rows.map((row) => (
+          {rows.map((row) => {
+            const imageSrc = resolveProductImageSrc(row);
+            return (
             <article
               key={row.href}
               className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)] items-center gap-6 px-6 py-5 transition hover:bg-surface-muted/60"
@@ -68,9 +70,9 @@ export function ComparisonTable({
                   className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted"
                   aria-label={ctaLabel}
                 >
-                  {row.imageUrl ? (
+                  {imageSrc ? (
                     <Image
-                      src={row.imageUrl}
+                      src={imageSrc}
                       alt=""
                       fill
                       className="object-contain p-2 transition group-hover:scale-105"
@@ -146,12 +148,15 @@ export function ComparisonTable({
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       <div className="grid gap-4 lg:hidden">
-        {rows.map((row) => (
+        {rows.map((row) => {
+          const imageSrc = resolveProductImageSrc(row);
+          return (
           <article key={row.href} className="igz-card p-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -163,9 +168,9 @@ export function ComparisonTable({
                   className="relative h-16 w-16 overflow-hidden rounded-lg bg-surface-muted"
                   aria-label={ctaLabel}
                 >
-                  {row.imageUrl ? (
+                  {imageSrc ? (
                     <Image
-                      src={row.imageUrl}
+                      src={imageSrc}
                       alt=""
                       fill
                       className="object-contain p-2"
@@ -210,7 +215,8 @@ export function ComparisonTable({
               </Link>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
     </>
   );
