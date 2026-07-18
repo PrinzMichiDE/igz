@@ -544,12 +544,23 @@ async function main() {
   });
 }
 
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  })
-  .finally(async () => {
+export async function runSeed() {
+  try {
+    await main();
+  } finally {
     await prisma.$disconnect();
     await pool.end();
+  }
+}
+
+// Only auto-run when executed as a script (npm run db:seed), not when imported
+// by the Vercel /api/cron/setup route.
+const invokedDirectly = process.argv.some(
+  (arg) => arg.includes("seed.ts") || arg.includes("seed.js"),
+);
+if (invokedDirectly) {
+  void runSeed().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
   });
+}

@@ -1,35 +1,12 @@
 import { NextResponse } from "next/server";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { resolveDatabaseUrl } from "@/lib/db/database-url";
 import { prisma } from "@/lib/db/prisma";
+import { pushPrismaSchema } from "@/lib/db/push-schema";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
-
-const execFileAsync = promisify(execFile);
-
-async function pushSchema() {
-  await execFileAsync("node", ["scripts/prisma-db-push.mjs"], {
-    env: {
-      ...process.env,
-      DATABASE_URL: resolveDatabaseUrl({ forSchemaPush: true }),
-    },
-    cwd: process.cwd(),
-  });
-}
-
-async function runSeed() {
-  await execFileAsync("npm", ["run", "db:seed"], {
-    env: {
-      ...process.env,
-      DATABASE_URL: resolveDatabaseUrl(),
-    },
-    cwd: process.cwd(),
-  });
-}
 
 export async function GET() {
   try {
@@ -40,27 +17,44 @@ export async function GET() {
     });
 
     let schemaPushed = false;
+    let schemaPushError: string | null = null;
+    let schemaPushLog: string | null = null;
+
     try {
-      await pushSchema();
+      const result = await pushPrismaSchema();
       schemaPushed = true;
+      schemaPushLog = [result.stdout, result.stderr].filter(Boolean).join("\n").slice(0, 2000);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      return NextResponse.json(
-        {
-          ok: false,
-          error: `Schema push failed: ${message}`,
-          databaseUrlConfigured: Boolean(databaseUrl),
-        },
-        { status: 500 },
-      );
+      // Build already runs db push; runtime push can fail if CLI/files are
+      // missing. Continue to seed when the DB is reachable.
+      schemaPushError =
+        error instanceof Error ? error.message : "Unknown schema push error";
     }
 
     const categoryCount = await prisma.category.count();
     let seeded = false;
+    let seedError: string | null = null;
 
     if (categoryCount === 0) {
-      await runSeed();
-      seeded = true;
+      try {
+        // Import seed only when needed so the route stays lean on warm paths.
+        const { runSeed } = await import("../../../../../prisma/seed");
+        await runSeed();
+        seeded = true;
+      } catch (error) {
+        seedError = error instanceof Error ? error.message : "Unknown seed error";
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Seed failed: ${seedError}`,
+            schemaPushed,
+            schemaPushError,
+            databaseUrlConfigured: true,
+            databaseHost: new URL(databaseUrl).hostname,
+          },
+          { status: 500 },
+        );
+      }
     }
 
     const quota = await prisma.apiQuotaMonth.findFirst({
@@ -70,6 +64,8 @@ export async function GET() {
     return NextResponse.json({
       ok: true,
       schemaPushed,
+      schemaPushError,
+      schemaPushLog,
       seeded,
       categoryCount: await prisma.category.count(),
       quotaMonth: quota?.yearMonth ?? null,
