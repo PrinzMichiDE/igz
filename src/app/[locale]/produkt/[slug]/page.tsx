@@ -21,6 +21,9 @@ import { ProductManuals } from "@/components/product/product-manuals";
 import { ProductImageGallery } from "@/components/product/product-image-gallery";
 import { PriceWatchButton } from "@/components/product/price-watch-button";
 import { PriceTrendBadge } from "@/components/product/price-trend-badge";
+import { TechDatasheet } from "@/components/product/tech-datasheet";
+import { KnownIssuesList } from "@/components/product/known-issues-list";
+import { ErrorCodesList } from "@/components/product/error-codes-list";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
 import {
@@ -37,6 +40,11 @@ import {
   computePriceTrend,
   getPriceHistory,
 } from "@/lib/price-history";
+import {
+  parseStoredDatasheet,
+  parseStoredErrorCodes,
+  parseStoredKnownIssues,
+} from "@/lib/product-tech/parse";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
@@ -162,6 +170,32 @@ export default async function ProductPage({ params }: Props) {
   const features = Array.isArray(product.features)
     ? (product.features as string[])
     : [];
+  const datasheet = parseStoredDatasheet(product.specsJson);
+  const knownIssues = parseStoredKnownIssues(product.knownIssuesJson);
+  const errorCodes = parseStoredErrorCodes(product.errorCodesJson);
+  const datasheetRows =
+    datasheet?.rows.map((row) => ({
+      key: row.key,
+      label: locale === "en" ? row.labelEn : row.labelDe,
+      value: row.value,
+      unit: row.unit,
+      group: locale === "en" ? row.groupEn : row.groupDe,
+    })) ?? [];
+  const issueRows =
+    knownIssues?.issues.map((issue) => ({
+      title: locale === "en" ? issue.titleEn : issue.titleDe,
+      summary: locale === "en" ? issue.summaryEn : issue.summaryDe,
+      severity: issue.severity,
+      status: issue.status,
+      sources: issue.sources,
+    })) ?? [];
+  const errorCodeRows =
+    errorCodes?.codes.map((code) => ({
+      code: code.code,
+      meaning: locale === "en" ? code.meaningEn : code.meaningDe,
+      steps: locale === "en" ? code.stepsEn : code.stepsDe,
+      severity: code.severity,
+    })) ?? [];
 
   const tocSections = [
     { id: "fazit", label: t("product.verdict") },
@@ -169,6 +203,9 @@ export default async function ProductPage({ params }: Props) {
     ...(manualLinks.length > 0
       ? [{ id: "anleitungen", label: t("product.manualsTitle") }]
       : []),
+    { id: "datenblatt", label: t("product.datasheetTitle") },
+    { id: "bekannte-fehler", label: t("product.knownIssuesTitle") },
+    { id: "fehlercodes", label: t("product.errorCodesTitle") },
     { id: "details", label: t("product.details") },
     { id: "nutzererfahrungen", label: t("product.experiences") },
   ];
@@ -445,12 +482,69 @@ export default async function ProductPage({ params }: Props) {
             }}
           />
 
+          <TechDatasheet
+            title={t("product.datasheetTitle")}
+            subtitle={t("product.datasheetSubtitle")}
+            emptyLabel={t("product.datasheetEmpty")}
+            rows={datasheetRows}
+            sourceNote={
+              locale === "en"
+                ? datasheet?.sourceNotesEn
+                : datasheet?.sourceNotesDe
+            }
+          />
+
+          <KnownIssuesList
+            title={t("product.knownIssuesTitle")}
+            disclaimer={
+              (locale === "en"
+                ? knownIssues?.disclaimerEn
+                : knownIssues?.disclaimerDe) || t("product.knownIssuesDisclaimer")
+            }
+            emptyLabel={t("product.knownIssuesEmpty")}
+            sourcesLabel={t("product.knownIssuesSources")}
+            severityLabels={{
+              low: t("product.severityLow"),
+              medium: t("product.severityMedium"),
+              high: t("product.severityHigh"),
+            }}
+            statusLabels={{
+              reported: t("product.issueStatusReported"),
+              widespread: t("product.issueStatusWidespread"),
+              fixed_in_update: t("product.issueStatusFixed"),
+              unconfirmed: t("product.issueStatusUnconfirmed"),
+            }}
+            issues={issueRows}
+          />
+
+          <ErrorCodesList
+            title={t("product.errorCodesTitle")}
+            note={
+              (locale === "en" ? errorCodes?.noteEn : errorCodes?.noteDe) ||
+              t("product.errorCodesNote")
+            }
+            emptyLabel={t("product.errorCodesEmpty")}
+            stepsLabel={t("product.errorCodesSteps")}
+            severityLabels={{
+              low: t("product.severityLow"),
+              medium: t("product.severityMedium"),
+              high: t("product.severityHigh"),
+            }}
+            codes={errorCodeRows}
+          />
+
           <section id="details" className="mt-10">
             <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
               {t("product.details")}
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {features.map((feature) => (
+              {(datasheetRows.length > 0
+                ? datasheetRows.map(
+                    (row) =>
+                      `${row.label}: ${row.value}${row.unit ? ` ${row.unit}` : ""}`,
+                  )
+                : features
+              ).map((feature) => (
                 <div
                   key={feature}
                   className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted-foreground"

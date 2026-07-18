@@ -32,6 +32,7 @@ enum JobType {
   generate_comparison
   generate_comments
   generate_buying_guide
+  generate_tech_profile
 }
 
 enum JobStatus {
@@ -92,6 +93,13 @@ model Product {
   rawSearchJson  Json?
   rawDetailsJson Json?
   manualLinks    Json?
+  /// Normalized bilingual technical datasheet for apples-to-apples comparisons
+  specsJson      Json?
+  /// Known product issues researched / synthesized with sources
+  knownIssuesJson Json?
+  /// Typical error/fault codes with remediation steps
+  errorCodesJson Json?
+  techProfileAt  DateTime?
   lastSyncedAt   DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

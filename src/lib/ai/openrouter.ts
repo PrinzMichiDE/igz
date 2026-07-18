@@ -27,6 +27,7 @@ export async function openRouterChatJson<T>(options: {
   messages: ChatMessage[];
   model?: string;
   temperature?: number;
+  plugins?: Array<Record<string, unknown>>;
 }): Promise<T> {
   const config = getOpenRouterConfig();
 
@@ -38,6 +39,7 @@ export async function openRouterChatJson<T>(options: {
       temperature: options.temperature ?? 0.4,
       response_format: { type: "json_object" },
       messages: options.messages,
+      ...(options.plugins?.length ? { plugins: options.plugins } : {}),
     }),
   });
 

@@ -7,6 +7,7 @@ import { AwardBadge } from "@/components/comparison/award-badge";
 import { AwardPicker } from "@/components/comparison/award-picker";
 import { FilteredComparisonSection } from "@/components/comparison/filtered-comparison-section";
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
+import { SpecComparisonMatrix } from "@/components/comparison/spec-comparison-matrix";
 import { ProductMatchFinder } from "@/components/comparison/product-match-finder";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { FaqAccordion } from "@/components/content/faq-accordion";
@@ -16,6 +17,7 @@ import { prisma } from "@/lib/db/prisma";
 import { asComparisonContent, asReviewContent } from "@/lib/content-types";
 import { buildFeatureMatrix } from "@/lib/product-ranking";
 import { collectFeatureList } from "@/lib/product-metadata";
+import { buildSpecMatrix } from "@/lib/product-tech/matrix";
 import { numericPrice, productOutHref } from "@/lib/product-links";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
@@ -199,6 +201,16 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       features: collectFeatureList(product.features),
       ctaHref: productOutHref(product, locale, pagePath),
     })),
+  );
+  const specMatrix = buildSpecMatrix(
+    category.products.map((product) => ({
+      id: product.id,
+      title: product.title,
+      specsJson: product.specsJson,
+      features: product.features,
+      ctaHref: productOutHref(product, locale, pagePath),
+    })),
+    locale,
   );
 
   const awardOptions = [
@@ -429,15 +441,26 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             </div>
           ) : null}
 
-          <FeatureComparisonMatrix
-            title={t("category.featureMatrixTitle")}
-            featureLabel={t("category.featureColumn")}
-            yesLabel={t("category.featureYes")}
-            noLabel={t("category.featureNo")}
-            ctaLabel={t("cta.amazon")}
-            features={featureMatrix.features}
-            rows={featureMatrix.rows}
-          />
+          {specMatrix.columns.length > 0 ? (
+            <SpecComparisonMatrix
+              title={t("category.specMatrixTitle")}
+              featureLabel={t("category.featureColumn")}
+              missingLabel={t("category.specMissing")}
+              ctaLabel={t("cta.amazon")}
+              columns={specMatrix.columns}
+              rows={specMatrix.rows}
+            />
+          ) : (
+            <FeatureComparisonMatrix
+              title={t("category.featureMatrixTitle")}
+              featureLabel={t("category.featureColumn")}
+              yesLabel={t("category.featureYes")}
+              noLabel={t("category.featureNo")}
+              ctaLabel={t("cta.amazon")}
+              features={featureMatrix.features}
+              rows={featureMatrix.rows}
+            />
+          )}
 
           <section className="mb-10">
             <h2 className="mb-4 font-display text-2xl font-semibold text-primary">

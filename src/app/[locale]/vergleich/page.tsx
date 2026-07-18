@@ -4,11 +4,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { ProsCons } from "@/components/content/pros-cons";
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
+import { SpecComparisonMatrix } from "@/components/comparison/spec-comparison-matrix";
 import { ScoreBadge } from "@/components/product/score-badge";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
 import { collectFeatureList } from "@/lib/product-metadata";
 import { buildFeatureMatrix } from "@/lib/product-ranking";
+import { buildSpecMatrix } from "@/lib/product-tech/matrix";
 import { productOutHref } from "@/lib/product-links";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
@@ -142,6 +144,25 @@ export default async function ComparePage({ params, searchParams }: Props) {
       ctaHref: productOutHref(productB, locale, pagePath),
     },
   ]);
+  const specMatrix = buildSpecMatrix(
+    [
+      {
+        id: productA.id,
+        title: productA.title,
+        specsJson: productA.specsJson,
+        features: productA.features,
+        ctaHref: productOutHref(productA, locale, pagePath),
+      },
+      {
+        id: productB.id,
+        title: productB.title,
+        specsJson: productB.specsJson,
+        features: productB.features,
+        ctaHref: productOutHref(productB, locale, pagePath),
+      },
+    ],
+    locale,
+  );
 
   const products = [productA, productB];
 
@@ -196,15 +217,26 @@ export default async function ComparePage({ params, searchParams }: Props) {
         })}
       </div>
 
-      <FeatureComparisonMatrix
-        title={t("compare.featureMatrix")}
-        featureLabel={t("category.featureColumn")}
-        yesLabel={t("category.featureYes")}
-        noLabel={t("category.featureNo")}
-        ctaLabel={t("cta.amazon")}
-        features={matrix.features}
-        rows={matrix.rows}
-      />
+      {specMatrix.columns.length > 0 ? (
+        <SpecComparisonMatrix
+          title={t("compare.specMatrix")}
+          featureLabel={t("category.featureColumn")}
+          missingLabel={t("category.specMissing")}
+          ctaLabel={t("cta.amazon")}
+          columns={specMatrix.columns}
+          rows={specMatrix.rows}
+        />
+      ) : (
+        <FeatureComparisonMatrix
+          title={t("compare.featureMatrix")}
+          featureLabel={t("category.featureColumn")}
+          yesLabel={t("category.featureYes")}
+          noLabel={t("category.featureNo")}
+          ctaLabel={t("cta.amazon")}
+          features={matrix.features}
+          rows={matrix.rows}
+        />
+      )}
 
       <div className="mt-8">
         <Link href={`/${locale}/vergleich`} className="text-sm font-semibold text-secondary hover:underline">

@@ -5,6 +5,7 @@ export type OpenRouterChatCompletionBody = {
   temperature: number;
   response_format?: { type: "json_object" };
   messages: ChatMessage[];
+  plugins?: Array<Record<string, unknown>>;
 };
 
 export type OpenRouterChatCompletionResponse = {
@@ -34,12 +35,14 @@ export function buildOpenRouterJsonBody(options: {
   messages: ChatMessage[];
   temperature?: number;
   model?: string;
+  plugins?: Array<Record<string, unknown>>;
 }): OpenRouterChatCompletionBody {
   return {
     model: options.model || getOpenRouterModel(),
     temperature: options.temperature ?? 0.4,
     response_format: { type: "json_object" },
     messages: options.messages,
+    ...(options.plugins?.length ? { plugins: options.plugins } : {}),
   };
 }
 

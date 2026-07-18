@@ -8,6 +8,7 @@ import {
   generateProductExperienceComments,
   generateProductReview,
 } from "@/lib/ai/generate";
+import { generateProductTechProfile } from "@/lib/ai/generate-tech-profile";
 import { enrichCategoryManuals } from "@/lib/product-manuals";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 import type { Locale } from "@prisma/client";
@@ -28,6 +29,8 @@ export async function GET(req: NextRequest) {
   const force = req.nextUrl.searchParams.get("force") === "1";
   // Guides/comparisons are opt-in — reviews first (avoids extra OpenRouter timeouts).
   const skipGuides = req.nextUrl.searchParams.get("guides") !== "1";
+  const forceTech =
+    force || req.nextUrl.searchParams.get("tech") === "1";
 
   try {
     return await enqueueOrRunInline(
@@ -43,6 +46,7 @@ export async function GET(req: NextRequest) {
           comments: commentCount,
           productLimit,
           skipGuides,
+          forceTech,
           lockKey: "cron:generate-content",
         },
       },
@@ -92,7 +96,22 @@ export async function GET(req: NextRequest) {
 
           const reviews = [];
           const comments = [];
+          const techProfiles = [];
           for (const item of products) {
+            const existing = await prisma.product.findUnique({
+              where: { id: item.id },
+              select: { techProfileAt: true, specsJson: true },
+            });
+            if (forceTech || !existing?.techProfileAt || !existing.specsJson) {
+              const tech = await generateProductTechProfile(item.id);
+              techProfiles.push({
+                productId: item.id,
+                specs: tech.datasheet.rows.length,
+                issues: tech.knownIssues.issues.length,
+                codes: tech.errorCodes.codes.length,
+              });
+            }
+
             for (const locale of locales) {
               const article = await generateProductReview(item.id, locale);
               reviews.push({ productId: item.id, locale, id: article.id });
@@ -122,6 +141,7 @@ export async function GET(req: NextRequest) {
             category: categorySlug,
             reviewsCreated: reviews.length,
             commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
+            techProfilesCreated: techProfiles.length,
           };
         });
       },

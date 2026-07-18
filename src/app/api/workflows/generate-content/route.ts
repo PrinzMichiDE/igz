@@ -7,6 +7,10 @@ import {
   prepareProductReview,
 } from "@/lib/ai/generate";
 import {
+  persistProductTechProfile,
+  prepareProductTechProfile,
+} from "@/lib/ai/generate-tech-profile";
+import {
   OPENROUTER_CHAT_URL,
   buildOpenRouterJsonBody,
   getOpenRouterAuthHeaders,
@@ -15,6 +19,7 @@ import {
 } from "@/lib/ai/openrouter-request";
 import { resolveCronCategory } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
+import type { ProductTechProfileAiResponse } from "@/lib/product-tech/types";
 import { getWorkflowBaseUrl } from "@/lib/upstash/qstash";
 import { releaseLock } from "@/lib/upstash/redis";
 import type { Locale } from "@prisma/client";
@@ -32,6 +37,7 @@ type Payload = {
   lockKey?: string;
   productLimit?: number;
   skipGuides?: boolean;
+  forceTech?: boolean;
 };
 
 type ReviewContent = Parameters<typeof persistProductReview>[0]["content"];
@@ -143,8 +149,137 @@ export const { POST } = serve<Payload>(
       locale: Locale;
       count: number;
     }> = [];
+    const techProfiles: Array<{
+      productId: string;
+      specs: number;
+      issues: number;
+      codes: number;
+    }> = [];
 
     for (const product of products) {
+      const shouldGenerateTech = await context.run(
+        `check-tech-${product.asin}`,
+        async () => {
+          if (payload.forceTech) return true;
+          const row = await prisma.product.findUnique({
+            where: { id: product.id },
+            select: { techProfileAt: true, specsJson: true },
+          });
+          return !row?.techProfileAt || !row.specsJson;
+        },
+      );
+
+      if (shouldGenerateTech) {
+        const preparedTech = await context.run(
+          `prep-tech-${product.asin}`,
+          async () => prepareProductTechProfile(product.id),
+        );
+
+        const techConfig = await context.run(
+          `cfg-tech-${product.asin}`,
+          async () => ({
+            headers: getOpenRouterAuthHeaders(),
+            body: buildOpenRouterJsonBody({
+              messages: preparedTech.messages,
+              temperature: preparedTech.temperature,
+              plugins: preparedTech.plugins,
+            }),
+          }),
+        );
+
+        const techAi = await context.call<OpenRouterChatCompletionResponse>(
+          `ai-tech-${product.asin}`,
+          {
+            url: OPENROUTER_CHAT_URL,
+            method: "POST",
+            headers: techConfig.headers,
+            body: JSON.stringify(techConfig.body),
+            retries: 1,
+            timeout: "180s",
+          },
+        );
+
+        if (techAi.status < 200 || techAi.status >= 300) {
+          // Fallback without web plugin
+          const techConfigPlain = await context.run(
+            `cfg-tech-plain-${product.asin}`,
+            async () => ({
+              headers: getOpenRouterAuthHeaders(),
+              body: buildOpenRouterJsonBody({
+                messages: preparedTech.messages,
+                temperature: preparedTech.temperature,
+              }),
+            }),
+          );
+          const techAiPlain =
+            await context.call<OpenRouterChatCompletionResponse>(
+              `ai-tech-plain-${product.asin}`,
+              {
+                url: OPENROUTER_CHAT_URL,
+                method: "POST",
+                headers: techConfigPlain.headers,
+                body: JSON.stringify(techConfigPlain.body),
+                retries: 1,
+                timeout: "180s",
+              },
+            );
+
+          if (techAiPlain.status >= 200 && techAiPlain.status < 300) {
+            const savedTech = await context.run(
+              `save-tech-plain-${product.asin}`,
+              async () => {
+                const payloadJson =
+                  parseOpenRouterJsonContent<ProductTechProfileAiResponse>(
+                    techAiPlain.body,
+                  );
+                const normalized = await persistProductTechProfile({
+                  productId: preparedTech.productId,
+                  jobId: preparedTech.jobId,
+                  payload: payloadJson,
+                });
+                return {
+                  productId: product.id,
+                  specs: normalized.datasheet.rows.length,
+                  issues: normalized.knownIssues.issues.length,
+                  codes: normalized.errorCodes.codes.length,
+                };
+              },
+            );
+            techProfiles.push(savedTech);
+          } else {
+            await context.run(`fail-tech-${product.asin}`, async () => {
+              await failJob(
+                preparedTech.jobId,
+                new Error(`OpenRouter HTTP ${techAiPlain.status}`),
+              );
+              return { failed: true, status: techAiPlain.status };
+            });
+          }
+        } else {
+          const savedTech = await context.run(
+            `save-tech-${product.asin}`,
+            async () => {
+              const payloadJson =
+                parseOpenRouterJsonContent<ProductTechProfileAiResponse>(
+                  techAi.body,
+                );
+              const normalized = await persistProductTechProfile({
+                productId: preparedTech.productId,
+                jobId: preparedTech.jobId,
+                payload: payloadJson,
+              });
+              return {
+                productId: product.id,
+                specs: normalized.datasheet.rows.length,
+                issues: normalized.knownIssues.issues.length,
+                codes: normalized.errorCodes.codes.length,
+              };
+            },
+          );
+          techProfiles.push(savedTech);
+        }
+      }
+
       for (const locale of locales) {
         const prepared = await context.run(
           `prep-review-${product.asin}-${locale}`,
@@ -281,8 +416,10 @@ export const { POST } = serve<Payload>(
       category: category.slug,
       reviewsCreated: reviews.length,
       commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
+      techProfilesCreated: techProfiles.length,
       reviews,
       comments,
+      techProfiles,
     };
   },
   {
