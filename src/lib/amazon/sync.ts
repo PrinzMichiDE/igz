@@ -7,6 +7,7 @@ import {
   searchProducts,
 } from "@/lib/amazon/rapidapi";
 import { QuotaExceededError } from "@/lib/amazon/quota";
+import { enrichProductManuals } from "@/lib/product-manuals";
 import { slugify } from "@/lib/utils";
 import type { JobType } from "@prisma/client";
 
@@ -87,6 +88,23 @@ export async function syncCategorySearch(categoryId: string) {
         },
       });
       upserted += 1;
+
+      const saved = await prisma.product.findUnique({
+        where: {
+          asin_country: {
+            asin: item.asin,
+            country: category.countryScope,
+          },
+        },
+        select: { id: true },
+      });
+      if (saved) {
+        await enrichProductManuals(
+          saved.id,
+          category.countryScope === "US" ? "en" : "de",
+          false,
+        );
+      }
     }
 
     await prisma.jobRun.update({
@@ -174,6 +192,11 @@ export async function syncCategoryDetails(categoryId: string, topN = 5) {
           lastSyncedAt: new Date(),
         },
       });
+      await enrichProductManuals(
+        product.id,
+        category.countryScope === "US" ? "en" : "de",
+        true,
+      );
       enriched += 1;
     }
 

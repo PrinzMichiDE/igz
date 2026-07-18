@@ -6,6 +6,7 @@ import {
   generateProductExperienceComments,
   generateProductReview,
 } from "@/lib/ai/generate";
+import { enrichCategoryManuals } from "@/lib/product-manuals";
 import type { Locale } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -71,15 +72,19 @@ export async function GET(req: NextRequest) {
       comparisons.push({ locale, id: article.id });
     }
 
+    const manualResults = await enrichCategoryManuals(category.id, locales[0] ?? "de");
+
     return NextResponse.json({
       ok: true,
       category: category.slug,
       reviewsCreated: reviews.length,
       commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
       comparisonsCreated: comparisons.length,
+      manualsEnriched: manualResults.length,
       reviews,
       comments,
       comparisons,
+      manuals: manualResults,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
