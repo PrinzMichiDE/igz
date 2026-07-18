@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
@@ -10,6 +11,7 @@ import { ProductMatchFinder } from "@/components/comparison/product-match-finder
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
+import { resolveCategoryImageSrc } from "@/lib/category-image-src";
 import { prisma } from "@/lib/db/prisma";
 import { asComparisonContent, asReviewContent } from "@/lib/content-types";
 import { buildFeatureMatrix } from "@/lib/product-ranking";
@@ -126,6 +128,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const description =
     article?.excerpt ||
     (locale === "en" ? category.descriptionEn : category.descriptionDe);
+  const categoryImageSrc = resolveCategoryImageSrc({
+    id: category.id,
+    slug: category.slug,
+    imageUrl: category.imageUrl,
+    imageMimeType: category.imageMimeType,
+  });
 
   const rows = category.products.map((product, index) => {
     const review = reviewContentByProductId.get(product.id);
@@ -245,26 +253,39 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <span className="text-primary">{name}</span>
       </nav>
 
-      <div className="mt-6 max-w-4xl">
-        <p className="font-display text-sm font-medium tracking-[0.18em] text-secondary uppercase">
-          {t("category.comparison")}
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-primary md:text-5xl">
-          {article?.title || `${name} ${t("category.comparison")}`}
-        </h1>
-        {description ? (
-          <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            {description}
+      <div className="mt-6 grid items-start gap-6 md:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border/70 bg-surface-muted shadow-sm">
+          <Image
+            src={categoryImageSrc}
+            alt={name}
+            fill
+            className="object-cover"
+            sizes="220px"
+            unoptimized
+            priority
+          />
+        </div>
+        <div className="max-w-4xl">
+          <p className="font-display text-sm font-medium tracking-[0.18em] text-secondary uppercase">
+            {t("category.comparison")}
           </p>
-        ) : null}
-        {buyingGuide ? (
-          <Link
-            href={`/${locale}/kategorie/${slug}/kaufberatung`}
-            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:underline"
-          >
-            {t("guide.readGuide")} →
-          </Link>
-        ) : null}
+          <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-primary md:text-5xl">
+            {article?.title || `${name} ${t("category.comparison")}`}
+          </h1>
+          {description ? (
+            <p className="mt-4 text-lg leading-8 text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
+          {buyingGuide ? (
+            <Link
+              href={`/${locale}/kategorie/${slug}/kaufberatung`}
+              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:underline"
+            >
+              {t("guide.readGuide")} →
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-6">

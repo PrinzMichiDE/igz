@@ -6,6 +6,7 @@ import {
   normalizeAmazonCategoryName,
   type TopCategorySeed,
 } from "@/lib/amazon/top-categories";
+import { ensureCategoryImages } from "@/lib/category-images";
 import { slugify } from "@/lib/utils";
 
 const TARGET_COUNT = 50;
@@ -141,6 +142,7 @@ export async function ensureTopAmazonCategories(options?: {
     }
   }
 
+  const images = await ensureCategoryImages();
   const total = await prisma.category.count();
   return {
     ok: true,
@@ -150,6 +152,8 @@ export async function ensureTopAmazonCategories(options?: {
     apiUpserted,
     upserted,
     total,
+    imagesUpdated: images.updated,
+    imagesTotal: images.total,
     apiError,
   };
 }

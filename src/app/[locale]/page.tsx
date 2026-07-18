@@ -139,6 +139,9 @@ export default async function HomePage({ params }: Props) {
                 href={`/${locale}/kategorie/${category.slug}`}
                 title={locale === "en" ? category.nameEn : category.nameDe}
                 slug={category.slug}
+                categoryId={category.id}
+                imageUrl={category.imageUrl}
+                imageMimeType={category.imageMimeType}
               />
             ))}
           </div>

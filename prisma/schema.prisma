@@ -49,17 +49,21 @@ enum ExperienceCommentStatus {
 }
 
 model Category {
-  id               String   @id @default(cuid())
-  slug             String   @unique
+  id               String    @id @default(cuid())
+  slug             String    @unique
   nameDe           String
   nameEn           String
   descriptionDe    String?
   descriptionEn    String?
   searchKeywords   String[]
   amazonCategoryId String?
-  countryScope     String   @default("DE")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  countryScope     String    @default("DE")
+  imageUrl         String?
+  imageData        Bytes?
+  imageMimeType    String?
+  imageFetchedAt   DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   products    Product[]
   articles    Article[]

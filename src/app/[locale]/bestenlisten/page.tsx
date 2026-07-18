@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { CategoryCard } from "@/components/layout/category-card";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
@@ -137,29 +138,26 @@ export default async function BestListsPage({ params }: Props) {
             const name = locale === "en" ? category.nameEn : category.nameDe;
             const winner = category.comparisons[0]?.winnerProduct;
             return (
-              <article
-                key={category.id}
-                className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
-              >
-                <h3 className="text-xl font-semibold text-zinc-900">
-                  <Link
-                    href={`/${locale}/kategorie/${category.slug}`}
-                    className="hover:text-blue-700"
-                  >
-                    {isDe ? `Beste ${name}` : `Best ${name}`}
-                  </Link>
-                </h3>
-                <p className="mt-2 text-sm text-zinc-600">
-                  {locale === "en"
-                    ? category.descriptionEn
-                    : category.descriptionDe}
-                </p>
-                <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  {category._count.products}{" "}
-                  {isDe ? "Produkte im Vergleich" : "products compared"}
-                </p>
+              <article key={category.id} className="space-y-3">
+                <CategoryCard
+                  href={`/${locale}/kategorie/${category.slug}`}
+                  title={isDe ? `Beste ${name}` : `Best ${name}`}
+                  description={
+                    locale === "en"
+                      ? category.descriptionEn
+                      : category.descriptionDe
+                  }
+                  count={category._count.products}
+                  countLabel={
+                    isDe ? "Produkte im Vergleich" : "products compared"
+                  }
+                  slug={category.slug}
+                  categoryId={category.id}
+                  imageUrl={category.imageUrl}
+                  imageMimeType={category.imageMimeType}
+                />
                 {winner ? (
-                  <p className="mt-3 text-sm text-zinc-800">
+                  <p className="px-1 text-sm text-zinc-800">
                     <span className="font-semibold">
                       {isDe ? "Testsieger:" : "Winner:"}
                     </span>{" "}
