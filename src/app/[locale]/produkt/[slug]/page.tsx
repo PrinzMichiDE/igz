@@ -16,6 +16,7 @@ import { ExperienceCommentExplorer } from "@/components/content/experience-comme
 import { AmazonTrustBadges } from "@/components/product/amazon-trust-badges";
 import { ScenarioTags } from "@/components/product/scenario-tags";
 import { ValueIndicators } from "@/components/product/value-indicators";
+import { ProductManuals } from "@/components/product/product-manuals";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
 import {
@@ -23,6 +24,10 @@ import {
   extractTrustSignals,
 } from "@/lib/product-metadata";
 import { numericPrice, productOutHref } from "@/lib/product-links";
+import {
+  parseProductManualLinks,
+  resolveProductManuals,
+} from "@/lib/product-manuals";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 
@@ -92,6 +97,22 @@ export default async function ProductPage({ params }: Props) {
   );
   const currentPrice = numericPrice(product.price);
 
+  const manualLinks =
+    parseProductManualLinks(product.manualLinks).length > 0
+      ? parseProductManualLinks(product.manualLinks)
+      : resolveProductManuals(
+          {
+            title: product.title,
+            asin: product.asin,
+            country: product.country,
+            productUrl: product.productUrl,
+            rawSearchJson: product.rawSearchJson,
+            rawDetailsJson: product.rawDetailsJson,
+            existingManualLinks: product.manualLinks,
+          },
+          { locale },
+        );
+
   const features = Array.isArray(product.features)
     ? (product.features as string[])
     : [];
@@ -99,6 +120,9 @@ export default async function ProductPage({ params }: Props) {
   const tocSections = [
     { id: "fazit", label: t("product.verdict") },
     { id: "pros-cons", label: `${t("product.pros")} / ${t("product.cons")}` },
+    ...(manualLinks.length > 0
+      ? [{ id: "anleitungen", label: t("product.manualsTitle") }]
+      : []),
     { id: "details", label: t("product.details") },
     { id: "nutzererfahrungen", label: t("product.experiences") },
   ];
@@ -336,6 +360,18 @@ export default async function ProductPage({ params }: Props) {
             locale={locale}
             categorySlug={product.category.slug}
             hint={t("product.scenarioTagsHint")}
+          />
+
+          <ProductManuals
+            manuals={manualLinks}
+            labels={{
+              title: t("product.manualsTitle"),
+              subtitle: t("product.manualsSubtitle"),
+              disclaimer: t("product.manualsDisclaimer"),
+              sourceManufacturer: t("product.manualsSourceManufacturer"),
+              sourceAmazon: t("product.manualsSourceAmazon"),
+              sourcePortal: t("product.manualsSourcePortal"),
+            }}
           />
 
           <section id="details" className="mt-10">
