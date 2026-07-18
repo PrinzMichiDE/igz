@@ -104,6 +104,27 @@ export async function GET() {
       }
     }
 
+    let topCategories: Awaited<
+      ReturnType<
+        typeof import("@/lib/amazon/sync-categories").ensureTopAmazonCategories
+      >
+    > | null = null;
+    let topCategoriesError: string | null = null;
+    try {
+      const { ensureTopAmazonCategories } = await import(
+        "@/lib/amazon/sync-categories"
+      );
+      // Prefer curated Top 50 without spending RapidAPI quota during setup.
+      // Live Amazon IDs can be refreshed via /api/cron/sync-categories.
+      topCategories = await ensureTopAmazonCategories({
+        limit: 50,
+        fetchFromApi: false,
+      });
+    } catch (error) {
+      topCategoriesError =
+        error instanceof Error ? error.message : "Unknown top-categories error";
+    }
+
     const quota = await prisma.apiQuotaMonth.findFirst({
       orderBy: { updatedAt: "desc" },
     });
@@ -116,6 +137,8 @@ export async function GET() {
       schemaPushError,
       schemaPushLog,
       seeded,
+      topCategories,
+      topCategoriesError,
       categoryCount: await prisma.category.count(),
       quotaMonth: quota?.yearMonth ?? null,
       databaseHost: new URL(databaseUrl).hostname,

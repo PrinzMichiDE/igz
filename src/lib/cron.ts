@@ -5,16 +5,33 @@ export async function resolveCronCategory(slug: string | null) {
     return prisma.category.findUnique({ where: { slug } });
   }
 
-  const categories = await prisma.category.findMany({
+  // Prefer categories that still need products, then rotate daily.
+  const underfilled = await prisma.category.findMany({
+    where: { products: { none: {} } },
+    orderBy: { createdAt: "asc" },
+    take: 1,
+  });
+  if (underfilled[0]) {
+    return underfilled[0];
+  }
+
+  const lowStock = await prisma.category.findMany({
+    include: { _count: { select: { products: true } } },
     orderBy: { createdAt: "asc" },
   });
 
-  if (categories.length === 0) {
+  if (lowStock.length === 0) {
     return null;
   }
 
-  const dayIndex =
-    Math.floor(Date.now() / 86_400_000) % categories.length;
+  const sparsest = [...lowStock].sort(
+    (a, b) => a._count.products - b._count.products,
+  );
+  const sparsePool = sparsest.filter(
+    (category) => category._count.products < 8,
+  );
+  const pool = sparsePool.length > 0 ? sparsePool : sparsest;
 
-  return categories[dayIndex] ?? categories[0];
+  const dayIndex = Math.floor(Date.now() / 86_400_000) % pool.length;
+  return pool[dayIndex] ?? pool[0];
 }

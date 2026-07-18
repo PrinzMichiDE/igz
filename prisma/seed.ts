@@ -548,8 +548,18 @@ async function main() {
     },
   });
 
+  // Curated Top-50 Amazon categories (no RapidAPI quota during seed).
+  const { ensureTopAmazonCategories } = await import(
+    "../src/lib/amazon/sync-categories"
+  );
+  const topCategories = await ensureTopAmazonCategories({
+    limit: 50,
+    fetchFromApi: false,
+  });
+
   console.log("Seed completed:", {
-    categories: [headphones.slug, vacuums.slug],
+    nicheCategories: [headphones.slug, vacuums.slug],
+    topCategories: topCategories.total,
     products: demoProducts.length,
   });
 }

@@ -5,6 +5,10 @@
       "schedule": "55 5 * * *"
     },
     {
+      "path": "/api/cron/sync-categories",
+      "schedule": "58 5 * * *"
+    },
+    {
       "path": "/api/cron/sync-products",
       "schedule": "0 6 * * *"
     },

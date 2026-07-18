@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
 import { buildAffiliateUrl } from "@/lib/amazon/affiliate";
-import { downloadProductImage } from "@/lib/amazon/product-image";
+import {
+  downloadProductImage,
+  pickBestProductImageUrl,
+} from "@/lib/amazon/product-image";
 import {
   getProductDetails,
   parsePrice,
@@ -61,19 +64,37 @@ async function storeProductImageIfNeeded(input: {
 export async function backfillMissingProductImages(limit = 50) {
   const products = await prisma.product.findMany({
     where: {
-      imageUrl: { not: null },
-      imageMimeType: null,
+      OR: [
+        { imageUrl: { not: null }, imageMimeType: null },
+        { imageUrl: { not: null }, imageData: null },
+        { imageUrl: { not: null }, imageFetchedAt: null },
+      ],
     },
-    select: { id: true, imageUrl: true },
+    select: {
+      id: true,
+      imageUrl: true,
+      rawDetailsJson: true,
+      rawSearchJson: true,
+    },
     take: limit,
     orderBy: { updatedAt: "desc" },
   });
 
   let stored = 0;
   for (const product of products) {
+    const details = product.rawDetailsJson as
+      | { product_photo?: string; product_photos?: string[] }
+      | null;
+    const search = product.rawSearchJson as { product_photo?: string } | null;
+    const imageUrl = pickBestProductImageUrl({
+      primary: details?.product_photo || product.imageUrl,
+      gallery: details?.product_photos,
+      fallback: search?.product_photo || product.imageUrl,
+    });
+
     const ok = await storeProductImageIfNeeded({
       productId: product.id,
-      imageUrl: product.imageUrl,
+      imageUrl,
       force: true,
     });
     if (ok) stored += 1;
@@ -156,7 +177,10 @@ export async function syncCategorySearch(categoryId: string) {
 
       await storeProductImageIfNeeded({
         productId: product.id,
-        imageUrl: item.product_photo || product.imageUrl,
+        imageUrl: pickBestProductImageUrl({
+          primary: item.product_photo,
+          fallback: product.imageUrl,
+        }),
       });
       upserted += 1;
 
@@ -249,7 +273,11 @@ export async function syncCategoryDetails(categoryId: string, topN = 5) {
           ([k, v]) => `${k}: ${v}`,
         );
 
-      const nextImageUrl = details.product_photo || product.imageUrl;
+      const nextImageUrl = pickBestProductImageUrl({
+        primary: details.product_photo,
+        gallery: details.product_photos,
+        fallback: product.imageUrl,
+      });
 
       await prisma.product.update({
         where: { id: product.id },
@@ -270,6 +298,12 @@ export async function syncCategoryDetails(categoryId: string, topN = 5) {
           lastSyncedAt: new Date(),
         },
       });
+
+      await storeProductImageIfNeeded({
+        productId: product.id,
+        imageUrl: nextImageUrl,
+      });
+
       await enrichProductManuals(
         product.id,
         category.countryScope === "US" ? "en" : "de",
