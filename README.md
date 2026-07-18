@@ -66,27 +66,26 @@ Auf Vercel muss `DATABASE_URL` als Environment Variable gesetzt sein (Build + Ru
 - `npm run db:migrate` – lokale Migration erzeugen
 - `npm run db:seed` – Kategorien (Nischen + Top 50), entfernt Demo-Produkte
 
-## Cron Endpoints
+## Cron Endpoints (QStash Workflow)
 
-- `GET /api/cron/setup` — DB health check + seed if empty + purge demo products + ensure Top-50 categories (schema sync runs at build; set `SCHEMA_PUSH_AT_RUNTIME=1` only if you must push from the cron)
-- `GET /api/cron/sync-categories?limit=50` — upsert Top-50 Amazon categories (optional live `/product-category-list` via RapidAPI; `?api=0` for curated-only)
-- `GET /api/cron/sync-products?category=bluetooth-kopfhoerer&top=5` — product search/details + image download into Postgres (`imageData`)
-- `GET /api/cron/generate-content?category=bluetooth-kopfhoerer&locales=de,en&comments=6`
+Vercel Cron triggert nur noch **kurze** Endpoints. Die schwere Arbeit läuft als **Upstash Workflow** (QStash) in vielen kleinen Steps – damit entfallen `FUNCTION_INVOCATION_TIMEOUT` / 504 Gateways.
 
-`generate-content` erzeugt:
-1. ausführliche authentische Testberichte (OpenRouter)
-2. KI-synthetisierte Nutzererfahrungs-Kommentare je Produkt/Locale
-3. Kategorie-Vergleiche
+- `GET /api/cron/setup` → Workflow `/api/workflows/setup`
+- `GET /api/cron/sync-categories?limit=50` → `/api/workflows/sync-categories`
+- `GET /api/cron/sync-products?category=…&top=3` → `/api/workflows/sync-products`
+- `GET /api/cron/generate-content?category=…&locales=de,en&comments=4&products=3` → `/api/workflows/generate-content`
+- `GET /api/cron/indexnow` — bleibt direkt (kurz)
 
-Daily schedules are defined in `vercel.json` (UTC):
+Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal).
 
-- `setup` — every day at 05:55 UTC (wakes DB, pushes schema, seeds if needed)
-- `sync-products` — every day at 06:00 UTC
-- `generate-content` — every day at 07:00 UTC
+`generate-content` erzeugt pro Step getrennt:
+1. Testberichte (OpenRouter)
+2. Nutzererfahrungs-Kommentare
+3. Kategorie-Vergleiche + Kaufberatung
 
-Without a `category` query parameter, each run rotates through seeded categories by day. Vercel Cron invokes these paths on the schedule defined in `vercel.json`.
+Daily schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content 07:00 · indexnow 08:00.
 
-On deploy, `npm run build` runs `prisma db push` so the schema stays in sync.
+Benötigte Env (auch auf Vercel setzen): `QSTASH_TOKEN`, `QSTASH_URL`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `UPSTASH_WORKFLOW_URL`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
 
 ## Vercel / Postgres
 

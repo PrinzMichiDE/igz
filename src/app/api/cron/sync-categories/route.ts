@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureTopAmazonCategories } from "@/lib/amazon/sync-categories";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
+import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   const fetchFromApi = req.nextUrl.searchParams.get("api") !== "0";
@@ -12,15 +13,28 @@ export async function GET(req: NextRequest) {
   const country = req.nextUrl.searchParams.get("country") || "DE";
 
   try {
-    const result = await withDbRetry(() =>
-      ensureTopAmazonCategories({
-        country,
-        limit: Number.isFinite(limit) ? Math.min(80, Math.max(1, limit)) : 50,
-        fetchFromApi,
-      }),
+    return await enqueueOrRunInline(
+      {
+        lockKey: "cron:sync-categories",
+        workflowPath: "/api/workflows/sync-categories",
+        body: {
+          limit: Number.isFinite(limit) ? Math.min(80, Math.max(1, limit)) : 50,
+          fetchFromApi,
+          country,
+          lockKey: "cron:sync-categories",
+        },
+      },
+      async () =>
+        withDbRetry(() =>
+          ensureTopAmazonCategories({
+            country,
+            limit: Number.isFinite(limit)
+              ? Math.min(80, Math.max(1, limit))
+              : 50,
+            fetchFromApi,
+          }),
+        ),
     );
-
-    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: formatDatabaseError(error) },

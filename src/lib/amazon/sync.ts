@@ -234,16 +234,94 @@ export async function syncCategorySearch(categoryId: string) {
   }
 }
 
+export async function listTopProductIds(categoryId: string, topN = 5) {
+  const products = await prisma.product.findMany({
+    where: { categoryId },
+    orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
+    take: topN,
+    select: { id: true, asin: true },
+  });
+  return products;
+}
+
+/** Enrich a single product (1 RapidAPI request + image download). */
+export async function syncProductDetails(productId: string) {
+  const product = await prisma.product.findUniqueOrThrow({
+    where: { id: productId },
+    include: { category: true },
+  });
+
+  const details = await getProductDetails({
+    asin: product.asin,
+    country: product.country,
+  });
+
+  const price = parsePrice(details.product_price) ?? product.price;
+  const rating = parseRating(details.product_star_rating) ?? product.rating;
+  const features =
+    details.about_product ||
+    Object.entries(details.product_information || {}).map(
+      ([k, v]) => `${k}: ${v}`,
+    );
+
+  const nextImageUrl = pickBestProductImageUrl({
+    primary: details.product_photo,
+    gallery: details.product_photos,
+    fallback: product.imageUrl,
+  });
+
+  await prisma.product.update({
+    where: { id: product.id },
+    data: {
+      title: details.product_title || product.title,
+      imageUrl: nextImageUrl,
+      price: price ?? undefined,
+      currency:
+        details.currency ||
+        product.currency ||
+        (product.country === "US" ? "USD" : "EUR"),
+      rating: rating ?? undefined,
+      reviewCount: details.product_num_ratings ?? product.reviewCount,
+      features,
+      productUrl: details.product_url || product.productUrl,
+      affiliateUrl: buildAffiliateUrl(product.asin, product.country),
+      rawDetailsJson: details,
+      lastSyncedAt: new Date(),
+    },
+  });
+
+  const imageStored = await storeProductImageIfNeeded({
+    productId: product.id,
+    imageUrl: nextImageUrl,
+  });
+
+  await enrichProductManuals(
+    product.id,
+    product.category.countryScope === "US" ? "en" : "de",
+    true,
+  );
+  await recordPriceSnapshot(
+    product.id,
+    numericPrice(price),
+    details.currency ||
+      product.currency ||
+      (product.country === "US" ? "USD" : "EUR"),
+  );
+
+  return {
+    productId: product.id,
+    asin: product.asin,
+    imageStored,
+    requestsUsed: 1,
+  };
+}
+
 export async function syncCategoryDetails(categoryId: string, topN = 5) {
   const category = await prisma.category.findUniqueOrThrow({
     where: { id: categoryId },
   });
 
-  const products = await prisma.product.findMany({
-    where: { categoryId },
-    orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-    take: topN,
-  });
+  const products = await listTopProductIds(categoryId, topN);
 
   const job = await prisma.jobRun.create({
     data: {
@@ -259,63 +337,8 @@ export async function syncCategoryDetails(categoryId: string, topN = 5) {
 
   try {
     for (const product of products) {
-      const details = await getProductDetails({
-        asin: product.asin,
-        country: product.country,
-      });
-      requestsUsed += 1;
-
-      const price = parsePrice(details.product_price) ?? product.price;
-      const rating = parseRating(details.product_star_rating) ?? product.rating;
-      const features =
-        details.about_product ||
-        Object.entries(details.product_information || {}).map(
-          ([k, v]) => `${k}: ${v}`,
-        );
-
-      const nextImageUrl = pickBestProductImageUrl({
-        primary: details.product_photo,
-        gallery: details.product_photos,
-        fallback: product.imageUrl,
-      });
-
-      await prisma.product.update({
-        where: { id: product.id },
-        data: {
-          title: details.product_title || product.title,
-          imageUrl: nextImageUrl,
-          price: price ?? undefined,
-          currency:
-            details.currency ||
-            product.currency ||
-            (product.country === "US" ? "USD" : "EUR"),
-          rating: rating ?? undefined,
-          reviewCount: details.product_num_ratings ?? product.reviewCount,
-          features,
-          productUrl: details.product_url || product.productUrl,
-          affiliateUrl: buildAffiliateUrl(product.asin, product.country),
-          rawDetailsJson: details,
-          lastSyncedAt: new Date(),
-        },
-      });
-
-      await storeProductImageIfNeeded({
-        productId: product.id,
-        imageUrl: nextImageUrl,
-      });
-
-      await enrichProductManuals(
-        product.id,
-        category.countryScope === "US" ? "en" : "de",
-        true,
-      );
-      await recordPriceSnapshot(
-        product.id,
-        numericPrice(price),
-        details.currency ||
-          product.currency ||
-          (product.country === "US" ? "USD" : "EUR"),
-      );
+      const result = await syncProductDetails(product.id);
+      requestsUsed += result.requestsUsed;
       enriched += 1;
     }
 

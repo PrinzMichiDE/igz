@@ -43,7 +43,9 @@ Prefer improving the existing Vercel path over introducing Docker, long-lived No
 ## Cron & background work
 
 - Cron entrypoints live under `src/app/api/cron/*` and are declared in `@vercel.json`.
-- Cron routes: `runtime = "nodejs"`, `dynamic = "force-dynamic"`, set `maxDuration` appropriately (long jobs up to plan limits; currently 300s for heavy jobs).
+- Heavy jobs must run via **Upstash Workflow** (`src/app/api/workflows/*`) so each `context.run` stays under Vercel timeouts. Cron routes only enqueue (`enqueueOrRunInline`) and return fast (`maxDuration` ~60s).
+- Required env: `QSTASH_TOKEN`, signing keys, `UPSTASH_WORKFLOW_URL`, plus Redis `KV_REST_API_URL` / `KV_REST_API_TOKEN` for locks.
+- Respect QStash daily message budget (~500/day): keep step counts modest (few products/locales per run).
 - Protect cron/admin triggers with `CRON_SECRET` / existing auth helpers. Do not expose unbounded sync or AI generation publicly.
 - Design jobs to be **idempotent**, budget-aware (RapidAPI monthly quota), and resumable. No assumptions about a warm always-on process.
 - Prefer cache-first public pages: **no RapidAPI / OpenRouter calls in normal page renders**.
