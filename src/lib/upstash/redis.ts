@@ -25,7 +25,7 @@ export async function acquireLock(
   const client = getRedis();
   if (!client) return true; // no Redis → allow (local/dev)
 
-  const result = await client.set(`lock:${key}`, "1", {
+  const result = await client.set(`lock:${key}`, String(Date.now()), {
     nx: true,
     ex: ttlSeconds,
   });
@@ -36,6 +36,10 @@ export async function releaseLock(key: string) {
   const client = getRedis();
   if (!client) return;
   await client.del(`lock:${key}`);
+}
+
+export async function forceReleaseLock(key: string) {
+  await releaseLock(key);
 }
 
 export async function incrDailyCounter(name: string) {

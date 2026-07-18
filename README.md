@@ -74,7 +74,7 @@ Vercel Cron triggert nur noch **kurze** Endpoints. Die schwere Arbeit läuft als
 - `GET /api/cron/setup` → Workflow `/api/workflows/setup`
 - `GET /api/cron/sync-categories?limit=50` → `/api/workflows/sync-categories`
 - `GET /api/cron/sync-products?category=…&top=3` → `/api/workflows/sync-products`
-- `GET /api/cron/generate-content?category=…&locales=de,en&comments=4&products=3` → `/api/workflows/generate-content`
+- `GET /api/cron/generate-content?category=…&product=asin-or-slug&locales=de&comments=3&products=1&force=1&guides=0` → `/api/workflows/generate-content` (OpenRouter via QStash `context.call`, no Vercel 60s wait)
 - `GET /api/cron/indexnow` — bleibt direkt (kurz)
 
 Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal).

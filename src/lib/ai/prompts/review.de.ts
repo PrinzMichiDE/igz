@@ -31,21 +31,19 @@ Produktdaten:
 - Amazon-Rating: ${input.rating ?? "unbekannt"} (${input.reviewCount ?? 0} Bewertungen)
 - Features: ${(input.features || []).join(" | ") || "keine"}
 
-Anforderungen an Länge/Tiefe:
-- Mindestens 7 Abschnitte in "sections"
-- Jeder section.body: 120–220 Wörter
-- verdict: 80–140 Wörter, klar und kaufentscheidend
-- pros: 5–7 Punkte, cons: 3–5 Punkte
-- faq: 5 praxisnahe Fragen
+Anforderungen an Länge/Tiefe (knapp und praxisnah – nicht romanhaft):
+- Genau 5 Abschnitte in "sections"
+- Jeder section.body: 70–110 Wörter
+- verdict: 50–80 Wörter, klar und kaufentscheidend
+- pros: 4–5 Punkte, cons: 2–3 Punkte
+- faq: 3–4 praxisnahe Fragen
 
-Pflicht-Abschnitte (Headings sinngemäß, Reihenfolge frei):
-1. Erster Eindruck / Unboxing
-2. Alltagstest (konkrete Nutzungsszenen)
-3. Verarbeitung & Komfort / Handhabung
-4. Leistung im Vergleich zur Preisklasse
-5. Lautstärke/Akku/Bedienung – je nach Produktrelevant
-6. Schwächen nach längerer Nutzung
-7. Für wen lohnt sich der Kauf wirklich?
+Pflicht-Abschnitte (Headings sinngemäß):
+1. Erster Eindruck
+2. Alltagstest
+3. Verarbeitung & Komfort
+4. Schwächen
+5. Für wen lohnt sich der Kauf?
 
 AEO-Anforderungen (für Answer Engines):
 - directAnswer: 2–3 Sätze, die die Kernfrage "Lohnt sich der Kauf?" direkt beantworten

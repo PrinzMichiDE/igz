@@ -131,27 +131,27 @@ function buildFullMarkdown(content: ReviewContent) {
 
 function passesReviewQualityGate(content: ReviewContent) {
   const sections = content.sections || [];
-  const longSections = sections.filter((s) => wordCount(s.body || "") >= 80);
+  const longSections = sections.filter((s) => wordCount(s.body || "") >= 50);
   const takeaways = content.keyTakeaways || [];
 
   return (
     content.title?.length > 10 &&
-    wordCount(content.verdict || "") >= 60 &&
-    wordCount(content.directAnswer || "") >= 20 &&
+    wordCount(content.verdict || "") >= 40 &&
+    wordCount(content.directAnswer || "") >= 15 &&
     takeaways.length >= 3 &&
     Array.isArray(content.pros) &&
-    content.pros.length >= 4 &&
+    content.pros.length >= 3 &&
     Array.isArray(content.cons) &&
     content.cons.length >= 2 &&
-    sections.length >= 5 &&
-    longSections.length >= 4 &&
+    sections.length >= 4 &&
+    longSections.length >= 3 &&
     typeof content.score === "number" &&
     content.score >= 0 &&
     content.score <= 10
   );
 }
 
-export async function generateProductReview(productId: string, locale: Locale) {
+export async function prepareProductReview(productId: string, locale: Locale) {
   const product = await prisma.product.findUniqueOrThrow({
     where: { id: productId },
     include: { category: true },
@@ -166,78 +166,100 @@ export async function generateProductReview(productId: string, locale: Locale) {
     },
   });
 
+  const features = Array.isArray(product.features)
+    ? (product.features as string[])
+    : [];
+
+  const system = locale === "de" ? reviewSystemPromptDe : reviewSystemPromptEn;
+  const user =
+    locale === "de"
+      ? buildReviewUserPromptDe({
+          title: product.title,
+          asin: product.asin,
+          price: product.price?.toString(),
+          rating: product.rating,
+          reviewCount: product.reviewCount,
+          features,
+          categoryName: product.category.nameDe,
+        })
+      : buildReviewUserPromptEn({
+          title: product.title,
+          asin: product.asin,
+          price: product.price?.toString(),
+          rating: product.rating,
+          reviewCount: product.reviewCount,
+          features,
+          categoryName: product.category.nameEn,
+        });
+
+  return {
+    jobId: job.id,
+    productId: product.id,
+    asin: product.asin,
+    productSlug: product.slug,
+    locale,
+    temperature: 0.55,
+    messages: [
+      { role: "system" as const, content: system },
+      { role: "user" as const, content: user },
+    ],
+  };
+}
+
+export async function persistProductReview(input: {
+  productId: string;
+  locale: Locale;
+  jobId: string;
+  content: ReviewContent;
+}) {
+  const product = await prisma.product.findUniqueOrThrow({
+    where: { id: input.productId },
+    select: { id: true, slug: true },
+  });
+
   try {
-    const features = Array.isArray(product.features)
-      ? (product.features as string[])
-      : [];
+    const qualityGatePassed = passesReviewQualityGate(input.content);
+    if (!qualityGatePassed) {
+      // Still publish — shorter prompts should usually pass; avoid blocking pages.
+      console.warn(
+        `Review quality gate soft-fail for ${product.id}/${input.locale}`,
+      );
+    }
 
-    const system =
-      locale === "de" ? reviewSystemPromptDe : reviewSystemPromptEn;
-    const user =
-      locale === "de"
-        ? buildReviewUserPromptDe({
-            title: product.title,
-            asin: product.asin,
-            price: product.price?.toString(),
-            rating: product.rating,
-            reviewCount: product.reviewCount,
-            features,
-            categoryName: product.category.nameDe,
-          })
-        : buildReviewUserPromptEn({
-            title: product.title,
-            asin: product.asin,
-            price: product.price?.toString(),
-            rating: product.rating,
-            reviewCount: product.reviewCount,
-            features,
-            categoryName: product.category.nameEn,
-          });
-
-    const content = await openRouterChatJson<ReviewContent>({
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      temperature: 0.55,
-    });
-
-    const qualityGatePassed = passesReviewQualityGate(content);
-    const status = "published";
     const publishedAt = new Date();
-    const slug = `${slugify(content.title) || product.slug}-${locale}`;
-    const bodyMarkdown = buildFullMarkdown(content);
+    const slug = `${slugify(input.content.title) || product.slug}-${input.locale}`;
+    const bodyMarkdown = buildFullMarkdown(input.content);
 
     const article = await prisma.article.upsert({
       where: {
         productId_type_locale: {
           productId: product.id,
           type: "review",
-          locale,
+          locale: input.locale,
         },
       },
       create: {
         type: "review",
-        locale,
-        status,
-        title: content.title,
+        locale: input.locale,
+        status: "published",
+        title: input.content.title,
         slug,
-        excerpt: content.excerpt,
-        seoTitle: content.seoTitle,
-        seoDescription: content.seoDescription,
-        contentJson: content,
+        excerpt: input.content.excerpt,
+        seoTitle: input.content.seoTitle,
+        seoDescription: input.content.seoDescription,
+        contentJson: input.content,
         bodyMarkdown,
         publishedAt,
         productId: product.id,
       },
       update: {
-        status,
-        title: content.title,
+        status: "published",
+        title: input.content.title,
         slug,
-        excerpt: content.excerpt,
-        seoTitle: content.seoTitle,
-        seoDescription: content.seoDescription,
-        contentJson: content,
+        excerpt: input.content.excerpt,
+        seoTitle: input.content.seoTitle,
+        seoDescription: input.content.seoDescription,
+        contentJson: input.content,
         bodyMarkdown,
         publishedAt,
       },
@@ -245,19 +267,19 @@ export async function generateProductReview(productId: string, locale: Locale) {
 
     await prisma.product.update({
       where: { id: product.id },
-      data: { editorialScore: content.score },
+      data: { editorialScore: input.content.score },
     });
 
     await prisma.jobRun.update({
-      where: { id: job.id },
+      where: { id: input.jobId },
       data: {
         status: "succeeded",
         finishedAt: new Date(),
         message: `Review published (qualityGate: ${qualityGatePassed})`,
         metricsJson: {
           articleId: article.id,
-          score: content.score,
-          sections: content.sections?.length ?? 0,
+          score: input.content.score,
+          sections: input.content.sections?.length ?? 0,
           words: wordCount(bodyMarkdown),
           qualityGatePassed,
         },
@@ -268,7 +290,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     await prisma.jobRun.update({
-      where: { id: job.id },
+      where: { id: input.jobId },
       data: {
         status: "failed",
         finishedAt: new Date(),
@@ -279,10 +301,41 @@ export async function generateProductReview(productId: string, locale: Locale) {
   }
 }
 
-export async function generateProductExperienceComments(
+export async function failJob(jobId: string, error: unknown) {
+  const message = error instanceof Error ? error.message : "Unknown error";
+  await prisma.jobRun.update({
+    where: { id: jobId },
+    data: {
+      status: "failed",
+      finishedAt: new Date(),
+      error: message,
+    },
+  });
+}
+
+export async function generateProductReview(productId: string, locale: Locale) {
+  const prepared = await prepareProductReview(productId, locale);
+  try {
+    const content = await openRouterChatJson<ReviewContent>({
+      messages: prepared.messages,
+      temperature: prepared.temperature,
+    });
+    return persistProductReview({
+      productId: prepared.productId,
+      locale: prepared.locale,
+      jobId: prepared.jobId,
+      content,
+    });
+  } catch (error) {
+    await failJob(prepared.jobId, error);
+    throw error;
+  }
+}
+
+export async function prepareProductExperienceComments(
   productId: string,
   locale: Locale,
-  count = 6,
+  count = 4,
 ) {
   const product = await prisma.product.findUniqueOrThrow({
     where: { id: productId },
@@ -298,44 +351,54 @@ export async function generateProductExperienceComments(
     },
   });
 
+  const features = Array.isArray(product.features)
+    ? (product.features as string[])
+    : [];
+  const system =
+    locale === "de" ? commentsSystemPromptDe : commentsSystemPromptEn;
+  const user =
+    locale === "de"
+      ? buildCommentsUserPromptDe({
+          title: product.title,
+          asin: product.asin,
+          price: product.price?.toString(),
+          rating: product.rating,
+          features,
+          categoryName: product.category.nameDe,
+          count,
+        })
+      : buildCommentsUserPromptEn({
+          title: product.title,
+          asin: product.asin,
+          price: product.price?.toString(),
+          rating: product.rating,
+          features,
+          categoryName: product.category.nameEn,
+          count,
+        });
+
+  return {
+    jobId: job.id,
+    productId: product.id,
+    asin: product.asin,
+    locale,
+    temperature: 0.75,
+    messages: [
+      { role: "system" as const, content: system },
+      { role: "user" as const, content: user },
+    ],
+  };
+}
+
+export async function persistProductExperienceComments(input: {
+  productId: string;
+  locale: Locale;
+  jobId: string;
+  payload: ExperienceCommentsResponse;
+}) {
   try {
-    const features = Array.isArray(product.features)
-      ? (product.features as string[])
-      : [];
-
-    const system =
-      locale === "de" ? commentsSystemPromptDe : commentsSystemPromptEn;
-    const user =
-      locale === "de"
-        ? buildCommentsUserPromptDe({
-            title: product.title,
-            asin: product.asin,
-            price: product.price?.toString(),
-            rating: product.rating,
-            features,
-            categoryName: product.category.nameDe,
-            count,
-          })
-        : buildCommentsUserPromptEn({
-            title: product.title,
-            asin: product.asin,
-            price: product.price?.toString(),
-            rating: product.rating,
-            features,
-            categoryName: product.category.nameEn,
-            count,
-          });
-
-    const payload = await openRouterChatJson<ExperienceCommentsResponse>({
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      temperature: 0.75,
-    });
-
-    const comments = (payload.comments || [])
-      .filter((c) => c.authorName && c.body && wordCount(c.body) >= 40)
+    const comments = (input.payload.comments || [])
+      .filter((c) => c.authorName && c.body && wordCount(c.body) >= 30)
       .map((c) => ({
         authorName: c.authorName.slice(0, 80),
         authorContext: c.authorContext?.slice(0, 120),
@@ -348,22 +411,22 @@ export async function generateProductExperienceComments(
             : null,
       }));
 
-    if (comments.length < 3) {
+    if (comments.length < 2) {
       throw new Error("OpenRouter returned too few usable experience comments");
     }
 
     await prisma.$transaction([
       prisma.productExperienceComment.deleteMany({
         where: {
-          productId: product.id,
-          locale,
+          productId: input.productId,
+          locale: input.locale,
           source: "openrouter_synth",
         },
       }),
       prisma.productExperienceComment.createMany({
         data: comments.map((c) => ({
-          productId: product.id,
-          locale,
+          productId: input.productId,
+          locale: input.locale,
           authorName: c.authorName,
           authorContext: c.authorContext,
           rating: c.rating,
@@ -379,8 +442,8 @@ export async function generateProductExperienceComments(
 
     const saved = await prisma.productExperienceComment.findMany({
       where: {
-        productId: product.id,
-        locale,
+        productId: input.productId,
+        locale: input.locale,
         source: "openrouter_synth",
         status: "published",
       },
@@ -388,26 +451,45 @@ export async function generateProductExperienceComments(
     });
 
     await prisma.jobRun.update({
-      where: { id: job.id },
+      where: { id: input.jobId },
       data: {
         status: "succeeded",
         finishedAt: new Date(),
         message: `Stored ${saved.length} experience comments`,
-        metricsJson: { count: saved.length, locale },
+        metricsJson: { count: saved.length, locale: input.locale },
       },
     });
 
     return saved;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    await prisma.jobRun.update({
-      where: { id: job.id },
-      data: {
-        status: "failed",
-        finishedAt: new Date(),
-        error: message,
-      },
+    await failJob(input.jobId, error);
+    throw error;
+  }
+}
+
+export async function generateProductExperienceComments(
+  productId: string,
+  locale: Locale,
+  count = 4,
+) {
+  const prepared = await prepareProductExperienceComments(
+    productId,
+    locale,
+    count,
+  );
+  try {
+    const payload = await openRouterChatJson<ExperienceCommentsResponse>({
+      messages: prepared.messages,
+      temperature: prepared.temperature,
     });
+    return persistProductExperienceComments({
+      productId: prepared.productId,
+      locale: prepared.locale,
+      jobId: prepared.jobId,
+      payload,
+    });
+  } catch (error) {
+    await failJob(prepared.jobId, error);
     throw error;
   }
 }

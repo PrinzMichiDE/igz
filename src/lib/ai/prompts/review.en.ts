@@ -31,21 +31,19 @@ Product data:
 - Amazon rating: ${input.rating ?? "unknown"} (${input.reviewCount ?? 0} ratings)
 - Features: ${(input.features || []).join(" | ") || "none"}
 
-Depth requirements:
-- At least 7 sections in "sections"
-- Each section.body: 120–220 words
-- verdict: 80–140 words, decisive
-- pros: 5–7 items, cons: 3–5 items
-- faq: 5 practical questions
+Depth requirements (concise and practical — not novel-length):
+- Exactly 5 sections in "sections"
+- Each section.body: 70–110 words
+- verdict: 50–80 words, decisive
+- pros: 4–5 items, cons: 2–3 items
+- faq: 3–4 practical questions
 
 Required themes:
-1. First impressions / unboxing
+1. First impressions
 2. Daily-use scenarios
 3. Build quality & handling
-4. Performance vs price class
-5. Battery/noise/controls (as relevant)
-6. Weaknesses after longer use
-7. Who should actually buy it?
+4. Weaknesses
+5. Who should actually buy it?
 
 AEO requirements (for answer engines):
 - directAnswer: 2–3 sentences answering "Is it worth buying?"

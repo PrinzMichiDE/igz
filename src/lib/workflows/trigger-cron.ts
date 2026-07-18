@@ -3,13 +3,19 @@ import {
   qstashConfigured,
   triggerWorkflow,
 } from "@/lib/upstash/qstash";
-import { acquireLock, incrDailyCounter } from "@/lib/upstash/redis";
+import {
+  acquireLock,
+  forceReleaseLock,
+  incrDailyCounter,
+  releaseLock,
+} from "@/lib/upstash/redis";
 
 type TriggerOptions = {
   lockKey: string;
   workflowPath: string;
   body?: Record<string, unknown>;
   lockTtlSeconds?: number;
+  force?: boolean;
 };
 
 /**
@@ -20,9 +26,13 @@ export async function enqueueOrRunInline<T>(
   options: TriggerOptions,
   inlineFallback: () => Promise<T>,
 ) {
+  if (options.force) {
+    await forceReleaseLock(options.lockKey);
+  }
+
   const locked = await acquireLock(
     options.lockKey,
-    options.lockTtlSeconds ?? 55 * 60,
+    options.lockTtlSeconds ?? 20 * 60,
   );
   if (!locked) {
     return NextResponse.json({
@@ -30,28 +40,35 @@ export async function enqueueOrRunInline<T>(
       skipped: true,
       reason: "lock_held",
       lockKey: options.lockKey,
+      hint: "Pass ?force=1 to clear a stuck lock",
     });
   }
 
-  if (!qstashConfigured()) {
-    const result = await inlineFallback();
+  try {
+    if (!qstashConfigured()) {
+      const result = await inlineFallback();
+      await releaseLock(options.lockKey);
+      return NextResponse.json({
+        ok: true,
+        mode: "inline",
+        result,
+      });
+    }
+
+    const triggered = await triggerWorkflow(
+      options.workflowPath,
+      options.body ?? {},
+    );
+    await incrDailyCounter("qstash_workflow_triggers");
+
     return NextResponse.json({
       ok: true,
-      mode: "inline",
-      result,
+      mode: "qstash",
+      workflowRunId: triggered.workflowRunId,
+      url: triggered.url,
     });
+  } catch (error) {
+    await releaseLock(options.lockKey);
+    throw error;
   }
-
-  const triggered = await triggerWorkflow(
-    options.workflowPath,
-    options.body ?? {},
-  );
-  await incrDailyCounter("qstash_workflow_triggers");
-
-  return NextResponse.json({
-    ok: true,
-    mode: "qstash",
-    workflowRunId: triggered.workflowRunId,
-    url: triggered.url,
-  });
 }
