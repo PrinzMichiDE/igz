@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveCronCategory } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
+import { withDbRetry } from "@/lib/db/with-db-retry";
 import {
   generateCategoryComparison,
   generateBuyingGuide,
@@ -12,6 +13,7 @@ import type { Locale } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("category");
@@ -22,88 +24,93 @@ export async function GET(req: NextRequest) {
   const commentCount = Number(req.nextUrl.searchParams.get("comments") || 6);
 
   try {
-    const category = await resolveCronCategory(slug);
+    return await withDbRetry(async () => {
+      const category = await resolveCronCategory(slug);
 
-    if (!category) {
-      return NextResponse.json(
-        { error: "No category found. Run seed first." },
-        { status: 404 },
-      );
-    }
-
-    const publishedBacklog = await prisma.article.updateMany({
-      where: {
-        status: "needs_review",
-        type: "review",
-        product: { categoryId: category.id },
-      },
-      data: {
-        status: "published",
-        publishedAt: new Date(),
-      },
-    });
-
-    const products = await prisma.product.findMany({
-      where: { categoryId: category.id },
-      orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-      take: 5,
-    });
-
-    const reviews: Array<{ productId: string; locale: Locale; id: string }> =
-      [];
-    const comments: Array<{
-      productId: string;
-      locale: Locale;
-      count: number;
-    }> = [];
-
-    for (const product of products) {
-      for (const locale of locales) {
-        const article = await generateProductReview(product.id, locale);
-        reviews.push({
-          productId: product.id,
-          locale,
-          id: article.id,
-        });
-
-        const savedComments = await generateProductExperienceComments(
-          product.id,
-          locale,
-          commentCount,
+      if (!category) {
+        return NextResponse.json(
+          { error: "No category found. Run /api/cron/setup first." },
+          { status: 404 },
         );
-        comments.push({
-          productId: product.id,
-          locale,
-          count: savedComments.length,
-        });
       }
-    }
 
-    const comparisons = [];
-    const buyingGuides = [];
-    for (const locale of locales) {
-      const article = await generateCategoryComparison(category.id, locale);
-      comparisons.push({ locale, id: article.id });
-      const guide = await generateBuyingGuide(category.id, locale);
-      buyingGuides.push({ locale, id: guide.id });
-    }
+      const publishedBacklog = await prisma.article.updateMany({
+        where: {
+          status: "needs_review",
+          type: "review",
+          product: { categoryId: category.id },
+        },
+        data: {
+          status: "published",
+          publishedAt: new Date(),
+        },
+      });
 
-    const manualResults = await enrichCategoryManuals(category.id, locales[0] ?? "de");
+      const products = await prisma.product.findMany({
+        where: { categoryId: category.id },
+        orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
+        take: 5,
+      });
 
-    return NextResponse.json({
-      ok: true,
-      category: category.slug,
-      reviewsPublishedFromBacklog: publishedBacklog.count,
-      reviewsCreated: reviews.length,
-      commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
-      comparisonsCreated: comparisons.length,
-      buyingGuidesCreated: buyingGuides.length,
-      manualsEnriched: manualResults.length,
-      reviews,
-      comments,
-      comparisons,
-      buyingGuides,
-      manuals: manualResults,
+      const reviews: Array<{ productId: string; locale: Locale; id: string }> =
+        [];
+      const comments: Array<{
+        productId: string;
+        locale: Locale;
+        count: number;
+      }> = [];
+
+      for (const product of products) {
+        for (const locale of locales) {
+          const article = await generateProductReview(product.id, locale);
+          reviews.push({
+            productId: product.id,
+            locale,
+            id: article.id,
+          });
+
+          const savedComments = await generateProductExperienceComments(
+            product.id,
+            locale,
+            commentCount,
+          );
+          comments.push({
+            productId: product.id,
+            locale,
+            count: savedComments.length,
+          });
+        }
+      }
+
+      const comparisons = [];
+      const buyingGuides = [];
+      for (const locale of locales) {
+        const article = await generateCategoryComparison(category.id, locale);
+        comparisons.push({ locale, id: article.id });
+        const guide = await generateBuyingGuide(category.id, locale);
+        buyingGuides.push({ locale, id: guide.id });
+      }
+
+      const manualResults = await enrichCategoryManuals(
+        category.id,
+        locales[0] ?? "de",
+      );
+
+      return NextResponse.json({
+        ok: true,
+        category: category.slug,
+        reviewsPublishedFromBacklog: publishedBacklog.count,
+        reviewsCreated: reviews.length,
+        commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
+        comparisonsCreated: comparisons.length,
+        buyingGuidesCreated: buyingGuides.length,
+        manualsEnriched: manualResults.length,
+        reviews,
+        comments,
+        comparisons,
+        buyingGuides,
+        manuals: manualResults,
+      });
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
