@@ -18,7 +18,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const locales = ["de", "en"] as const;
-  const staticPaths = ["", "/deals", "/suche", "/vergleich", "/impressum", "/datenschutz"];
+  const staticPaths = [
+    "",
+    "/deals",
+    "/suche",
+    "/vergleich",
+    "/scanner",
+    "/impressum",
+    "/datenschutz",
+  ];
 
   const entries: MetadataRoute.Sitemap = [];
 

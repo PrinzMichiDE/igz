@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Tag } from "lucide-react";
+import { ScanBarcode, Tag } from "lucide-react";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { HeroSearch } from "@/components/layout/hero-search";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
@@ -53,6 +53,12 @@ export async function SiteHeader({ locale }: Props) {
             {t("nav.compare")}
           </Link>
           <Link
+            href={`/${locale}/scanner`}
+            className="text-sm font-medium text-muted-foreground transition hover:text-primary"
+          >
+            {t("nav.scanner")}
+          </Link>
+          <Link
             href={`/${locale}#reviews`}
             className="text-sm font-medium text-muted-foreground transition hover:text-primary"
           >
@@ -67,6 +73,13 @@ export async function SiteHeader({ locale }: Props) {
             actionHref={`/${locale}/suche`}
             variant="compact"
           />
+          <Link
+            href={`/${locale}/scanner`}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-primary transition hover:border-secondary xl:hidden"
+            aria-label={t("nav.scanner")}
+          >
+            <ScanBarcode className="h-4 w-4" aria-hidden />
+          </Link>
           <Link
             href={`/${locale}/deals`}
             className="hidden items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-container sm:inline-flex"

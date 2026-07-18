@@ -11,6 +11,7 @@ import {
   searchProducts,
 } from "@/lib/amazon/rapidapi";
 import { QuotaExceededError } from "@/lib/amazon/quota";
+import { extractEanFromProductInfo } from "@/lib/barcode/normalize";
 import { enrichProductManuals } from "@/lib/product-manuals";
 import { recordPriceSnapshot } from "@/lib/price-history";
 import { numericPrice } from "@/lib/product-links";
@@ -269,11 +270,17 @@ export async function syncProductDetails(productId: string) {
     gallery: details.product_photos,
     fallback: product.imageUrl,
   });
+  const ean =
+    extractEanFromProductInfo(details.product_information) ||
+    extractEanFromProductInfo(details.product_details) ||
+    product.ean ||
+    undefined;
 
   await prisma.product.update({
     where: { id: product.id },
     data: {
       title: details.product_title || product.title,
+      ean,
       imageUrl: nextImageUrl,
       price: price ?? undefined,
       currency:

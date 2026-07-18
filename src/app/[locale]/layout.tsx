@@ -5,6 +5,7 @@ import { routing } from "@/i18n/routing";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { AiChatWidget } from "@/components/chat/ai-chat-widget";
+import { ScannerFab } from "@/components/barcode/scanner-fab";
 
 type Props = {
   children: React.ReactNode;
@@ -29,6 +30,10 @@ export default async function LocaleLayout({ children, params }: Props) {
         <SiteHeader locale={locale} />
         <main className="flex-1">{children}</main>
         <SiteFooter locale={locale} />
+        <ScannerFab
+          href={`/${locale}/scanner`}
+          label={t("scanner.fab")}
+        />
         <AiChatWidget
           locale={locale}
           categorySlug="bluetooth-kopfhoerer"

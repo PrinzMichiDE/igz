@@ -132,6 +132,47 @@ export async function getProductDetails(options: {
   });
 }
 
+export type AmazonGtinLookupProduct = {
+  asin?: string;
+  product_title?: string;
+  product_price?: string;
+  currency?: string;
+  product_star_rating?: string;
+  product_num_ratings?: number;
+  product_url?: string;
+  product_photo?: string;
+};
+
+/**
+ * Resolve GTIN/EAN/UPC/ISBN → Amazon ASIN(s).
+ * Endpoint: GET /gtin-to-asin
+ */
+export async function gtinToAsin(options: {
+  productIdentifier: string;
+  country: string;
+}) {
+  const data = await rapidGet<unknown>("/gtin-to-asin", {
+    product_identifier: options.productIdentifier,
+    country: options.country,
+  });
+
+  if (Array.isArray(data)) {
+    return data as AmazonGtinLookupProduct[];
+  }
+  if (data && typeof data === "object") {
+    const record = data as {
+      products?: AmazonGtinLookupProduct[];
+      asin?: string;
+      product_title?: string;
+    };
+    if (Array.isArray(record.products)) return record.products;
+    if (record.asin || record.product_title) {
+      return [record as AmazonGtinLookupProduct];
+    }
+  }
+  return [];
+}
+
 export function parsePrice(value?: string | null): number | null {
   if (!value) return null;
   const cleaned = value

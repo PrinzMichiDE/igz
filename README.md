@@ -31,6 +31,7 @@ Next.js-Plattform für automatisierte Amazon-Produktvergleiche und Testberichte.
 - Fokus-Nische Bluetooth-Kopfhörer (10 Ranking-Seiten): [`docs/niche-bluetooth-kopfhoerer.md`](docs/niche-bluetooth-kopfhoerer.md)
 - Produkt-Duell: `/[locale]/vergleich` und `/[locale]/vergleich/[a]-vs-[b]`
 - KI-Chat (OpenRouter Streaming): Floating Widget + `/api/chat`
+- Barcode-Scanner im Laden: `/[locale]/scanner` + `/api/barcode/lookup` (EAN/UPC/ASIN → Produkttest)
 
 ## Setup
 
