@@ -224,7 +224,7 @@ export const { POST } = serve<Payload>(
             headers: commentsConfig.headers,
             body: JSON.stringify(commentsConfig.body),
             retries: 1,
-            timeout: 120,
+            timeout: "120s",
           },
         );
 

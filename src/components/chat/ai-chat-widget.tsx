@@ -177,8 +177,8 @@ export function AiChatWidget({
                 key={`${msg.role}-${index}`}
                 className={
                   msg.role === "user"
-                    ? "ml-8 rounded-2xl bg-blue-700 px-3 py-2 text-sm text-white"
-                    : "mr-8 rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-800"
+                    ? "ml-6 rounded-2xl bg-blue-700 px-3.5 py-2.5 text-sm text-white"
+                    : "mr-6 rounded-2xl border border-zinc-200/80 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-800 shadow-sm"
                 }
               >
                 {msg.content ? (
