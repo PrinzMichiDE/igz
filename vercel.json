@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/setup",
+      "schedule": "55 5 * * *"
+    },
+    {
       "path": "/api/cron/sync-products",
       "schedule": "0 6 * * *"
     },

@@ -3,8 +3,15 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { buildAffiliateUrl } from "../src/lib/amazon/affiliate";
+import { resolveDatabaseUrl } from "../src/lib/db/database-url";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({
+  connectionString: resolveDatabaseUrl(),
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : undefined,
+});
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {

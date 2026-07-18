@@ -40,6 +40,7 @@ App: [http://localhost:3000/de](http://localhost:3000/de)
 
 ## Cron Endpoints
 
+- `GET /api/cron/setup` — DB health check, schema push, seed if empty
 - `GET /api/cron/sync-products?category=bluetooth-kopfhoerer&top=5`
 - `GET /api/cron/generate-content?category=bluetooth-kopfhoerer&locales=de,en&comments=6`
 
@@ -50,10 +51,19 @@ App: [http://localhost:3000/de](http://localhost:3000/de)
 
 Daily schedules are defined in `vercel.json` (UTC):
 
+- `setup` — every day at 05:55 UTC (wakes DB, pushes schema, seeds if needed)
 - `sync-products` — every day at 06:00 UTC
 - `generate-content` — every day at 07:00 UTC
 
 Without a `category` query parameter, each run rotates through seeded categories by day. Vercel Cron invokes these paths on the schedule defined in `vercel.json`.
+
+On deploy, `npm run build` runs `prisma db push` so the schema stays in sync.
+
+## Vercel / Postgres
+
+- Link **Vercel Postgres** in the project or set `DATABASE_URL` to a real connection string (not the `.env.example` placeholder `host`).
+- If Vercel injects `POSTGRES_PRISMA_URL`, the app uses it automatically when `DATABASE_URL` is missing.
+- Cron jobs need the database env vars on the **Production** environment.
 
 ## Env
 
