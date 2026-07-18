@@ -1,0 +1,14 @@
+---
+description: Always land work on master; merge feature branches into master
+alwaysApply: true
+---
+
+# Merge everything into `master`
+
+- Default integration branch is **`master`** (not a long-lived develop branch).
+- When the user asks to ship/finish/merge, integrate into `master` and `git push origin master`.
+- Prefer merging open feature branches / PRs into `master` rather than leaving them diverged.
+- On conflicts: keep the newer `master` UX/product behavior unless the branch uniquely adds a missing feature; then combine both.
+- After merges: run a production build (`next build` / project build script) before pushing when feasible.
+- Do not leave duplicate exports, broken imports, or half-merged pages on `master`.
+- Vercel deploys from `master`; treat a green `master` push as the release path.
