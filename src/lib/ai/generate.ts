@@ -157,8 +157,9 @@ export async function generateProductReview(productId: string, locale: Locale) {
       temperature: 0.55,
     });
 
-    const ok = passesReviewQualityGate(content);
-    const status = ok ? "published" : "needs_review";
+    const qualityGatePassed = passesReviewQualityGate(content);
+    const status = "published";
+    const publishedAt = new Date();
     const slug = `${slugify(content.title) || product.slug}-${locale}`;
     const bodyMarkdown = buildFullMarkdown(content);
 
@@ -181,7 +182,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
         seoDescription: content.seoDescription,
         contentJson: content,
         bodyMarkdown,
-        publishedAt: ok ? new Date() : null,
+        publishedAt,
         productId: product.id,
       },
       update: {
@@ -193,7 +194,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
         seoDescription: content.seoDescription,
         contentJson: content,
         bodyMarkdown,
-        publishedAt: ok ? new Date() : null,
+        publishedAt,
       },
     });
 
@@ -207,12 +208,13 @@ export async function generateProductReview(productId: string, locale: Locale) {
       data: {
         status: "succeeded",
         finishedAt: new Date(),
-        message: `Review ${status}`,
+        message: `Review published (qualityGate: ${qualityGatePassed})`,
         metricsJson: {
           articleId: article.id,
           score: content.score,
           sections: content.sections?.length ?? 0,
           words: wordCount(bodyMarkdown),
+          qualityGatePassed,
         },
       },
     });

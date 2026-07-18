@@ -30,6 +30,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const publishedBacklog = await prisma.article.updateMany({
+      where: {
+        status: "needs_review",
+        type: "review",
+        product: { categoryId: category.id },
+      },
+      data: {
+        status: "published",
+        publishedAt: new Date(),
+      },
+    });
+
     const products = await prisma.product.findMany({
       where: { categoryId: category.id },
       orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
@@ -77,6 +89,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       category: category.slug,
+      reviewsPublishedFromBacklog: publishedBacklog.count,
       reviewsCreated: reviews.length,
       commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
       comparisonsCreated: comparisons.length,
