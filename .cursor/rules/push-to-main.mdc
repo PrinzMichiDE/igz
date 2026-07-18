@@ -1,0 +1,31 @@
+---
+description: Always push all finished work to main/master; never leave changes only on feature branches
+alwaysApply: true
+---
+
+# Alles in Main pushen
+
+In diesem Repo ist **`master`** der Main-Branch (Production / Vercel).
+
+## Pflicht
+
+- Jede abgeschlossene Aufgabe endet mit Integration auf **`master`** und **`git push origin master`**.
+- Feature-Branches (`cursor/...`) sind nur Zwischenstände – nicht der Zielzustand.
+- Wenn der User „main“, „master“, „deployen“, „fertig“ oder „pushen“ sagt: Änderungen nach `master` mergen/cherry-picken und pushen.
+- Offene Feature-Branches mit relevantem Diff nach `master` holen, statt parallel liegen zu lassen.
+
+## Workflow
+
+1. Auf Feature-Branch arbeiten / committen.
+2. In `master` mergen (oder PR mergen, dann `master` pullen).
+3. Bei Konflikten: `master`-Stand bevorzugen, einzigartige Features der Branch behalten.
+4. Build/Checks soweit möglich grün.
+5. **`git push origin master`** – erst dann ist die Aufgabe erledigt.
+
+## Nicht tun
+
+- Fertige Arbeit nur auf `cursor/...` lassen ohne Merge nach `master`.
+- Nur den Feature-Branch pushen und `master` vergessen.
+- Einen parallelen Langzeit-`develop`-Branch einführen.
+
+Vercel deployed von `master`. Ohne Push auf `master` gibt es kein Production-Update.
