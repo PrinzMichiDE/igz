@@ -7,7 +7,7 @@ import {
   syncCategorySearch,
 } from "@/lib/amazon/sync";
 import { QuotaExceededError } from "@/lib/amazon/quota";
-import { withDbRetry } from "@/lib/db/with-db-retry";
+import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
       });
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message = formatDatabaseError(error);
     const status = error instanceof QuotaExceededError ? 429 : 500;
     return NextResponse.json({ ok: false, error: message }, { status });
   }

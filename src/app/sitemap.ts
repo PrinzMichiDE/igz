@@ -4,10 +4,18 @@ import { prisma } from "@/lib/db/prisma";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igz.example.com";
 
-  const [products, categories] = await Promise.all([
-    prisma.product.findMany({ select: { slug: true, updatedAt: true } }).catch(() => []),
-    prisma.category.findMany({ select: { slug: true, updatedAt: true } }).catch(() => []),
-  ]);
+  let products: Array<{ slug: string; updatedAt: Date }> = [];
+  let categories: Array<{ slug: string; updatedAt: Date }> = [];
+  try {
+    [products, categories] = await Promise.all([
+      prisma.product.findMany({ select: { slug: true, updatedAt: true } }),
+      prisma.category.findMany({ select: { slug: true, updatedAt: true } }),
+    ]);
+  } catch {
+    // Build/preview without a reachable DB should still emit static routes.
+    products = [];
+    categories = [];
+  }
 
   const locales = ["de", "en"] as const;
   const staticPaths = ["", "/deals", "/suche", "/vergleich", "/impressum", "/datenschutz"];

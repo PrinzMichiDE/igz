@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { resolveDatabaseUrl } from "@/lib/db/database-url";
 import { prisma } from "@/lib/db/prisma";
-import { withDbRetry } from "@/lib/db/with-db-retry";
+import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,7 +76,9 @@ export async function GET() {
       databaseHost: new URL(databaseUrl).hostname,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: formatDatabaseError(error) },
+      { status: 500 },
+    );
   }
 }

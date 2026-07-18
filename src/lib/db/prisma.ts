@@ -1,15 +1,24 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
-import { resolveDatabaseUrl } from "@/lib/db/database-url";
+import {
+  describeDatabaseUrl,
+  resolveDatabaseUrl,
+} from "@/lib/db/database-url";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
   pgPool: Pool | undefined;
+  dbHostLogged?: boolean;
 };
 
 function createPrismaClient() {
   const connectionString = resolveDatabaseUrl();
+
+  if (!globalForPrisma.dbHostLogged) {
+    console.info(`[db] prisma pool → ${describeDatabaseUrl(connectionString)}`);
+    globalForPrisma.dbHostLogged = true;
+  }
 
   const pool =
     globalForPrisma.pgPool ??
@@ -19,7 +28,7 @@ function createPrismaClient() {
       idleTimeoutMillis: 20_000,
       connectionTimeoutMillis: 30_000,
       ssl:
-        process.env.NODE_ENV === "production"
+        process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
           ? { rejectUnauthorized: false }
           : undefined,
     });
@@ -33,8 +42,21 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getPrismaClient() {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient();
+  }
+  return globalForPrisma.prisma;
 }
+
+/**
+ * Lazy proxy so importing this module does not crash at build time when
+ * DATABASE_URL is missing; first real query resolves/validates the URL.
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

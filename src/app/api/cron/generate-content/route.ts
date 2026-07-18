@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveCronCategory } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
-import { withDbRetry } from "@/lib/db/with-db-retry";
+import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
 import {
   generateCategoryComparison,
   generateBuyingGuide,
@@ -113,7 +113,9 @@ export async function GET(req: NextRequest) {
       });
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: formatDatabaseError(error) },
+      { status: 500 },
+    );
   }
 }

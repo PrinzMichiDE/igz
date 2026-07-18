@@ -3,15 +3,20 @@ const PLACEHOLDER_HOSTS = new Set([
   "base",
   "example.com",
   "example.org",
+  "db.example.com",
+  "xxx",
+  "localhost",
+  "127.0.0.1",
 ]);
 
+/** Prefer Vercel/Neon injected URLs before a possibly stale DATABASE_URL. */
 const CANDIDATE_ENV_KEYS = [
-  "DATABASE_URL",
   "POSTGRES_PRISMA_URL",
   "POSTGRES_URL_NON_POOLING",
   "POSTGRES_URL",
   "DATABASE_URL_UNPOOLED",
   "POSTGRES_DATABASE_URL",
+  "DATABASE_URL",
 ] as const;
 
 function appendQueryParam(url: string, key: string, value: string) {
@@ -37,7 +42,7 @@ function normalizeCandidate(raw: string) {
   value = value.replace(/^DATABASE_URL\s*=\s*/i, "").trim();
 
   // prisma+postgres / prisma:// are Accelerate/Data-Proxy URLs and cannot be
-  // used for `prisma db push` against a real Postgres instance.
+  // used with the node-postgres adapter / db push against real Postgres.
   if (/^prisma(\+postgres)?:\/\//i.test(value)) {
     return null;
   }
@@ -54,20 +59,48 @@ function normalizeCandidate(raw: string) {
   return value;
 }
 
+function isLocalHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
 function isUsableDatabaseUrl(url: string) {
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
-    if (!hostname || PLACEHOLDER_HOSTS.has(hostname)) {
-      return false;
-    }
-    // On Vercel, localhost URLs are never reachable during build.
+
+    if (!hostname) return false;
+
+    // Always reject known placeholders (including "base" from bad templates).
     if (
-      process.env.VERCEL === "1" &&
-      (hostname === "localhost" || hostname === "127.0.0.1")
+      hostname === "host" ||
+      hostname === "base" ||
+      hostname === "example.com" ||
+      hostname === "example.org" ||
+      hostname === "db.example.com" ||
+      hostname === "xxx"
     ) {
       return false;
     }
+
+    // On Vercel, reject classic .env.example credentials and localhost.
+    const exampleCreds =
+      parsed.username === "user" &&
+      (parsed.password === "password" || parsed.password === "pass");
+    if (process.env.VERCEL === "1") {
+      if (exampleCreds || isLocalHost(hostname)) return false;
+    }
+
+    // Locally, still reject example credentials against non-local hosts.
+    if (exampleCreds && !isLocalHost(hostname)) {
+      return false;
+    }
+
+    // Single-label hosts (no dot) are almost never valid managed Postgres.
+    // Allow localhost only outside Vercel.
+    if (!hostname.includes(".")) {
+      return isLocalHost(hostname) && process.env.VERCEL !== "1";
+    }
+
     return true;
   } catch {
     return false;
@@ -82,23 +115,46 @@ export function listDatabaseUrlCandidates() {
     if (!raw) continue;
     const normalized = normalizeCandidate(raw);
     if (!normalized) continue;
-    if (!isUsableDatabaseUrl(normalized)) continue;
+    if (!isUsableDatabaseUrl(normalized)) {
+      continue;
+    }
     values.push({ key, url: normalized });
   }
 
   return values;
 }
 
+export function describeDatabaseUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}${parsed.pathname}`;
+  } catch {
+    return "(unparseable)";
+  }
+}
+
+/**
+ * Resolve a usable Postgres URL and publish it back to process.env.DATABASE_URL
+ * so Prisma internals never keep reading a placeholder like host "base".
+ */
 export function resolveDatabaseUrl(options?: { forSchemaPush?: boolean }) {
   const candidates = listDatabaseUrlCandidates();
 
   if (candidates.length === 0) {
+    const present = CANDIDATE_ENV_KEYS.filter((key) => Boolean(process.env[key]));
     throw new Error(
-      "No usable Postgres URL found. Set DATABASE_URL to postgresql://... or link Vercel Postgres (POSTGRES_PRISMA_URL / POSTGRES_URL). Accelerate URLs (prisma+postgres://) are not supported for db push.",
+      [
+        "No usable Postgres URL found.",
+        "Set DATABASE_URL to a real postgresql://USER:PASS@HOST/DB string,",
+        "or link Vercel Postgres / Neon (POSTGRES_PRISMA_URL / POSTGRES_URL).",
+        'Placeholder hosts like "base" or "host" are rejected.',
+        present.length
+          ? `Present but unusable env keys: ${present.join(", ")}.`
+          : "No DATABASE_URL/POSTGRES_* env keys were set.",
+      ].join(" "),
     );
   }
 
-  // Prefer non-pooling URLs for schema push / migrations when available.
   let selected = candidates[0];
   if (options?.forSchemaPush) {
     selected =
@@ -111,10 +167,35 @@ export function resolveDatabaseUrl(options?: { forSchemaPush?: boolean }) {
   connectionString = appendQueryParam(connectionString, "connect_timeout", "30");
 
   if (
-    process.env.NODE_ENV === "production" &&
+    (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") &&
     !connectionString.includes("sslmode=")
   ) {
     connectionString = appendQueryParam(connectionString, "sslmode", "require");
+  }
+
+  // Critical: overwrite DATABASE_URL so Prisma/pg never fall back to a
+  // placeholder value still sitting in the Vercel env (e.g. host "base").
+  process.env.DATABASE_URL = connectionString;
+
+  // Discrete libpq vars can override/confuse node-postgres if they are junk.
+  for (const key of ["PGHOST", "PGHOSTADDR", "PGDATABASE", "PGUSER", "PGPASSWORD"]) {
+    const value = process.env[key];
+    if (!value) continue;
+    const lower = value.toLowerCase();
+    if (
+      PLACEHOLDER_HOSTS.has(lower) ||
+      lower === "user" ||
+      lower === "password" ||
+      lower === "pass"
+    ) {
+      delete process.env[key];
+    }
+  }
+
+  if (process.env.DEBUG_DATABASE_URL === "1") {
+    console.info(
+      `[db] using ${selected.key} → ${describeDatabaseUrl(connectionString)}`,
+    );
   }
 
   return connectionString;

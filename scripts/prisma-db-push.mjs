@@ -1,22 +1,19 @@
 #!/usr/bin/env node
 /**
  * Resolve a usable Postgres URL (Vercel Postgres fallbacks) and run
- * `prisma db push` with it. Avoids P1013 when DATABASE_URL is a bad/placeholder
- * or an Accelerate URL while POSTGRES_* is valid.
+ * `prisma db push` with it. Avoids P1013 / host "base" when DATABASE_URL is a
+ * bad placeholder while POSTGRES_* is valid.
  */
 import "dotenv/config";
 import { spawnSync } from "node:child_process";
 
-// Plain-JS resolver (no TS loader needed during Vercel build).
-const PLACEHOLDER_HOSTS = new Set(["host", "base", "example.com", "example.org"]);
-
 const CANDIDATE_ENV_KEYS = [
-  "DATABASE_URL",
   "POSTGRES_PRISMA_URL",
   "POSTGRES_URL_NON_POOLING",
   "POSTGRES_URL",
   "DATABASE_URL_UNPOOLED",
   "POSTGRES_DATABASE_URL",
+  "DATABASE_URL",
 ];
 
 function normalizeCandidate(raw) {
@@ -40,12 +37,33 @@ function isUsable(url) {
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
-    if (!hostname || PLACEHOLDER_HOSTS.has(hostname)) return false;
+    if (!hostname) return false;
     if (
-      process.env.VERCEL === "1" &&
-      (hostname === "localhost" || hostname === "127.0.0.1")
+      hostname === "host" ||
+      hostname === "base" ||
+      hostname === "example.com" ||
+      hostname === "example.org" ||
+      hostname === "db.example.com" ||
+      hostname === "xxx"
     ) {
       return false;
+    }
+    const exampleCreds =
+      parsed.username === "user" &&
+      (parsed.password === "password" || parsed.password === "pass");
+    const local =
+      hostname === "localhost" || hostname === "127.0.0.1";
+    if (process.env.VERCEL === "1" && (exampleCreds || local)) {
+      return false;
+    }
+    if (exampleCreds && !local) {
+      return false;
+    }
+    if (!hostname.includes(".")) {
+      return (
+        (hostname === "localhost" || hostname === "127.0.0.1") &&
+        process.env.VERCEL !== "1"
+      );
     }
     return true;
   } catch {
@@ -68,7 +86,7 @@ function resolveUrl() {
 
   if (candidates.length === 0) {
     throw new Error(
-      "No usable Postgres URL found. Set DATABASE_URL=postgresql://... or link Vercel Postgres (POSTGRES_PRISMA_URL).",
+      'No usable Postgres URL found. Remove placeholder DATABASE_URL hosts like "base"/"host" and link Vercel Postgres (POSTGRES_PRISMA_URL) or set a real postgresql:// URL.',
     );
   }
 
@@ -80,15 +98,35 @@ function resolveUrl() {
   if (!url.includes("connect_timeout=")) {
     url += `${url.includes("?") ? "&" : "?"}connect_timeout=30`;
   }
-  if (process.env.NODE_ENV === "production" && !url.includes("sslmode=")) {
+  if (
+    (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") &&
+    !url.includes("sslmode=")
+  ) {
     url += `${url.includes("?") ? "&" : "?"}sslmode=require`;
   }
 
-  console.log(`[prisma-db-push] Using ${selected.key}`);
+  let host = "?";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    // ignore
+  }
+  console.log(`[prisma-db-push] Using ${selected.key} (host=${host})`);
   return url;
 }
 
 const databaseUrl = resolveUrl();
+
+// Scrub discrete libpq placeholders that can confuse pg/prisma.
+for (const key of ["PGHOST", "PGHOSTADDR", "PGDATABASE", "PGUSER", "PGPASSWORD"]) {
+  const value = process.env[key];
+  if (!value) continue;
+  const lower = value.toLowerCase();
+  if (["host", "base", "user", "password", "pass", "localhost"].includes(lower)) {
+    delete process.env[key];
+  }
+}
+
 const result = spawnSync("npx", ["prisma", "db", "push"], {
   stdio: "inherit",
   env: {
