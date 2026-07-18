@@ -3,6 +3,7 @@ import { resolveCronCategory } from "@/lib/cron";
 import { prisma } from "@/lib/db/prisma";
 import {
   generateCategoryComparison,
+  generateBuyingGuide,
   generateProductExperienceComments,
   generateProductReview,
 } from "@/lib/ai/generate";
@@ -79,9 +80,12 @@ export async function GET(req: NextRequest) {
     }
 
     const comparisons = [];
+    const buyingGuides = [];
     for (const locale of locales) {
       const article = await generateCategoryComparison(category.id, locale);
       comparisons.push({ locale, id: article.id });
+      const guide = await generateBuyingGuide(category.id, locale);
+      buyingGuides.push({ locale, id: guide.id });
     }
 
     const manualResults = await enrichCategoryManuals(category.id, locales[0] ?? "de");
@@ -93,10 +97,12 @@ export async function GET(req: NextRequest) {
       reviewsCreated: reviews.length,
       commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
       comparisonsCreated: comparisons.length,
+      buyingGuidesCreated: buyingGuides.length,
       manualsEnriched: manualResults.length,
       reviews,
       comments,
       comparisons,
+      buyingGuides,
       manuals: manualResults,
     });
   } catch (error) {

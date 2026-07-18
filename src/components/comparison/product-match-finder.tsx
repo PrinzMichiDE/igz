@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import {
@@ -33,9 +33,15 @@ type Props = {
   candidates: MatchCandidate[];
   locale: string;
   labels: Labels;
+  initialUseCase?: string;
 };
 
-export function ProductMatchFinder({ candidates, locale, labels }: Props) {
+export function ProductMatchFinder({
+  candidates,
+  locale,
+  labels,
+  initialUseCase = "",
+}: Props) {
   const maxPrice = useMemo(() => {
     const prices = candidates
       .map((candidate) => candidate.price)
@@ -45,8 +51,15 @@ export function ProductMatchFinder({ candidates, locale, labels }: Props) {
 
   const [budgetMax, setBudgetMax] = useState(Math.round(maxPrice * 0.8));
   const [priority, setPriority] = useState<MatchPriority>("score");
-  const [useCase, setUseCase] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [useCase, setUseCase] = useState(initialUseCase);
+  const [submitted, setSubmitted] = useState(Boolean(initialUseCase.trim()));
+
+  useEffect(() => {
+    if (initialUseCase.trim()) {
+      setUseCase(initialUseCase);
+      setSubmitted(true);
+    }
+  }, [initialUseCase]);
 
   const results = useMemo(() => {
     if (!submitted) return [];

@@ -8,6 +8,7 @@
     "categories": "Categories",
     "reviews": "Reviews",
     "deals": "Deals",
+    "compare": "Compare",
     "imprint": "Imprint",
     "privacy": "Privacy"
   },
@@ -60,6 +61,9 @@
     "filterBrand": "Brand",
     "filterPrice": "Price range",
     "filterUseCase": "Use case",
+    "filterMinScore": "Minimum score",
+    "filterReset": "Reset",
+    "filterResults": "Results",
     "availableOnAmazon": "Available on Amazon",
     "columnModel": "Model",
     "columnSpecs": "Core specs",
@@ -85,6 +89,41 @@
     "featureColumn": "Feature",
     "featureYes": "Yes",
     "featureNo": "No"
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Find products, categories and reviews on IGZ.",
+    "resultsFor": "Results for \"{query}\"",
+    "emptyPrompt": "Enter a search term to find products and categories.",
+    "categories": "Categories",
+    "products": "Products",
+    "noResults": "No matches — try another term or browse categories."
+  },
+  "deals": {
+    "badge": "Deals",
+    "title": "Current deals & savings",
+    "subtitle": "Products with real savings vs. list price or category average — updated daily from Amazon data.",
+    "empty": "No deals with measurable savings right now. Run a sync or check back later.",
+    "searchTitle": "Not what you're looking for?",
+    "searchSubtitle": "Search all products and categories.",
+    "browseCategories": "Browse all categories →"
+  },
+  "compare": {
+    "title": "Compare products",
+    "subtitle": "Pick two models for a direct comparison of specs, pros and cons.",
+    "headToHead": "Head-to-head",
+    "featureMatrix": "Feature matrix",
+    "pickAnother": "Compare other products",
+    "pickSecond": "Choose the second product to compare:",
+    "compareWith": "Compare with {product}"
+  },
+  "guide": {
+    "badge": "Buying guide",
+    "readGuide": "Read the full buying guide",
+    "keyCriteria": "What to look for",
+    "budgetTiers": "Recommendations by budget",
+    "checklist": "Buying checklist",
+    "backToComparison": "Back to category comparison"
   },
   "product": {
     "score": "Editorial score",
@@ -136,6 +175,13 @@
     "manualsSourceManufacturer": "Manufacturer",
     "manualsSourceAmazon": "Amazon",
     "manualsSourcePortal": "Support portal",
+    "priceWatch": "Watch price",
+    "priceWatching": "On watchlist",
+    "priceWatchHint": "Saved locally — we'll remember your selection on your next visit.",
+    "priceTrendDown": "{percent}% cheaper than before",
+    "priceTrendUp": "{percent}% more expensive than before",
+    "priceTrendStable": "Price stable",
+    "priceTrendUnknown": "Price history unknown",
     "experienceFilterAll": "All",
     "experienceFilterPositive": "Positive (4–5★)",
     "experienceFilterCritical": "Critical (1–3★)",

@@ -8,6 +8,8 @@ import {
 } from "@/lib/amazon/rapidapi";
 import { QuotaExceededError } from "@/lib/amazon/quota";
 import { enrichProductManuals } from "@/lib/product-manuals";
+import { recordPriceSnapshot } from "@/lib/price-history";
+import { numericPrice } from "@/lib/product-links";
 import { slugify } from "@/lib/utils";
 import type { JobType } from "@prisma/client";
 
@@ -104,6 +106,11 @@ export async function syncCategorySearch(categoryId: string) {
           category.countryScope === "US" ? "en" : "de",
           false,
         );
+        await recordPriceSnapshot(
+          saved.id,
+          parsePrice(item.product_price),
+          item.currency || (category.countryScope === "US" ? "USD" : "EUR"),
+        );
       }
     }
 
@@ -196,6 +203,13 @@ export async function syncCategoryDetails(categoryId: string, topN = 5) {
         product.id,
         category.countryScope === "US" ? "en" : "de",
         true,
+      );
+      await recordPriceSnapshot(
+        product.id,
+        numericPrice(price),
+        details.currency ||
+          product.currency ||
+          (product.country === "US" ? "USD" : "EUR"),
       );
       enriched += 1;
     }

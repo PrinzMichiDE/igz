@@ -8,6 +8,7 @@
     "categories": "Kategorien",
     "reviews": "Tests",
     "deals": "Deals",
+    "compare": "Vergleichen",
     "imprint": "Impressum",
     "privacy": "Datenschutz"
   },
@@ -60,6 +61,9 @@
     "filterBrand": "Marke",
     "filterPrice": "Preisbereich",
     "filterUseCase": "Einsatzbereich",
+    "filterMinScore": "Mindest-Score",
+    "filterReset": "Zurücksetzen",
+    "filterResults": "Treffer",
     "availableOnAmazon": "Verfügbar bei Amazon",
     "columnModel": "Modell",
     "columnSpecs": "Kern-Specs",
@@ -85,6 +89,41 @@
     "featureColumn": "Feature",
     "featureYes": "Ja",
     "featureNo": "Nein"
+  },
+  "search": {
+    "title": "Suche",
+    "subtitle": "Finde Produkte, Kategorien und Testberichte auf IGZ.",
+    "resultsFor": "Ergebnisse für \"{query}\"",
+    "emptyPrompt": "Gib einen Suchbegriff ein, um Produkte und Kategorien zu finden.",
+    "categories": "Kategorien",
+    "products": "Produkte",
+    "noResults": "Keine Treffer – versuche einen anderen Begriff oder stöbere in den Kategorien."
+  },
+  "deals": {
+    "badge": "Angebote",
+    "title": "Aktuelle Deals & Ersparnisse",
+    "subtitle": "Produkte mit echten Preisvorteilen gegenüber UVP oder Kategorie-Durchschnitt – täglich aktualisiert aus Amazon-Daten.",
+    "empty": "Aktuell keine Deals mit messbarer Ersparnis. Starte einen Sync oder schau später wieder vorbei.",
+    "searchTitle": "Nicht das Richtige dabei?",
+    "searchSubtitle": "Durchsuche alle Produkte und Kategorien.",
+    "browseCategories": "Alle Kategorien ansehen →"
+  },
+  "compare": {
+    "title": "Produkte vergleichen",
+    "subtitle": "Wähle zwei Modelle für einen direkten Vergleich von Specs, Stärken und Schwächen.",
+    "headToHead": "Direktvergleich",
+    "featureMatrix": "Feature-Matrix",
+    "pickAnother": "Andere Produkte vergleichen",
+    "pickSecond": "Wähle das zweite Produkt für den Vergleich:",
+    "compareWith": "Vergleichen mit {product}"
+  },
+  "guide": {
+    "badge": "Kaufberatung",
+    "readGuide": "Ausführliche Kaufberatung lesen",
+    "keyCriteria": "Worauf du achten solltest",
+    "budgetTiers": "Empfehlungen nach Budget",
+    "checklist": "Kauf-Checkliste",
+    "backToComparison": "Zurück zum Kategorie-Vergleich"
   },
   "product": {
     "score": "Redaktioneller Score",
@@ -136,6 +175,13 @@
     "manualsSourceManufacturer": "Hersteller",
     "manualsSourceAmazon": "Amazon",
     "manualsSourcePortal": "Support-Portal",
+    "priceWatch": "Preis beobachten",
+    "priceWatching": "Auf der Beobachtungsliste",
+    "priceWatchHint": "Lokal gespeichert – wir erinnern dich beim nächsten Besuch an deine Auswahl.",
+    "priceTrendDown": "{percent}% günstiger als zuvor",
+    "priceTrendUp": "{percent}% teurer als zuvor",
+    "priceTrendStable": "Preis stabil",
+    "priceTrendUnknown": "Preisverlauf unbekannt",
     "experienceFilterAll": "Alle",
     "experienceFilterPositive": "Positiv (4–5★)",
     "experienceFilterCritical": "Kritisch (1–3★)",

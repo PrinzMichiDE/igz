@@ -47,6 +47,12 @@ export async function SiteHeader({ locale }: Props) {
             );
           })}
           <Link
+            href={`/${locale}/vergleich`}
+            className="text-sm font-medium text-muted-foreground transition hover:text-primary"
+          >
+            {t("nav.compare")}
+          </Link>
+          <Link
             href={`/${locale}#reviews`}
             className="text-sm font-medium text-muted-foreground transition hover:text-primary"
           >
@@ -58,11 +64,11 @@ export async function SiteHeader({ locale }: Props) {
           <HeroSearch
             placeholder={t("home.searchPlaceholder")}
             buttonLabel={t("home.searchButton")}
-            actionHref={`/${locale}#categories`}
+            actionHref={`/${locale}/suche`}
             variant="compact"
           />
           <Link
-            href={`/${locale}#deals`}
+            href={`/${locale}/deals`}
             className="hidden items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-container sm:inline-flex"
           >
             <Tag className="h-4 w-4" aria-hidden />
