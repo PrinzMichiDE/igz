@@ -19,7 +19,7 @@ Next.js-Plattform für automatisierte Amazon-Produktvergleiche und Testberichte.
 
 ```bash
 cp .env.example .env
-# DATABASE_URL, RAPIDAPI_KEY, OPENROUTER_API_KEY, CRON_SECRET, NEXTAUTH_SECRET setzen
+# DATABASE_URL, RAPIDAPI_KEY, OPENROUTER_API_KEY, NEXTAUTH_SECRET setzen
 
 npm install
 npx prisma db push
@@ -40,8 +40,6 @@ App: [http://localhost:3000/de](http://localhost:3000/de)
 
 ## Cron Endpoints
 
-Header: `Authorization: Bearer $CRON_SECRET`
-
 - `GET /api/cron/sync-products?category=bluetooth-kopfhoerer&top=5`
 - `GET /api/cron/generate-content?category=bluetooth-kopfhoerer&locales=de,en&comments=6`
 
@@ -55,7 +53,7 @@ Daily schedules are defined in `vercel.json` (UTC):
 - `sync-products` — every day at 06:00 UTC
 - `generate-content` — every day at 07:00 UTC
 
-Without a `category` query parameter, each run rotates through seeded categories by day. Set `CRON_SECRET` in Vercel so scheduled invocations are authorized automatically.
+Without a `category` query parameter, each run rotates through seeded categories by day. Vercel Cron invokes these paths on the schedule defined in `vercel.json`.
 
 ## Env
 

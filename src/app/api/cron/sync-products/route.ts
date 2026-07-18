@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assertCronAuthorized, resolveCronCategory } from "@/lib/cron";
+import { resolveCronCategory } from "@/lib/cron";
 import { getQuotaStatus } from "@/lib/amazon/quota";
 import { syncCategoryDetails, syncCategorySearch } from "@/lib/amazon/sync";
 import { QuotaExceededError } from "@/lib/amazon/quota";
@@ -8,10 +8,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (!assertCronAuthorized(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const slug = req.nextUrl.searchParams.get("category");
   const detailsTopN = Number(req.nextUrl.searchParams.get("top") || 5);
 
