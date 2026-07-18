@@ -116,7 +116,7 @@ export default async function DealsPage({ params }: Props) {
           />
         </div>
         <Link
-          href={`/${locale}#categories`}
+          href={`/${locale}/kategorien`}
           className="mt-4 inline-block text-sm font-semibold text-secondary hover:underline"
         >
           {t("deals.browseCategories")}

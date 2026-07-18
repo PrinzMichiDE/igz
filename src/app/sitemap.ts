@@ -20,6 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const locales = ["de", "en"] as const;
   const staticPaths = [
     "",
+    "/kategorien",
+    "/bestenlisten",
     "/deals",
     "/suche",
     "/vergleich",

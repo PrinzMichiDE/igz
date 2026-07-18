@@ -148,6 +148,13 @@
     "featureYes": "Yes",
     "featureNo": "No"
   },
+  "categoriesPage": {
+    "title": "All product categories",
+    "subtitle": "Pick a category and compare current Amazon bestsellers with scores, specs and buying guides.",
+    "countLabel": "categories",
+    "productsLabel": "products",
+    "empty": "No categories yet. Run the category sync first."
+  },
   "search": {
     "title": "Search",
     "subtitle": "Find products, categories and reviews on IGZ.",

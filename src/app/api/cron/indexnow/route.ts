@@ -15,6 +15,7 @@ export async function GET() {
 
     for (const locale of routing.locales) {
       urls.push(absoluteUrl(localizedPath(locale)));
+      urls.push(absoluteUrl(localizedPath(locale, "/kategorien")));
       urls.push(absoluteUrl(localizedPath(locale, "/bestenlisten")));
       urls.push(absoluteUrl(localizedPath(locale, "/methodik")));
       urls.push(absoluteUrl(localizedPath(locale, "/ueber-uns")));

@@ -38,6 +38,7 @@ export async function GET() {
     `## Key pages`,
     `- ${absoluteUrl("/de")}: German homepage`,
     `- ${absoluteUrl("/en")}: English homepage`,
+    `- ${absoluteUrl("/de/kategorien")}: All product categories`,
     `- ${absoluteUrl("/de/bestenlisten")}: Best-of lists hub`,
     `- ${absoluteUrl("/de/methodik")}: Editorial methodology (E-E-A-T)`,
     `- ${absoluteUrl("/de/ueber-uns")}: About`,

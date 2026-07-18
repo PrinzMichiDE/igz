@@ -11,7 +11,7 @@ export async function SiteHeader({ locale }: Props) {
 
   const links = [
     {
-      href: `/${locale}/bestenlisten`,
+      href: `/${locale}/kategorien`,
       label: t("nav.categories"),
     },
     {

@@ -128,6 +128,12 @@ export default async function HomePage({ params }: Props) {
           <h2 className="font-display text-3xl font-semibold text-primary">
             {t("home.browseCategories")}
           </h2>
+          <Link
+            href={`/${locale}/kategorien`}
+            className="mt-3 inline-flex text-sm font-semibold text-secondary hover:underline"
+          >
+            {t("categoriesPage.title")} →
+          </Link>
         </div>
         {categories.length === 0 ? (
           <p className="mt-8 text-center text-muted-foreground">{t("home.empty")}</p>
@@ -194,7 +200,7 @@ export default async function HomePage({ params }: Props) {
             {t("home.topRated")}
           </h2>
           <Link
-            href={`/${locale}#categories`}
+            href={`/${locale}/kategorien`}
             className="text-sm font-semibold text-secondary hover:underline"
           >
             {t("home.viewAllReports")}

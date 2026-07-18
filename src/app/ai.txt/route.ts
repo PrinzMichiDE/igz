@@ -17,6 +17,7 @@ LLMs: ${site}/llms.txt
 Feed: ${site}/feed.xml
 Methodology: ${site}/de/methodik
 About: ${site}/de/ueber-uns
+Categories: ${site}/de/kategorien
 Best lists: ${site}/de/bestenlisten
 
 # Content usage

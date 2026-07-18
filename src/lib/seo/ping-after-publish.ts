@@ -10,6 +10,7 @@ export async function pingProductUrls(input: {
   const urls = input.locales.flatMap((locale) => [
     absoluteUrl(localizedPath(locale, `/produkt/${input.productSlug}`)),
     absoluteUrl(localizedPath(locale, `/kategorie/${input.categorySlug}`)),
+    absoluteUrl(localizedPath(locale, "/kategorien")),
     absoluteUrl(localizedPath(locale, "/bestenlisten")),
   ]);
 
