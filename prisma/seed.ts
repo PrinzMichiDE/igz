@@ -3,15 +3,17 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { buildAffiliateUrl } from "../src/lib/amazon/affiliate";
-import { resolveDatabaseUrl } from "../src/lib/db/database-url";
+import {
+  pgPoolSslOption,
+  resolveDatabaseUrl,
+} from "../src/lib/db/database-url";
 import { NICHE_CATEGORY_KEYWORDS_DE } from "../src/lib/seo/niche/bluetooth-headphones";
 
+const connectionString = resolveDatabaseUrl();
+const ssl = pgPoolSslOption(connectionString);
 const pool = new Pool({
-  connectionString: resolveDatabaseUrl(),
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : undefined,
+  connectionString,
+  ...(ssl ? { ssl } : {}),
 });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 

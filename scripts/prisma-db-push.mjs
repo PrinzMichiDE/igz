@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
  * Resolve a usable Postgres URL (Vercel Postgres fallbacks) and run
- * `prisma db push` with it. Avoids P1013 / host "base" when DATABASE_URL is a
- * bad placeholder while POSTGRES_* is valid.
+ * `prisma db push` with it. Respects sslmode=disable / DATABASE_SSL_MODE=disable.
  */
 import "dotenv/config";
 import { spawnSync } from "node:child_process";
@@ -51,8 +50,7 @@ function isUsable(url) {
     const exampleCreds =
       parsed.username === "user" &&
       (parsed.password === "password" || parsed.password === "pass");
-    const local =
-      hostname === "localhost" || hostname === "127.0.0.1";
+    const local = hostname === "localhost" || hostname === "127.0.0.1";
     if (process.env.VERCEL === "1" && (exampleCreds || local)) {
       return false;
     }
@@ -60,15 +58,50 @@ function isUsable(url) {
       return false;
     }
     if (!hostname.includes(".")) {
-      return (
-        (hostname === "localhost" || hostname === "127.0.0.1") &&
-        process.env.VERCEL !== "1"
-      );
+      return local && process.env.VERCEL !== "1";
     }
     return true;
   } catch {
     return false;
   }
+}
+
+function envDisablesSsl() {
+  const mode = (process.env.DATABASE_SSL_MODE || process.env.PGSSLMODE || "")
+    .trim()
+    .toLowerCase();
+  if (mode === "disable" || mode === "allow") return true;
+  const flag = (process.env.DATABASE_SSL || "").trim().toLowerCase();
+  return flag === "0" || flag === "false" || flag === "off" || flag === "disable";
+}
+
+function anyCandidateDisablesSsl() {
+  if (envDisablesSsl()) return true;
+  for (const key of CANDIDATE_ENV_KEYS) {
+    const raw = process.env[key];
+    if (raw && /[?&]sslmode=(disable|allow)(?:&|$)/i.test(String(raw))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function applySslMode(url) {
+  if (anyCandidateDisablesSsl() || /[?&]sslmode=(disable|allow)(?:&|$)/i.test(url)) {
+    if (/[?&]sslmode=/i.test(url)) {
+      return url.replace(/([?&])sslmode=[^&]*/i, "$1sslmode=disable");
+    }
+    return `${url}${url.includes("?") ? "&" : "?"}sslmode=disable`;
+  }
+
+  if (
+    (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") &&
+    !/[?&]sslmode=/i.test(url)
+  ) {
+    return `${url}${url.includes("?") ? "&" : "?"}sslmode=require`;
+  }
+
+  return url;
 }
 
 function resolveUrl() {
@@ -95,29 +128,27 @@ function resolveUrl() {
     candidates[0];
 
   let url = selected.url;
-  if (!url.includes("connect_timeout=")) {
+  if (!/[?&]connect_timeout=/i.test(url)) {
     url += `${url.includes("?") ? "&" : "?"}connect_timeout=30`;
   }
-  if (
-    (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") &&
-    !url.includes("sslmode=")
-  ) {
-    url += `${url.includes("?") ? "&" : "?"}sslmode=require`;
-  }
+  url = applySslMode(url);
 
   let host = "?";
+  let sslmode = "default";
   try {
     host = new URL(url).hostname;
+    sslmode = /[?&]sslmode=([^&]+)/i.exec(url)?.[1] ?? "default";
   } catch {
     // ignore
   }
-  console.log(`[prisma-db-push] Using ${selected.key} (host=${host})`);
+  console.log(
+    `[prisma-db-push] Using ${selected.key} (host=${host}, sslmode=${sslmode})`,
+  );
   return url;
 }
 
 const databaseUrl = resolveUrl();
 
-// Scrub discrete libpq placeholders that can confuse pg/prisma.
 for (const key of ["PGHOST", "PGHOSTADDR", "PGDATABASE", "PGUSER", "PGPASSWORD"]) {
   const value = process.env[key];
   if (!value) continue;
@@ -127,12 +158,19 @@ for (const key of ["PGHOST", "PGHOSTADDR", "PGDATABASE", "PGUSER", "PGPASSWORD"]
   }
 }
 
+const env = {
+  ...process.env,
+  DATABASE_URL: databaseUrl,
+};
+
+if (/[?&]sslmode=disable(?:&|$)/i.test(databaseUrl) || envDisablesSsl()) {
+  env.PGSSLMODE = "disable";
+  env.DATABASE_SSL_MODE = env.DATABASE_SSL_MODE || "disable";
+}
+
 const result = spawnSync("npx", ["prisma", "db", "push"], {
   stdio: "inherit",
-  env: {
-    ...process.env,
-    DATABASE_URL: databaseUrl,
-  },
+  env,
   shell: false,
 });
 

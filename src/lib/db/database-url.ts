@@ -20,11 +20,78 @@ const CANDIDATE_ENV_KEYS = [
 ] as const;
 
 function appendQueryParam(url: string, key: string, value: string) {
-  if (url.includes(`${key}=`)) {
+  if (new RegExp(`[?&]${key}=`, "i").test(url)) {
     return url;
   }
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}${key}=${value}`;
+}
+
+function replaceOrSetQueryParam(url: string, key: string, value: string) {
+  if (new RegExp(`[?&]${key}=`, "i").test(url)) {
+    return url.replace(
+      new RegExp(`([?&])${key}=[^&]*`, "i"),
+      `$1${key}=${value}`,
+    );
+  }
+  return appendQueryParam(url, key, value);
+}
+
+function envDisablesSsl() {
+  const mode = (process.env.DATABASE_SSL_MODE || process.env.PGSSLMODE || "")
+    .trim()
+    .toLowerCase();
+  if (mode === "disable" || mode === "allow") return true;
+  const flag = (process.env.DATABASE_SSL || "").trim().toLowerCase();
+  return flag === "0" || flag === "false" || flag === "off" || flag === "disable";
+}
+
+function urlDisablesSsl(url: string) {
+  return /[?&]sslmode=(disable|allow)(?:&|$)/i.test(url);
+}
+
+/** True when TLS must not be used (server without SSL, e.g. some VPS Postgres). */
+export function isSslDisabled(connectionString?: string) {
+  if (envDisablesSsl()) return true;
+  if (connectionString && urlDisablesSsl(connectionString)) return true;
+  // Honor sslmode=disable on any configured URL candidate (even if another
+  // POSTGRES_* URL without sslmode is selected first).
+  for (const key of CANDIDATE_ENV_KEYS) {
+    const raw = process.env[key];
+    if (raw && /[?&]sslmode=(disable|allow)(?:&|$)/i.test(raw)) return true;
+  }
+  return false;
+}
+
+/**
+ * Apply sslmode for Prisma/pg.
+ * - Honors ?sslmode=disable / DATABASE_SSL_MODE=disable
+ * - Otherwise defaults to require on Vercel/production when unset
+ */
+export function applySslMode(connectionString: string) {
+  if (isSslDisabled(connectionString)) {
+    return replaceOrSetQueryParam(connectionString, "sslmode", "disable");
+  }
+
+  if (
+    (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") &&
+    !/[?&]sslmode=/i.test(connectionString)
+  ) {
+    return appendQueryParam(connectionString, "sslmode", "require");
+  }
+
+  return connectionString;
+}
+
+/** node-postgres `ssl` option: never force TLS when sslmode=disable. */
+export function pgPoolSslOption(connectionString: string) {
+  if (isSslDisabled(connectionString)) {
+    return undefined;
+  }
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
+    return { rejectUnauthorized: false as const };
+  }
+  return undefined;
 }
 
 function normalizeCandidate(raw: string) {
@@ -165,17 +232,16 @@ export function resolveDatabaseUrl(options?: { forSchemaPush?: boolean }) {
 
   let connectionString = selected.url;
   connectionString = appendQueryParam(connectionString, "connect_timeout", "30");
-
-  if (
-    (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") &&
-    !connectionString.includes("sslmode=")
-  ) {
-    connectionString = appendQueryParam(connectionString, "sslmode", "require");
-  }
+  connectionString = applySslMode(connectionString);
 
   // Critical: overwrite DATABASE_URL so Prisma/pg never fall back to a
-  // placeholder value still sitting in the Vercel env (e.g. host "base").
+  // placeholder value still sitting in the Vercel env (e.g. host "base"),
+  // and so sslmode=disable wins over a stale sslmode=require.
   process.env.DATABASE_URL = connectionString;
+  if (isSslDisabled(connectionString)) {
+    process.env.PGSSLMODE = "disable";
+    process.env.DATABASE_SSL_MODE = process.env.DATABASE_SSL_MODE || "disable";
+  }
 
   // Discrete libpq vars can override/confuse node-postgres if they are junk.
   for (const key of ["PGHOST", "PGHOSTADDR", "PGDATABASE", "PGUSER", "PGPASSWORD"]) {

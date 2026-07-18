@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import {
   describeDatabaseUrl,
+  pgPoolSslOption,
   resolveDatabaseUrl,
 } from "@/lib/db/database-url";
 
@@ -14,9 +15,13 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   const connectionString = resolveDatabaseUrl();
+  const ssl = pgPoolSslOption(connectionString);
 
   if (!globalForPrisma.dbHostLogged) {
-    console.info(`[db] prisma pool → ${describeDatabaseUrl(connectionString)}`);
+    const sslMode = /[?&]sslmode=([^&]+)/i.exec(connectionString)?.[1] ?? "default";
+    console.info(
+      `[db] prisma pool → ${describeDatabaseUrl(connectionString)} (sslmode=${sslMode})`,
+    );
     globalForPrisma.dbHostLogged = true;
   }
 
@@ -27,10 +32,9 @@ function createPrismaClient() {
       max: Number(process.env.DATABASE_POOL_MAX ?? 1),
       idleTimeoutMillis: 20_000,
       connectionTimeoutMillis: 30_000,
-      ssl:
-        process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
-          ? { rejectUnauthorized: false }
-          : undefined,
+      // Important: do not pass `ssl: {...}` when sslmode=disable — that forces TLS
+      // and causes P1011 "server does not support TLS".
+      ...(ssl ? { ssl } : {}),
     });
 
   globalForPrisma.pgPool = pool;
