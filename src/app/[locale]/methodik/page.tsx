@@ -105,8 +105,8 @@ export default async function MethodologyPage({ params }: Props) {
           <h2>{isDe ? "4. Nutzererfahrungen" : "4. User experiences"}</h2>
           <p>
             {isDe
-              ? "Nutzer können eigene Erfahrungsberichte einreichen. Diese werden vor der Veröffentlichung geprüft. Zusätzlich gibt es klar gekennzeichnete KI-gestützte Erfahrungsstimmen. Keine verifizierten Amazon-Käufe."
-              : "Users can submit their own experience reports. These are reviewed before publishing. There are also clearly labeled AI-assisted experience notes. Not verified Amazon purchases."}
+              ? "Nutzer können eigene Erfahrungsberichte einreichen. Diese werden vor der Veröffentlichung geprüft und als Nutzerbericht gekennzeichnet. Zusätzlich erscheinen redaktionelle Erfahrungsberichte aus typischen Nutzungsszenarien. Keine verifizierten Amazon-Käufe."
+              : "Users can submit their own experience reports. These are reviewed before publishing and labeled as user reports. Editorial experience notes based on typical usage scenarios may also appear. Not verified Amazon purchases."}
           </p>
         </section>
         <section>

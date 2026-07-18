@@ -26,7 +26,6 @@ type Labels = {
   sortRating: string;
   averageRating: string;
   countLabel: string;
-  badgeAi: string;
   badgeUser: string;
   formTitle: string;
   formHint: string;
@@ -63,16 +62,11 @@ function Stars({ rating }: { rating: number }) {
 }
 
 function sourceBadge(source: string | null | undefined, labels: Labels) {
-  if (source === "user_submitted") {
-    return (
-      <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secondary">
-        {labels.badgeUser}
-      </span>
-    );
-  }
+  // Only highlight real user submissions — do not label AI-generated notes.
+  if (source !== "user_submitted") return null;
   return (
-    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-      {labels.badgeAi}
+    <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secondary">
+      {labels.badgeUser}
     </span>
   );
 }

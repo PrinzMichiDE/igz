@@ -476,7 +476,6 @@ export default async function ProductPage({ params }: Props) {
               sortRating: t("product.experienceSortRating"),
               averageRating: t("product.experienceAverageRating"),
               countLabel: t("product.experienceCount"),
-              badgeAi: t("product.experienceBadgeAi"),
               badgeUser: t("product.experienceBadgeUser"),
               formTitle: t("product.experienceFormTitle"),
               formHint: t("product.experienceFormHint"),

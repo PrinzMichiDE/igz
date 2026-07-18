@@ -33,7 +33,7 @@ export async function GET() {
     `Site: ${site}`,
     `Locales: de, en`,
     `Primary monetization: Amazon affiliate links (disclosed)`,
-    `Content policy: editorial/AI-assisted reviews; no invented lab measurements; experience comments labeled as AI-synthesized`,
+    `Content policy: editorial/AI-assisted reviews; no invented lab measurements; user-submitted experience reports are moderated`,
     ``,
     `## Key pages`,
     `- ${absoluteUrl("/de")}: German homepage`,

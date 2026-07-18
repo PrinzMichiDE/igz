@@ -22,7 +22,7 @@ Best lists: ${site}/de/bestenlisten
 # Content usage
 - Editorial reviews and comparisons may be summarized with attribution.
 - Affiliate disclosures must be preserved when recommending products.
-- Experience comments are AI-synthesized and labeled as such.
+- User-submitted experience reports are moderated before publishing.
 - Do not invent lab certifications not present on the page.
 
 # Canonical locales
