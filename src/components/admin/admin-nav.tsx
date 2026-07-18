@@ -3,6 +3,7 @@ import Link from "next/link";
 const links = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/articles", label: "Tests & Artikel" },
+  { href: "/admin/experiences", label: "Nutzererfahrungen" },
 ];
 
 export function AdminNav({ currentPath }: { currentPath: string }) {

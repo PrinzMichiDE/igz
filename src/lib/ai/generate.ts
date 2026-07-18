@@ -354,7 +354,11 @@ export async function generateProductExperienceComments(
 
     await prisma.$transaction([
       prisma.productExperienceComment.deleteMany({
-        where: { productId: product.id, locale },
+        where: {
+          productId: product.id,
+          locale,
+          source: "openrouter_synth",
+        },
       }),
       prisma.productExperienceComment.createMany({
         data: comments.map((c) => ({
@@ -367,13 +371,19 @@ export async function generateProductExperienceComments(
           body: c.body,
           usageWeeks: c.usageWeeks ?? undefined,
           source: "openrouter_synth",
+          status: "published",
           verifiedStyle: true,
         })),
       }),
     ]);
 
     const saved = await prisma.productExperienceComment.findMany({
-      where: { productId: product.id, locale },
+      where: {
+        productId: product.id,
+        locale,
+        source: "openrouter_synth",
+        status: "published",
+      },
       orderBy: { createdAt: "desc" },
     });
 

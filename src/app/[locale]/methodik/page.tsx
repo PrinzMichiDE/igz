@@ -105,8 +105,8 @@ export default async function MethodologyPage({ params }: Props) {
           <h2>{isDe ? "4. Nutzererfahrungen" : "4. User experiences"}</h2>
           <p>
             {isDe
-              ? "Kommentare auf Produktseiten sind KI-synthetisierte Erfahrungsstimmen und klar als solche gekennzeichnet – keine verifizierten Amazon-Käufe."
-              : "Comments on product pages are AI-synthesized experience notes and clearly labeled as such — not verified Amazon purchases."}
+              ? "Nutzer können eigene Erfahrungsberichte einreichen. Diese werden vor der Veröffentlichung geprüft. Zusätzlich gibt es klar gekennzeichnete KI-gestützte Erfahrungsstimmen. Keine verifizierten Amazon-Käufe."
+              : "Users can submit their own experience reports. These are reviewed before publishing. There are also clearly labeled AI-assisted experience notes. Not verified Amazon purchases."}
           </p>
         </section>
         <section>

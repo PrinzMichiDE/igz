@@ -440,7 +440,11 @@ async function main() {
         });
 
         await prisma.productExperienceComment.deleteMany({
-          where: { productId: product.id, locale },
+          where: {
+            productId: product.id,
+            locale,
+            source: { in: ["seed_demo", "openrouter_synth"] },
+          },
         });
 
         await prisma.productExperienceComment.createMany({
@@ -457,6 +461,7 @@ async function main() {
                     body: "Nach zwei Wochen Alltagstest bin ich überrascht, wie unkompliziert sich das Teil anfühlt. Morgens in der S-Bahn bleibt der Klang klar genug für Podcasts, und bei Calls wirkt die Bedienung intuitiv. Nicht perfekt bei sehr lautem Umfeld, aber für meinen Alltag genau richtig.",
                     usageWeeks: 2,
                     source: "seed_demo",
+                    status: "published",
                   },
                   {
                     productId: product.id,
@@ -468,6 +473,7 @@ async function main() {
                     body: "Sitzt beim Joggen stabil und nervt nicht mit ständigen Verbindungsabbrüchen. Der Klang ist alltagstauglich, nicht audiophil. Nach längeren Sessions wünsche ich mir etwas mehr Feinschliff bei den Höhen – trotzdem würde ich es weiterempfehlen.",
                     usageWeeks: 5,
                     source: "seed_demo",
+                    status: "published",
                   },
                   {
                     productId: product.id,
@@ -479,6 +485,7 @@ async function main() {
                     body: "Für den Preis okay, ohne Wow-Effekt. Die Akkulaufzeit reicht mir fürs Pendeln, die App wirkt jedoch etwas nüchtern. Wer einfache Nutzung will, kommt klar – wer Features sucht, sollte genauer vergleichen.",
                     usageWeeks: 3,
                     source: "seed_demo",
+                    status: "published",
                   },
                 ]
               : [
@@ -492,6 +499,7 @@ async function main() {
                     body: "After two weeks of commuting and calls, this feels refreshingly simple. Podcast clarity is solid on the train and controls are intuitive. Not perfect in very loud spaces, but for my routine it hits the mark.",
                     usageWeeks: 2,
                     source: "seed_demo",
+                    status: "published",
                   },
                   {
                     productId: product.id,
@@ -503,6 +511,7 @@ async function main() {
                     body: "Stays put while running and does not drop connection every few minutes. Sound is practical rather than audiophile. After longer sessions I want a bit more treble polish, but I would still recommend it.",
                     usageWeeks: 5,
                     source: "seed_demo",
+                    status: "published",
                   },
                   {
                     productId: product.id,
@@ -514,6 +523,7 @@ async function main() {
                     body: "Decent for the price without a wow moment. Battery covers my commute, though the app feels basic. Great if you want simplicity; compare more carefully if you need advanced features.",
                     usageWeeks: 3,
                     source: "seed_demo",
+                    status: "published",
                   },
                 ],
         });

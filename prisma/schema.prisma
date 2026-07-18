@@ -42,6 +42,12 @@ enum JobStatus {
   skipped
 }
 
+enum ExperienceCommentStatus {
+  pending
+  published
+  rejected
+}
+
 model Category {
   id               String   @id @default(cuid())
   slug             String   @unique
@@ -100,23 +106,28 @@ model Product {
 }
 
 model ProductExperienceComment {
-  id           String   @id @default(cuid())
-  locale       Locale
-  authorName   String
+  id            String                   @id @default(cuid())
+  locale        Locale
+  authorName    String
   authorContext String?
-  rating       Int
-  title        String?
-  body         String
-  usageWeeks   Int?
-  verifiedStyle Boolean @default(true)
-  source       String   @default("openrouter_synth")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  authorEmail   String?
+  rating        Int
+  title         String?
+  body          String
+  usageWeeks    Int?
+  verifiedStyle Boolean                  @default(true)
+  source        String                   @default("openrouter_synth")
+  status        ExperienceCommentStatus  @default(published)
+  ipHash        String?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
 
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@index([productId, locale])
+  @@index([productId, locale, status])
+  @@index([status, createdAt])
+  @@index([ipHash, createdAt])
 }
 
 model Article {

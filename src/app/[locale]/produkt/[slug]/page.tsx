@@ -94,7 +94,7 @@ export default async function ProductPage({ params }: Props) {
           take: 1,
         },
         experienceComments: {
-          where: { locale },
+          where: { locale, status: "published" },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -462,6 +462,8 @@ export default async function ProductPage({ params }: Props) {
           </section>
 
           <ExperienceCommentExplorer
+            productSlug={product.slug}
+            locale={locale}
             labels={{
               title: t("product.experiences"),
               disclaimer: t("product.experiencesDisclaimer"),
@@ -474,6 +476,22 @@ export default async function ProductPage({ params }: Props) {
               sortRating: t("product.experienceSortRating"),
               averageRating: t("product.experienceAverageRating"),
               countLabel: t("product.experienceCount"),
+              badgeAi: t("product.experienceBadgeAi"),
+              badgeUser: t("product.experienceBadgeUser"),
+              formTitle: t("product.experienceFormTitle"),
+              formHint: t("product.experienceFormHint"),
+              formName: t("product.experienceFormName"),
+              formContext: t("product.experienceFormContext"),
+              formEmail: t("product.experienceFormEmail"),
+              formEmailHint: t("product.experienceFormEmailHint"),
+              formRating: t("product.experienceFormRating"),
+              formReportTitle: t("product.experienceFormReportTitle"),
+              formBody: t("product.experienceFormBody"),
+              formUsageWeeks: t("product.experienceFormUsageWeeks"),
+              formSubmit: t("product.experienceFormSubmit"),
+              formSubmitting: t("product.experienceFormSubmitting"),
+              formSuccess: t("product.experienceFormSuccess"),
+              formError: t("product.experienceFormError"),
             }}
             comments={product.experienceComments}
           />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ExperienceCommentForm } from "@/components/content/experience-comment-form";
 
 type Comment = {
   id: string;
@@ -10,6 +11,7 @@ type Comment = {
   title?: string | null;
   body: string;
   usageWeeks?: number | null;
+  source?: string | null;
 };
 
 type Labels = {
@@ -24,11 +26,29 @@ type Labels = {
   sortRating: string;
   averageRating: string;
   countLabel: string;
+  badgeAi: string;
+  badgeUser: string;
+  formTitle: string;
+  formHint: string;
+  formName: string;
+  formContext: string;
+  formEmail: string;
+  formEmailHint: string;
+  formRating: string;
+  formReportTitle: string;
+  formBody: string;
+  formUsageWeeks: string;
+  formSubmit: string;
+  formSubmitting: string;
+  formSuccess: string;
+  formError: string;
 };
 
 type Props = {
   labels: Labels;
   comments: Comment[];
+  productSlug: string;
+  locale: "de" | "en";
 };
 
 function Stars({ rating }: { rating: number }) {
@@ -42,7 +62,27 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export function ExperienceCommentExplorer({ labels, comments }: Props) {
+function sourceBadge(source: string | null | undefined, labels: Labels) {
+  if (source === "user_submitted") {
+    return (
+      <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secondary">
+        {labels.badgeUser}
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+      {labels.badgeAi}
+    </span>
+  );
+}
+
+export function ExperienceCommentExplorer({
+  labels,
+  comments,
+  productSlug,
+  locale,
+}: Props) {
   const [filter, setFilter] = useState<"all" | "positive" | "critical">("all");
   const [sort, setSort] = useState<"recent" | "rating">("recent");
 
@@ -132,9 +172,12 @@ export function ExperienceCommentExplorer({ labels, comments }: Props) {
             <article key={comment.id} className="igz-card p-4">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-primary">
-                    {comment.authorName}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-primary">
+                      {comment.authorName}
+                    </p>
+                    {sourceBadge(comment.source, labels)}
+                  </div>
                   {comment.authorContext ? (
                     <p className="text-xs text-muted-foreground">
                       {comment.authorContext}
@@ -162,6 +205,27 @@ export function ExperienceCommentExplorer({ labels, comments }: Props) {
           ))}
         </div>
       )}
+
+      <ExperienceCommentForm
+        productSlug={productSlug}
+        locale={locale}
+        labels={{
+          formTitle: labels.formTitle,
+          formHint: labels.formHint,
+          name: labels.formName,
+          context: labels.formContext,
+          email: labels.formEmail,
+          emailHint: labels.formEmailHint,
+          rating: labels.formRating,
+          title: labels.formReportTitle,
+          body: labels.formBody,
+          usageWeeks: labels.formUsageWeeks,
+          submit: labels.formSubmit,
+          submitting: labels.formSubmitting,
+          success: labels.formSuccess,
+          error: labels.formError,
+        }}
+      />
     </section>
   );
 }
