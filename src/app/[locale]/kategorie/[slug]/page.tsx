@@ -4,8 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
 import { AwardBadge } from "@/components/comparison/award-badge";
 import { AwardPicker } from "@/components/comparison/award-picker";
-import { CategoryFilterSidebar } from "@/components/comparison/category-filter-sidebar";
-import { ComparisonTable } from "@/components/comparison/comparison-table";
+import { FilteredComparisonSection } from "@/components/comparison/filtered-comparison-section";
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
 import { ProductMatchFinder } from "@/components/comparison/product-match-finder";
 import { CtaButton } from "@/components/affiliate/cta-button";
@@ -17,15 +16,51 @@ import { buildFeatureMatrix } from "@/lib/product-ranking";
 import { collectFeatureList } from "@/lib/product-metadata";
 import { numericPrice, productOutHref } from "@/lib/product-links";
 import type { AppLocale } from "@/i18n/routing";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ useCase?: string }>;
 };
 
-export default async function CategoryPage({ params }: Props) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const appLocale = locale as AppLocale;
+
+  const category = await prisma.category
+    .findUnique({
+      where: { slug },
+      include: {
+        articles: {
+          where: { type: "comparison", locale: appLocale, status: "published" },
+          take: 1,
+        },
+      },
+    })
+    .catch(() => null);
+
+  if (!category) {
+    return { title: "Category" };
+  }
+
+  const article = category.articles[0];
+  const name = appLocale === "en" ? category.nameEn : category.nameDe;
+
+  return {
+    title: article?.seoTitle || `${name} ${appLocale === "en" ? "Comparison" : "Vergleich"}`,
+    description:
+      article?.seoDescription ||
+      article?.excerpt ||
+      (appLocale === "en" ? category.descriptionEn : category.descriptionDe) ||
+      undefined,
+  };
+}
+
+export default async function CategoryPage({ params, searchParams }: Props) {
   const { locale: localeParam, slug } = await params;
+  const { useCase: initialUseCase = "" } = await searchParams;
   const locale = localeParam as AppLocale;
   setRequestLocale(locale);
   const t = await getTranslations();
@@ -81,23 +116,44 @@ export default async function CategoryPage({ params }: Props) {
     article?.excerpt ||
     (locale === "en" ? category.descriptionEn : category.descriptionDe);
 
-  const rows = category.products.map((product, index) => ({
-    rank: index + 1,
-    title: product.title,
-    href: `/${locale}/produkt/${product.slug}`,
-    imageUrl: product.imageUrl,
-    score: product.editorialScore ?? product.rating,
-    price: product.price?.toString(),
-    currency: product.currency,
-    ctaHref: productOutHref(product, locale, pagePath),
-    excerpt: description,
-    badge:
-      comparison?.winnerProductId === product.id
-        ? t("category.winner")
-        : comparison?.priceWinnerId === product.id
-          ? t("category.priceWinner")
-          : null,
-  }));
+  const rows = category.products.map((product, index) => {
+    const review = reviewContentByProductId.get(product.id);
+    const bestFor = review?.bestFor ?? [];
+    return {
+      rank: index + 1,
+      title: product.title,
+      href: `/${locale}/produkt/${product.slug}`,
+      imageUrl: product.imageUrl,
+      score: product.editorialScore ?? product.rating,
+      price: product.price?.toString(),
+      currency: product.currency,
+      ctaHref: productOutHref(product, locale, pagePath),
+      excerpt: [description, ...bestFor].filter(Boolean).join(" · "),
+      badge:
+        comparison?.winnerProductId === product.id
+          ? t("category.winner")
+          : comparison?.priceWinnerId === product.id
+            ? t("category.priceWinner")
+            : null,
+    };
+  });
+
+  const useCaseOptions = [
+    ...new Set(
+      category.products.flatMap((product) => {
+        const review = reviewContentByProductId.get(product.id);
+        return review?.bestFor ?? [];
+      }),
+    ),
+  ].slice(0, 12);
+
+  const productPrices = category.products
+    .map((product) => numericPrice(product.price))
+    .filter((price): price is number => price !== null);
+  const priceBounds = {
+    min: productPrices.length > 0 ? Math.floor(Math.min(...productPrices)) : 0,
+    max: productPrices.length > 0 ? Math.ceil(Math.max(...productPrices)) : 1000,
+  };
 
   const matchCandidates = category.products.map((product) => {
     const review = reviewContentByProductId.get(product.id);
@@ -200,6 +256,7 @@ export default async function CategoryPage({ params }: Props) {
         <ProductMatchFinder
           candidates={matchCandidates}
           locale={locale}
+          initialUseCase={initialUseCase}
           labels={{
             title: t("category.matchFinderTitle"),
             subtitle: t("category.matchFinderSubtitle"),
@@ -234,10 +291,7 @@ export default async function CategoryPage({ params }: Props) {
         />
       ) : null}
 
-      <div className="grid gap-8 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <CategoryFilterSidebar locale={locale} />
-
-        <div>
+      <div>
           <div className="mb-8 grid gap-4 lg:grid-cols-3">
             {comparison?.winnerProduct ? (
               <div className="space-y-3 rounded-xl border border-secondary/20 bg-secondary/5 p-4">
@@ -349,17 +403,29 @@ export default async function CategoryPage({ params }: Props) {
             <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
               {t("category.tableTitle")}
             </h2>
-            <ComparisonTable
+            <FilteredComparisonSection
               rows={rows}
+              useCaseOptions={useCaseOptions}
+              priceBounds={priceBounds}
               locale={locale}
-              ctaLabel={t("cta.amazon")}
-              ctaSublabel={t("cta.amazonSubline")}
-              readLabel={t("category.readReview")}
-              availableOnAmazonLabel={t("category.availableOnAmazon")}
-              columns={{
-                model: t("category.columnModel"),
-                specs: t("category.columnSpecs"),
-                priceAction: t("category.columnPriceAction"),
+              filterLabels={{
+                filters: t("category.filters"),
+                filterPrice: t("category.filterPrice"),
+                filterUseCase: t("category.filterUseCase"),
+                filterMinScore: t("category.filterMinScore"),
+                reset: t("category.filterReset"),
+                results: t("category.filterResults"),
+              }}
+              tableLabels={{
+                ctaLabel: t("cta.amazon"),
+                ctaSublabel: t("cta.amazonSubline"),
+                readLabel: t("category.readReview"),
+                availableOnAmazonLabel: t("category.availableOnAmazon"),
+                columns: {
+                  model: t("category.columnModel"),
+                  specs: t("category.columnSpecs"),
+                  priceAction: t("category.columnPriceAction"),
+                },
               }}
             />
           </section>
@@ -376,7 +442,6 @@ export default async function CategoryPage({ params }: Props) {
           <section>
             <FaqAccordion items={content.faq || []} />
           </section>
-        </div>
       </div>
     </div>
   );

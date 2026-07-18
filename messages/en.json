@@ -60,6 +60,9 @@
     "filterBrand": "Brand",
     "filterPrice": "Price range",
     "filterUseCase": "Use case",
+    "filterMinScore": "Minimum score",
+    "filterReset": "Reset",
+    "filterResults": "Results",
     "availableOnAmazon": "Available on Amazon",
     "columnModel": "Model",
     "columnSpecs": "Core specs",
@@ -85,6 +88,24 @@
     "featureColumn": "Feature",
     "featureYes": "Yes",
     "featureNo": "No"
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Find products, categories and reviews on IGZ.",
+    "resultsFor": "Results for \"{query}\"",
+    "emptyPrompt": "Enter a search term to find products and categories.",
+    "categories": "Categories",
+    "products": "Products",
+    "noResults": "No matches — try another term or browse categories."
+  },
+  "deals": {
+    "badge": "Deals",
+    "title": "Current deals & savings",
+    "subtitle": "Products with real savings vs. list price or category average — updated daily from Amazon data.",
+    "empty": "No deals with measurable savings right now. Run a sync or check back later.",
+    "searchTitle": "Not what you're looking for?",
+    "searchSubtitle": "Search all products and categories.",
+    "browseCategories": "Browse all categories →"
   },
   "product": {
     "score": "Editorial score",

@@ -8,6 +8,7 @@ import { WhyIgzSection } from "@/components/layout/why-igz-section";
 import { ProductCard } from "@/components/product/product-card";
 import { prisma } from "@/lib/db/prisma";
 import { productOutHref } from "@/lib/product-links";
+import { extractTrustSignals } from "@/lib/product-metadata";
 import type { AppLocale } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
@@ -34,16 +35,34 @@ async function safeLatestProducts() {
     return await prisma.product.findMany({
       orderBy: { updatedAt: "desc" },
       take: 8,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        imageUrl: true,
+        price: true,
+        currency: true,
+        editorialScore: true,
+        rating: true,
+        asin: true,
+        affiliateUrl: true,
+        productUrl: true,
+        rawSearchJson: true,
+      },
     });
   } catch {
     return [];
   }
 }
 
-function pseudoDiscount(seed: string) {
-  let total = 0;
-  for (const char of seed) total += char.charCodeAt(0);
-  return 12 + (total % 18);
+function dealDiscount(product: { slug: string; rawSearchJson: unknown; price: { toString(): string } | null }) {
+  const signals = extractTrustSignals(
+    product.rawSearchJson,
+    product.price?.toString(),
+  );
+  return signals.savingsPercent && signals.savingsPercent > 0
+    ? signals.savingsPercent
+    : null;
 }
 
 export default async function HomePage({ params }: Props) {
@@ -77,11 +96,11 @@ export default async function HomePage({ params }: Props) {
               {t("home.heroSubtitle")}
             </p>
             <div className="mt-8">
-              <HeroSearch
-                placeholder={t("home.searchPlaceholder")}
-                buttonLabel={t("home.searchButton")}
-                actionHref={`/${locale}#categories`}
-              />
+            <HeroSearch
+              placeholder={t("home.searchPlaceholder")}
+              buttonLabel={t("home.searchButton")}
+              actionHref={`/${locale}/suche`}
+            />
             </div>
             <div className="mt-6 flex justify-center">
               <AffiliateDisclosure text={t("home.trust")} compact />
@@ -132,7 +151,7 @@ export default async function HomePage({ params }: Props) {
             {t("home.topDeals")}
           </h2>
           <Link
-            href={`/${locale}#reviews`}
+            href={`/${locale}/deals`}
             className="text-sm font-semibold text-secondary hover:underline"
           >
             {t("home.viewAllDeals")}
@@ -157,7 +176,7 @@ export default async function HomePage({ params }: Props) {
                 ctaHref={productOutHref(product, locale, homePath)}
                 readLabel={t("category.readReview")}
                 amazonOverlayLabel={t("product.imageOverlay")}
-                discountPercent={pseudoDiscount(product.slug)}
+                discountPercent={dealDiscount(product) ?? undefined}
               />
             ))}
           </div>
