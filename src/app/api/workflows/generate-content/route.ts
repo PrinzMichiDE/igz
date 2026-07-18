@@ -170,7 +170,7 @@ export const { POST } = serve<Payload>(
             headers: callConfig.headers,
             body: JSON.stringify(callConfig.body),
             retries: 2,
-            timeout: 180,
+            timeout: "180s",
           },
         );
 
