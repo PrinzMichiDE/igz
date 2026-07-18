@@ -20,6 +20,21 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Convenience: /de/cron/... and /cron/... → /api/cron/...
+      {
+        source: "/cron/:path*",
+        destination: "/api/cron/:path*",
+        permanent: false,
+      },
+      {
+        source: "/:locale(de|en)/cron/:path*",
+        destination: "/api/cron/:path*",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);
