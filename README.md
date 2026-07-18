@@ -106,5 +106,5 @@ Siehe `.env.example`. Korrekt ist **`DATABASE_URL`** (nicht `DATEBASE_URL`).
 
 ## Rechtliches
 
-Impressum/Datenschutz sind Platzhalter und müssen vor Go-Live ersetzt werden.
+Impressum und Datenschutzerklärung sind mit den Angaben von Michel Fritzsch hinterlegt.
 Contents müssen als redaktionell/KI-gestützt und affiliate-gekennzeichnet bleiben – keine erfundenen Labortests.
