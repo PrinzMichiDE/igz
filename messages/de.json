@@ -8,8 +8,10 @@
     "categories": "Kategorien",
     "reviews": "Tests",
     "deals": "Deals",
-    "compare": "Vergleichen",
+    "compare": "Vergleich",
     "scanner": "Scanner",
+    "menuOpen": "Menü öffnen",
+    "menuClose": "Menü schließen",
     "imprint": "Impressum",
     "privacy": "Datenschutz"
   },
