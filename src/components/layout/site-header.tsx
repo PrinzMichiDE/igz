@@ -47,6 +47,12 @@ export async function SiteHeader({ locale }: Props) {
             );
           })}
           <Link
+            href={`/${locale}/vergleich`}
+            className="text-sm font-medium text-muted-foreground transition hover:text-primary"
+          >
+            {t("nav.compare")}
+          </Link>
+          <Link
             href={`/${locale}#reviews`}
             className="text-sm font-medium text-muted-foreground transition hover:text-primary"
           >

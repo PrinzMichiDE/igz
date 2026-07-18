@@ -8,6 +8,7 @@
     "categories": "Categories",
     "reviews": "Reviews",
     "deals": "Deals",
+    "compare": "Compare",
     "imprint": "Imprint",
     "privacy": "Privacy"
   },
@@ -107,6 +108,23 @@
     "searchSubtitle": "Search all products and categories.",
     "browseCategories": "Browse all categories →"
   },
+  "compare": {
+    "title": "Compare products",
+    "subtitle": "Pick two models for a direct comparison of specs, pros and cons.",
+    "headToHead": "Head-to-head",
+    "featureMatrix": "Feature matrix",
+    "pickAnother": "Compare other products",
+    "pickSecond": "Choose the second product to compare:",
+    "compareWith": "Compare with {product}"
+  },
+  "guide": {
+    "badge": "Buying guide",
+    "readGuide": "Read the full buying guide",
+    "keyCriteria": "What to look for",
+    "budgetTiers": "Recommendations by budget",
+    "checklist": "Buying checklist",
+    "backToComparison": "Back to category comparison"
+  },
   "product": {
     "score": "Editorial score",
     "igzScore": "IGZ score",
@@ -157,6 +175,13 @@
     "manualsSourceManufacturer": "Manufacturer",
     "manualsSourceAmazon": "Amazon",
     "manualsSourcePortal": "Support portal",
+    "priceWatch": "Watch price",
+    "priceWatching": "On watchlist",
+    "priceWatchHint": "Saved locally — we'll remember your selection on your next visit.",
+    "priceTrendDown": "{percent}% cheaper than before",
+    "priceTrendUp": "{percent}% more expensive than before",
+    "priceTrendStable": "Price stable",
+    "priceTrendUnknown": "Price history unknown",
     "experienceFilterAll": "All",
     "experienceFilterPositive": "Positive (4–5★)",
     "experienceFilterCritical": "Critical (1–3★)",

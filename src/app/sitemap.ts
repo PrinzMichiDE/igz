@@ -10,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   const locales = ["de", "en"] as const;
-  const staticPaths = ["", "/deals", "/suche", "/impressum", "/datenschutz"];
+  const staticPaths = ["", "/deals", "/suche", "/vergleich", "/impressum", "/datenschutz"];
 
   const entries: MetadataRoute.Sitemap = [];
 
@@ -30,6 +30,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: category.updatedAt,
         changeFrequency: "daily",
         priority: 0.9,
+      });
+      entries.push({
+        url: `${baseUrl}/${locale}/kategorie/${category.slug}/kaufberatung`,
+        lastModified: category.updatedAt,
+        changeFrequency: "weekly",
+        priority: 0.85,
       });
     }
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Star } from "lucide-react";
@@ -17,6 +18,9 @@ import { AmazonTrustBadges } from "@/components/product/amazon-trust-badges";
 import { ScenarioTags } from "@/components/product/scenario-tags";
 import { ValueIndicators } from "@/components/product/value-indicators";
 import { ProductManuals } from "@/components/product/product-manuals";
+import { ProductImageGallery } from "@/components/product/product-image-gallery";
+import { PriceWatchButton } from "@/components/product/price-watch-button";
+import { PriceTrendBadge } from "@/components/product/price-trend-badge";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
 import {
@@ -28,6 +32,11 @@ import {
   parseProductManualLinks,
   resolveProductManuals,
 } from "@/lib/product-manuals";
+import { extractProductGalleryUrls } from "@/lib/product-gallery";
+import {
+  computePriceTrend,
+  getPriceHistory,
+} from "@/lib/price-history";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
@@ -104,7 +113,7 @@ export default async function ProductPage({ params }: Props) {
     product.price?.toString(),
   );
 
-  const [related, categoryPrices] = await Promise.all([
+  const [related, categoryPrices, priceHistory] = await Promise.all([
     prisma.product
       .findMany({
         where: {
@@ -121,12 +130,18 @@ export default async function ProductPage({ params }: Props) {
         select: { price: true },
       })
       .catch(() => []),
+    getPriceHistory(product.id),
   ]);
 
   const categoryAveragePrice = averageNumeric(
     categoryPrices.map((item) => numericPrice(item.price)),
   );
   const currentPrice = numericPrice(product.price);
+  const priceTrend = computePriceTrend(priceHistory);
+  const galleryUrls = extractProductGalleryUrls(
+    product.imageUrl,
+    product.rawDetailsJson,
+  );
 
   const manualLinks =
     parseProductManualLinks(product.manualLinks).length > 0
@@ -215,7 +230,7 @@ export default async function ProductPage({ params }: Props) {
             }}
           />
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <ValueIndicators
               price={currentPrice}
               categoryAveragePrice={categoryAveragePrice}
@@ -231,9 +246,21 @@ export default async function ProductPage({ params }: Props) {
                 updated: t("product.valueUpdated"),
               }}
             />
+            <PriceTrendBadge
+              trend={priceTrend.trend}
+              changePercent={priceTrend.changePercent}
+              labels={{
+                down: t("product.priceTrendDown"),
+                up: t("product.priceTrendUp"),
+                stable: t("product.priceTrendStable"),
+                unknown: t("product.priceTrendUnknown"),
+              }}
+            />
           </div>
 
-          {product.imageUrl ? (
+          {galleryUrls.length > 1 ? (
+            <ProductImageGallery images={galleryUrls} alt={product.title} />
+          ) : product.imageUrl ? (
             <AmazonImageLink
               href={ctaHref}
               src={product.imageUrl}
@@ -484,13 +511,34 @@ export default async function ProductPage({ params }: Props) {
             disclosureInline={t("disclosure.inline")}
           />
           <p className="mt-3 text-xs leading-5 text-muted">{t("product.scoreHint")}</p>
+          <PriceWatchButton
+            slug={product.slug}
+            title={product.title}
+            price={currentPrice}
+            currency={product.currency}
+            labels={{
+              watch: t("product.priceWatch"),
+              watching: t("product.priceWatching"),
+              hint: t("product.priceWatchHint"),
+            }}
+          />
         </div>
       </div>
 
       <section className="mt-16">
-        <h2 className="mb-6 font-display text-2xl font-semibold text-primary">
-          {t("product.related")}
-        </h2>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <h2 className="font-display text-2xl font-semibold text-primary">
+            {t("product.related")}
+          </h2>
+          {related[0] ? (
+            <Link
+              href={`/${locale}/vergleich?a=${product.slug}&b=${related[0].slug}`}
+              className="text-sm font-semibold text-secondary hover:underline"
+            >
+              {t("compare.compareWith", { product: related[0].title })} →
+            </Link>
+          ) : null}
+        </div>
         <div className="grid gap-5 md:grid-cols-3">
           {related.map((item) => (
             <ProductCard

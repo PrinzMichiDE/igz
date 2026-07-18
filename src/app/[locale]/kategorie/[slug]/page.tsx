@@ -90,6 +90,17 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   if (!category) notFound();
 
+  const buyingGuide = await prisma.article
+    .findFirst({
+      where: {
+        categoryId: category.id,
+        type: "buying_guide",
+        locale,
+        status: "published",
+      },
+    })
+    .catch(() => null);
+
   const reviewArticles = await prisma.article
     .findMany({
       where: {
@@ -245,6 +256,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
             {description}
           </p>
+        ) : null}
+        {buyingGuide ? (
+          <Link
+            href={`/${locale}/kategorie/${slug}/kaufberatung`}
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:underline"
+          >
+            {t("guide.readGuide")} →
+          </Link>
         ) : null}
       </div>
 

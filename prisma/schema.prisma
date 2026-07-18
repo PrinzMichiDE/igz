@@ -31,6 +31,7 @@ enum JobType {
   generate_review
   generate_comparison
   generate_comments
+  generate_buying_guide
 }
 
 enum JobStatus {
@@ -89,6 +90,7 @@ model Product {
   comparisonWins       Comparison[] @relation("WinnerProduct")
   comparisonPriceWins  Comparison[] @relation("PriceWinnerProduct")
   comparisonBudgetWins Comparison[] @relation("BudgetWinnerProduct")
+  priceSnapshots       ProductPriceSnapshot[]
 
   @@unique([asin, country])
   @@index([categoryId])
@@ -195,4 +197,16 @@ model AffiliateClick {
 
   @@index([asin])
   @@index([createdAt])
+}
+
+model ProductPriceSnapshot {
+  id         String   @id @default(cuid())
+  price      Decimal  @db.Decimal(10, 2)
+  currency   String   @default("EUR")
+  recordedAt DateTime @default(now())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, recordedAt])
 }

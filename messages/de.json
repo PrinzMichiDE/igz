@@ -8,6 +8,7 @@
     "categories": "Kategorien",
     "reviews": "Tests",
     "deals": "Deals",
+    "compare": "Vergleichen",
     "imprint": "Impressum",
     "privacy": "Datenschutz"
   },
@@ -107,6 +108,23 @@
     "searchSubtitle": "Durchsuche alle Produkte und Kategorien.",
     "browseCategories": "Alle Kategorien ansehen →"
   },
+  "compare": {
+    "title": "Produkte vergleichen",
+    "subtitle": "Wähle zwei Modelle für einen direkten Vergleich von Specs, Stärken und Schwächen.",
+    "headToHead": "Direktvergleich",
+    "featureMatrix": "Feature-Matrix",
+    "pickAnother": "Andere Produkte vergleichen",
+    "pickSecond": "Wähle das zweite Produkt für den Vergleich:",
+    "compareWith": "Vergleichen mit {product}"
+  },
+  "guide": {
+    "badge": "Kaufberatung",
+    "readGuide": "Ausführliche Kaufberatung lesen",
+    "keyCriteria": "Worauf du achten solltest",
+    "budgetTiers": "Empfehlungen nach Budget",
+    "checklist": "Kauf-Checkliste",
+    "backToComparison": "Zurück zum Kategorie-Vergleich"
+  },
   "product": {
     "score": "Redaktioneller Score",
     "igzScore": "IGZ Score",
@@ -157,6 +175,13 @@
     "manualsSourceManufacturer": "Hersteller",
     "manualsSourceAmazon": "Amazon",
     "manualsSourcePortal": "Support-Portal",
+    "priceWatch": "Preis beobachten",
+    "priceWatching": "Auf der Beobachtungsliste",
+    "priceWatchHint": "Lokal gespeichert – wir erinnern dich beim nächsten Besuch an deine Auswahl.",
+    "priceTrendDown": "{percent}% günstiger als zuvor",
+    "priceTrendUp": "{percent}% teurer als zuvor",
+    "priceTrendStable": "Preis stabil",
+    "priceTrendUnknown": "Preisverlauf unbekannt",
     "experienceFilterAll": "Alle",
     "experienceFilterPositive": "Positiv (4–5★)",
     "experienceFilterCritical": "Kritisch (1–3★)",

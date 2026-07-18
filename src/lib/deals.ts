@@ -84,10 +84,19 @@ export async function getTopDeals(locale: "de" | "en", limit = 24) {
   return deals
     .sort((a, b) => b.dealScore - a.dealScore)
     .slice(0, limit)
-    .map(
-      ({
-        dealScore,
-        ...deal
-      }): DealItem => deal,
-    );
+    .map((item): DealItem => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      imageUrl: item.imageUrl,
+      price: item.price,
+      currency: item.currency,
+      score: item.score,
+      categorySlug: item.categorySlug,
+      categoryName: item.categoryName,
+      savingsPercent: item.savingsPercent,
+      belowAveragePercent: item.belowAveragePercent,
+      isBestSeller: item.isBestSeller,
+      isAmazonChoice: item.isAmazonChoice,
+    }));
 }

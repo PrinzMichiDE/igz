@@ -24,6 +24,14 @@ import {
   buildCommentsUserPromptEn,
   commentsSystemPromptEn,
 } from "@/lib/ai/prompts/comments.en";
+import {
+  buildBuyingGuideUserPromptDe,
+  buyingGuideSystemPromptDe,
+} from "@/lib/ai/prompts/buying-guide.de";
+import {
+  buildBuyingGuideUserPromptEn,
+  buyingGuideSystemPromptEn,
+} from "@/lib/ai/prompts/buying-guide.en";
 import { slugify } from "@/lib/utils";
 import type { Locale } from "@prisma/client";
 
@@ -53,6 +61,25 @@ type ComparisonContent = {
   budgetWinnerAsin: string;
   intro: string;
   rankingNotes: string[];
+  faq: Array<{ question: string; answer: string }>;
+};
+
+type BuyingGuideContent = {
+  title: string;
+  excerpt?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  intro: string;
+  keyCriteria: string[];
+  budgetTiers: Array<{
+    label: string;
+    range: string;
+    recommendation: string;
+    asin: string;
+  }>;
+  mistakesToAvoid: string[];
+  checklist: string[];
+  sections: Array<{ heading: string; body: string }>;
   faq: Array<{ question: string; answer: string }>;
 };
 
@@ -480,6 +507,121 @@ export async function generateCategoryComparison(
         status: "succeeded",
         finishedAt: new Date(),
         message: "Comparison published",
+        metricsJson: { articleId: article.id },
+      },
+    });
+
+    return article;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    await prisma.jobRun.update({
+      where: { id: job.id },
+      data: {
+        status: "failed",
+        finishedAt: new Date(),
+        error: message,
+      },
+    });
+    throw error;
+  }
+}
+
+export async function generateBuyingGuide(categoryId: string, locale: Locale) {
+  const category = await prisma.category.findUniqueOrThrow({
+    where: { id: categoryId },
+    include: {
+      products: {
+        orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
+        take: 8,
+      },
+    },
+  });
+
+  const job = await prisma.jobRun.create({
+    data: {
+      type: "generate_buying_guide",
+      status: "running",
+      startedAt: new Date(),
+      message: `Buying guide ${locale} for ${category.slug}`,
+    },
+  });
+
+  try {
+    const system =
+      locale === "de" ? buyingGuideSystemPromptDe : buyingGuideSystemPromptEn;
+    const user =
+      locale === "de"
+        ? buildBuyingGuideUserPromptDe({
+            categoryName: category.nameDe,
+            products: category.products.map((p) => ({
+              title: p.title,
+              asin: p.asin,
+              price: p.price?.toString(),
+              rating: p.rating,
+              score: p.editorialScore,
+            })),
+          })
+        : buildBuyingGuideUserPromptEn({
+            categoryName: category.nameEn,
+            products: category.products.map((p) => ({
+              title: p.title,
+              asin: p.asin,
+              price: p.price?.toString(),
+              rating: p.rating,
+              score: p.editorialScore,
+            })),
+          });
+
+    const content = await openRouterChatJson<BuyingGuideContent>({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature: 0.5,
+    });
+
+    const slug = `${category.slug}-kaufberatung-${locale}`;
+    const article = await prisma.article.upsert({
+      where: {
+        categoryId_type_locale: {
+          categoryId: category.id,
+          type: "buying_guide",
+          locale,
+        },
+      },
+      create: {
+        type: "buying_guide",
+        locale,
+        status: "published",
+        title: content.title,
+        slug,
+        excerpt: content.excerpt,
+        seoTitle: content.seoTitle,
+        seoDescription: content.seoDescription,
+        contentJson: content,
+        bodyMarkdown: content.intro,
+        publishedAt: new Date(),
+        categoryId: category.id,
+      },
+      update: {
+        status: "published",
+        title: content.title,
+        slug,
+        excerpt: content.excerpt,
+        seoTitle: content.seoTitle,
+        seoDescription: content.seoDescription,
+        contentJson: content,
+        bodyMarkdown: content.intro,
+        publishedAt: new Date(),
+      },
+    });
+
+    await prisma.jobRun.update({
+      where: { id: job.id },
+      data: {
+        status: "succeeded",
+        finishedAt: new Date(),
+        message: "Buying guide published",
         metricsJson: { articleId: article.id },
       },
     });
