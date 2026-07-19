@@ -57,6 +57,38 @@ export default async function ImprintPage({ params }: Props) {
 
         <section className="space-y-2">
           <h2 className="text-base font-semibold text-zinc-900">
+            {isDe ? "Kontakt / Produkt zum Test" : "Contact / product testing"}
+          </h2>
+          <p>
+            {isDe ? (
+              <>
+                Produktvorschläge und Musteranfragen bitte über das{" "}
+                <Link
+                  href={`/${locale}/kontakt`}
+                  className="text-blue-700 hover:underline"
+                >
+                  Kontaktformular
+                </Link>
+                . Bitte keine Muster ohne vorherige Absprache senden.
+              </>
+            ) : (
+              <>
+                Please use the{" "}
+                <Link
+                  href={`/${locale}/kontakt`}
+                  className="text-blue-700 hover:underline"
+                >
+                  contact form
+                </Link>{" "}
+                for product suggestions and sample offers. Do not ship samples
+                without prior agreement.
+              </>
+            )}
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-base font-semibold text-zinc-900">
             {isDe ? "Online-Streitbeilegung" : "Online dispute resolution"}
           </h2>
           <p>
