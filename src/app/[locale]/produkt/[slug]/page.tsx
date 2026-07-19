@@ -45,10 +45,24 @@ import {
   parseStoredErrorCodes,
   parseStoredKnownIssues,
 } from "@/lib/product-tech/parse";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, slugify } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
 import { ProductJsonLd } from "@/components/seo/product-json-ld";
+
+function estimateReadMinutes(content: {
+  verdict?: string;
+  directAnswer?: string;
+  sections?: Array<{ body?: string }>;
+}) {
+  const text = [
+    content.verdict || "",
+    content.directAnswer || "",
+    ...(content.sections || []).map((section) => section.body || ""),
+  ].join(" ");
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(8, Math.min(25, Math.round(words / 180)));
+}
 
 export const dynamic = "force-dynamic";
 
@@ -205,8 +219,20 @@ export default async function ProductPage({ params }: Props) {
         )
       : features;
 
+  const reviewSections = (content.sections || [])
+    .filter((section) => section.heading?.trim() && section.body?.trim())
+    .map((section, index) => ({
+      ...section,
+      id: `abschnitt-${slugify(section.heading) || index + 1}`,
+    }));
+  const readMinutes = estimateReadMinutes(content);
+
   const tocSections = [
     { id: "fazit", label: t("product.verdict") },
+    ...reviewSections.map((section) => ({
+      id: section.id,
+      label: section.heading,
+    })),
     { id: "pros-cons", label: `${t("product.pros")} / ${t("product.cons")}` },
     ...(manualLinks.length > 0
       ? [{ id: "anleitungen", label: t("product.manualsTitle") }]
@@ -266,7 +292,11 @@ export default async function ProductPage({ params }: Props) {
             <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
               {t("product.reviewBadge")}
             </span>
-            <span className="text-muted-foreground">{t("product.readTime")}</span>
+            <span className="text-muted-foreground">
+              {locale === "en"
+                ? `${readMinutes} min read`
+                : `${readMinutes} Min. Lesezeit`}
+            </span>
           </div>
 
           <h1 className="font-display text-4xl font-bold tracking-tight text-primary md:text-5xl">
@@ -382,16 +412,54 @@ export default async function ProductPage({ params }: Props) {
 
           <section id="fazit" className="prose-article mt-10">
             <h2>{t("product.verdict")}</h2>
+            {content.directAnswer ? (
+              <p className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3 text-base leading-7 text-primary">
+                {content.directAnswer}
+              </p>
+            ) : null}
             <p>{content.verdict || article?.excerpt || product.title}</p>
-            {content.sections?.map((section) => (
-              <div key={section.heading} className="mt-6">
-                <h2>{section.heading}</h2>
-                {section.body.split("\n\n").map((paragraph) => (
-                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-                ))}
+            {content.keyTakeaways && content.keyTakeaways.length > 0 ? (
+              <div className="not-prose mt-6 rounded-xl border border-border bg-surface-muted/60 p-5">
+                <h3 className="font-display text-sm font-semibold tracking-[0.14em] text-muted uppercase">
+                  {locale === "en" ? "Key takeaways" : "Die wichtigsten Punkte"}
+                </h3>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+                  {content.keyTakeaways.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ))}
+            ) : null}
           </section>
+
+          <div className="mt-10 space-y-6">
+            {reviewSections.map((section, index) => (
+              <section
+                key={section.id}
+                id={section.id}
+                className="scroll-mt-24 rounded-2xl border border-border bg-surface p-6 md:p-7"
+              >
+                <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
+                  {locale === "en" ? `Section ${index + 1}` : `Abschnitt ${index + 1}`}
+                </p>
+                <h2 className="mt-2 font-display text-2xl font-semibold text-primary">
+                  {section.heading}
+                </h2>
+                <div className="prose-article mt-4">
+                  {section.body
+                    .split(/\n{2,}/)
+                    .map((paragraph) => paragraph.trim())
+                    .filter(Boolean)
+                    .map((paragraph) => (
+                      <p key={paragraph.slice(0, 64)}>{paragraph}</p>
+                    ))}
+                </div>
+              </section>
+            ))}
+          </div>
 
           <AmazonInlineCta
             title={t("product.inlineCtaTitle")}

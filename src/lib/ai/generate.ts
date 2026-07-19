@@ -136,20 +136,21 @@ function buildFullMarkdown(content: ReviewContent) {
 
 function passesReviewQualityGate(content: ReviewContent) {
   const sections = content.sections || [];
-  const longSections = sections.filter((s) => wordCount(s.body || "") >= 50);
+  const longSections = sections.filter((s) => wordCount(s.body || "") >= 110);
   const takeaways = content.keyTakeaways || [];
 
   return (
     content.title?.length > 10 &&
-    wordCount(content.verdict || "") >= 40 &&
-    wordCount(content.directAnswer || "") >= 15 &&
-    takeaways.length >= 3 &&
+    wordCount(content.verdict || "") >= 70 &&
+    wordCount(content.directAnswer || "") >= 30 &&
+    takeaways.length >= 5 &&
     Array.isArray(content.pros) &&
-    content.pros.length >= 3 &&
+    content.pros.length >= 4 &&
     Array.isArray(content.cons) &&
-    content.cons.length >= 2 &&
-    sections.length >= 4 &&
-    longSections.length >= 3 &&
+    content.cons.length >= 3 &&
+    sections.length >= 7 &&
+    longSections.length >= 5 &&
+    sections.every((section) => Boolean(section.heading?.trim())) &&
     typeof content.score === "number" &&
     content.score >= 0 &&
     content.score <= 10
@@ -211,7 +212,7 @@ export async function prepareProductReview(productId: string, locale: Locale) {
     asin: product.asin,
     productSlug: product.slug,
     locale,
-    temperature: 0.55,
+    temperature: 0.5,
     messages: [
       { role: "system" as const, content: system },
       { role: "user" as const, content: user },

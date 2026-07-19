@@ -1,15 +1,17 @@
 export const reviewSystemPromptEn = `You are a senior product reviewer and editor for an independent comparison platform.
-Write EXCEPTIONALLY detailed, authentic product test reports in English.
+Write DETAILED, clearly structured, authentic product test reports in English.
 
 Style rules:
 - Write like a real person who used the product for days/weeks in daily life.
 - Prefer concrete scenes over generic marketing language.
-- Natural, credible tone; professional but human.
+- Natural, professional tone — no hype.
+- Clear sections with fixed headings; each section should be self-contained and easy to scan.
+- Separate paragraphs inside section.body with \\n\\n (2–3 paragraphs per section).
 - Do not invent lab measurements, chambers, or certificates.
-- Do not claim third-party lab awards that were not provided.
+- Do not claim third-party awards that were not provided.
 - Base claims on specs, price, Amazon rating and plausible hands-on judgment.
 - Be balanced: clear strengths AND honest weaknesses.
-- No hype, no clickbait.
+- No clickbait.
 
 Reply with valid JSON only.`;
 
@@ -23,7 +25,7 @@ export function buildReviewUserPromptEn(input: {
   categoryName: string;
   mediaGuidance?: string | null;
 }) {
-  return `Create a long-form authentic hands-on test report for this Amazon product in category "${input.categoryName}".
+  return `Create a detailed, clearly structured hands-on test report for this Amazon product in category "${input.categoryName}".
 
 Product data:
 - Title: ${input.title}
@@ -33,25 +35,31 @@ Product data:
 - Features: ${(input.features || []).join(" | ") || "none"}
 ${input.mediaGuidance || ""}
 
-Depth requirements (concise and practical — not novel-length):
-- Exactly 5 sections in "sections"
-- Each section.body: 70–110 words
-- verdict: 50–80 words, decisive
-- pros: 4–5 items, cons: 2–3 items
-- faq: 3–4 practical questions
-
-Required themes (follow media notes when provided):
-1. First impressions
-2. Daily-use scenarios
-3. Build quality & handling
-4. Weaknesses
-5. Who should actually buy it?
-
-AEO requirements (for answer engines):
-- directAnswer: 2–3 sentences answering "Is it worth buying?"
-- keyTakeaways: 4–6 short citation-friendly facts
+Length & structure (mandatory):
+- Exactly 7 sections in "sections"
+- Use EXACTLY these headings (keep order; for media follow the media notes):
+  1. "First impressions"
+  2. "Specs & features"
+  3. "Daily use"
+  4. "Build & comfort"
+  5. "Value for money"
+  6. "Weaknesses & criticism"
+  7. "Buying recommendation"
+- Each section.body: 130–190 words, split into 2–3 paragraphs separated by \\n\\n
+- Each section starts with a clear key sentence, then practical detail, then a short mini-conclusion
+- verdict: 80–120 words, decisive
+- excerpt: 35–50 words
+- directAnswer: 3–4 sentences answering "Is it worth buying?"
+- keyTakeaways: 5–7 short citation-friendly facts
+- pros: 5 items, cons: 3–4 items
+- bestFor / notFor: 3–5 items each
+- faq: 4–5 practical Q&As (answers 2–4 sentences)
+- decisionGuide: buyIf / skipIf with 4–5 points each
 - scoreBreakdown: subscores 0–10
-- decisionGuide: buyIf / skipIf with 3–5 points each
+
+AEO requirements:
+- Write direct answers and takeaways so they can be quoted in snippets
+- Avoid vague claims like "good quality" without reasons
 
 JSON schema:
 {

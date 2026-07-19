@@ -1,10 +1,12 @@
 export const reviewSystemPromptDe = `Du bist ein erfahrener Produkttester und Chefredakteur einer unabhängigen Vergleichsplattform.
-Schreibe AUSSERGEWÖHNLICH ausführliche, authentische Testberichte auf Deutsch.
+Schreibe AUSFÜHRLICHE, klar gegliederte, authentische Testberichte auf Deutsch.
 
 Stil-Regeln:
 - Schreibe wie ein Mensch, der das Produkt über Tage/Wochen im Alltag genutzt hat.
 - Konkrete Szenen statt Floskeln (Pendeln, Homeoffice, Sport, Küche, Reisen usw. – passend zur Kategorie).
-- Natürliche Sprache, gelegentlich kurze Einschübe, aber professionell.
+- Natürliche, professionelle Sprache – keine Werbesprache.
+- Klare Abschnitte mit festen Überschriften; jeder Abschnitt steht für sich und ist leicht scannbar.
+- Absätze innerhalb von section.body mit \\n\\n trennen (2–3 Absätze pro Abschnitt).
 - Keine erfundenen Laborwerte, Messkammern oder Zertifikate.
 - Keine Fake-Claims wie "von Stiftung Warentest getestet".
 - Stütze dich auf Specs, Preis, Amazon-Rating und nachvollziehbare Praxis-Einschätzung.
@@ -23,7 +25,7 @@ export function buildReviewUserPromptDe(input: {
   categoryName: string;
   mediaGuidance?: string | null;
 }) {
-  return `Erstelle einen ausführlichen, authentischen Langzeit-Testbericht für dieses Amazon-Produkt in der Kategorie "${input.categoryName}".
+  return `Erstelle einen ausführlichen, klar strukturierten Testbericht für dieses Amazon-Produkt in der Kategorie "${input.categoryName}".
 
 Produktdaten:
 - Titel: ${input.title}
@@ -33,25 +35,31 @@ Produktdaten:
 - Features: ${(input.features || []).join(" | ") || "keine"}
 ${input.mediaGuidance || ""}
 
-Anforderungen an Länge/Tiefe (knapp und praxisnah – nicht romanhaft):
-- Genau 5 Abschnitte in "sections"
-- Jeder section.body: 70–110 Wörter
-- verdict: 50–80 Wörter, klar und kaufentscheidend
-- pros: 4–5 Punkte, cons: 2–3 Punkte
-- faq: 3–4 praxisnahe Fragen
-
-Pflicht-Abschnitte (Headings sinngemäß – bei Medien ggf. die Medien-Hinweise nutzen):
-1. Erster Eindruck
-2. Alltagstest
-3. Verarbeitung & Komfort
-4. Schwächen
-5. Für wen lohnt sich der Kauf?
-
-AEO-Anforderungen (für Answer Engines):
-- directAnswer: 2–3 Sätze, die die Kernfrage "Lohnt sich der Kauf?" direkt beantworten
-- keyTakeaways: 4–6 kurze, zitierfähige Bullet-Facts
+Länge & Struktur (verbindlich):
+- Genau 7 Abschnitte in "sections"
+- Nutze GENAU diese Headings (Reihenfolge einhalten; bei Medien die Medien-Variante aus den Hinweisen):
+  1. "Erster Eindruck"
+  2. "Ausstattung & Technik"
+  3. "Alltagstest"
+  4. "Verarbeitung & Komfort"
+  5. "Preis-Leistung"
+  6. "Schwächen & Kritik"
+  7. "Kaufempfehlung"
+- Jeder section.body: 130–190 Wörter, aufgeteilt in 2–3 Absätze (getrennt mit \\n\\n)
+- Jeder Abschnitt beginnt mit einem klaren Kernsatz, dann Praxisdetails, dann kurzes Zwischenfazit
+- verdict: 80–120 Wörter, kaufentscheidend und klar
+- excerpt: 35–50 Wörter
+- directAnswer: 3–4 Sätze zur Frage "Lohnt sich der Kauf?"
+- keyTakeaways: 5–7 kurze, zitierfähige Fakten
+- pros: 5 Punkte, cons: 3–4 Punkte
+- bestFor / notFor: je 3–5 Punkte
+- faq: 4–5 praxisnahe Fragen mit konkreten Antworten (je 2–4 Sätze)
+- decisionGuide: buyIf / skipIf je 4–5 Punkte
 - scoreBreakdown: Teil-Scores 0–10
-- decisionGuide: buyIf / skipIf je 3–5 Punkte
+
+AEO-Anforderungen:
+- Direkte Antworten und Takeaways so schreiben, dass sie in Snippets zitierbar sind
+- Keine vagen Floskeln wie "gute Qualität" ohne Begründung
 
 JSON-Schema:
 {
