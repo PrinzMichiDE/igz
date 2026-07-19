@@ -142,6 +142,8 @@ export async function GET(req: NextRequest) {
           productLimit,
           skipGuides: true,
           forceTech: false,
+          force,
+          refreshShort: force,
           backfillMissing: true,
           diversify: true,
           chainRemaining: Math.max(0, Math.min(8, chainRemaining)),

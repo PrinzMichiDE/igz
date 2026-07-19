@@ -21,6 +21,7 @@ import {
   countCategoriesWithReviewBacklog,
   countProductsMissingReviews,
   listProductsMissingReviews,
+  listProductsNeedingDetailedReviewRefresh,
 } from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 import type { ProductTechProfileAiResponse } from "@/lib/product-tech/types";
@@ -48,6 +49,7 @@ type Payload = {
   chainRemaining?: number;
   fromCron?: boolean;
   force?: boolean;
+  refreshShort?: boolean;
 };
 
 type ReviewContent = Parameters<typeof persistProductReview>[0]["content"];
@@ -74,6 +76,7 @@ export const { POST } = serve<Payload>(
     );
     const primaryLocale = locales[0] ?? "de";
     const forceRegen = payload.force === true;
+    const refreshShort = payload.refreshShort === true;
     const categorySlugs = (payload.categorySlugs || [])
       .map((slug) => String(slug).trim())
       .filter(Boolean);
@@ -151,6 +154,24 @@ export const { POST } = serve<Payload>(
             categorySlug: product.category.slug,
           },
         ];
+      }
+
+      if (refreshShort) {
+        const stale = await listProductsNeedingDetailedReviewRefresh({
+          locale: primaryLocale,
+          limit: productLimit,
+          categorySlug: payload.category || null,
+          categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
+        });
+        if (stale.length > 0) {
+          return stale.map((item) => ({
+            id: item.id,
+            asin: item.asin,
+            slug: item.slug,
+            categoryId: item.categoryId,
+            categorySlug: item.categorySlug,
+          }));
+        }
       }
 
       const missing = await listProductsMissingReviews({
@@ -335,7 +356,7 @@ export const { POST } = serve<Payload>(
         const shouldWriteReview = await context.run(
           `need-review-${product.asin}-${locale}`,
           async () => {
-            if (forceRegen) return true;
+            if (forceRegen || refreshShort) return true;
             const existing = await prisma.article.findFirst({
               where: {
                 productId: product.id,
@@ -362,6 +383,7 @@ export const { POST } = serve<Payload>(
             body: buildOpenRouterJsonBody({
               messages: prepared.messages,
               temperature: prepared.temperature,
+              maxTokens: prepared.maxTokens,
             }),
           }),
         );
@@ -395,6 +417,7 @@ export const { POST } = serve<Payload>(
                 productId: prepared.productId,
                 locale: prepared.locale,
                 jobId: prepared.jobId,
+                categorySlug: prepared.categorySlug,
                 content,
               });
               return { id: article.id, productId: product.id, locale };
@@ -494,33 +517,73 @@ export const { POST } = serve<Payload>(
       return { released: true };
     });
 
-    // Keep draining the global backlog across categories by chaining runs.
+    // Keep draining missing reviews; once empty, chain into short-review refresh.
     let chained: { workflowRunId?: string; remaining?: number } | null = null;
-    if (backlogRemaining.products > 0 && chainRemaining > 0) {
-      chained = await context.run("chain-next-backfill", async () => {
-        const next = await triggerWorkflow(
-          "/api/workflows/generate-content",
-          {
-            category: payload.category || null,
+    if (chainRemaining > 0) {
+      if (backlogRemaining.products > 0) {
+        chained = await context.run("chain-next-backfill", async () => {
+          const next = await triggerWorkflow(
+            "/api/workflows/generate-content",
+            {
+              category: payload.category || null,
+              categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
+              locales,
+              comments: commentCount,
+              productLimit,
+              skipGuides: true,
+              forceTech: false,
+              force: false,
+              refreshShort: false,
+              backfillMissing: true,
+              diversify,
+              chainRemaining: chainRemaining - 1,
+              fromCron: false,
+              lockKey,
+            },
+            { delaySeconds: 45 },
+          );
+          return {
+            workflowRunId: next.workflowRunId,
+            remaining: chainRemaining - 1,
+          };
+        });
+      } else if (refreshShort || reviews.length > 0) {
+        chained = await context.run("chain-next-refresh", async () => {
+          const staleLeft = await listProductsNeedingDetailedReviewRefresh({
+            locale: primaryLocale,
+            limit: 1,
+            categorySlug: payload.category || null,
             categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
-            locales,
-            comments: commentCount,
-            productLimit,
-            skipGuides: true,
-            forceTech: false,
-            backfillMissing: true,
-            diversify,
-            chainRemaining: chainRemaining - 1,
-            fromCron: false,
-            lockKey,
-          },
-          { delaySeconds: 45 },
-        );
-        return {
-          workflowRunId: next.workflowRunId,
-          remaining: chainRemaining - 1,
-        };
-      });
+          });
+          if (staleLeft.length === 0) {
+            return { remaining: chainRemaining - 1 };
+          }
+          const next = await triggerWorkflow(
+            "/api/workflows/generate-content",
+            {
+              category: payload.category || null,
+              categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
+              locales,
+              comments: commentCount,
+              productLimit,
+              skipGuides: true,
+              forceTech: false,
+              force: true,
+              refreshShort: true,
+              backfillMissing: true,
+              diversify,
+              chainRemaining: chainRemaining - 1,
+              fromCron: false,
+              lockKey,
+            },
+            { delaySeconds: 45 },
+          );
+          return {
+            workflowRunId: next.workflowRunId,
+            remaining: chainRemaining - 1,
+          };
+        });
+      }
     }
 
     return {

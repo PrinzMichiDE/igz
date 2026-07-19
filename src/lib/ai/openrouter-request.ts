@@ -3,6 +3,7 @@ import type { ChatMessage } from "@/lib/ai/openrouter";
 export type OpenRouterChatCompletionBody = {
   model: string;
   temperature: number;
+  max_tokens?: number;
   response_format?: { type: "json_object" };
   messages: ChatMessage[];
   plugins?: Array<Record<string, unknown>>;
@@ -35,11 +36,15 @@ export function buildOpenRouterJsonBody(options: {
   messages: ChatMessage[];
   temperature?: number;
   model?: string;
+  maxTokens?: number;
   plugins?: Array<Record<string, unknown>>;
 }): OpenRouterChatCompletionBody {
   return {
     model: options.model || getOpenRouterModel(),
     temperature: options.temperature ?? 0.4,
+    ...(typeof options.maxTokens === "number"
+      ? { max_tokens: options.maxTokens }
+      : {}),
     response_format: { type: "json_object" },
     messages: options.messages,
     ...(options.plugins?.length ? { plugins: options.plugins } : {}),

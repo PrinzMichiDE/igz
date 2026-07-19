@@ -1,3 +1,7 @@
+import {
+  isDetailedSectionedReview,
+  type ReviewSection,
+} from "@/lib/ai/review-sections";
 import { prisma } from "@/lib/db/prisma";
 import type { Locale } from "@prisma/client";
 
@@ -204,6 +208,95 @@ export async function countCategoriesWithReviewBacklog(
 /**
  * Pick the category that currently has the largest review backlog.
  */
+/**
+ * Find published reviews that are still in the old short format
+ * (fewer than 7 clear sections / too little body text) so we can refresh them.
+ */
+export async function listProductsNeedingDetailedReviewRefresh(options?: {
+  locale?: Locale;
+  limit?: number;
+  categorySlug?: string | null;
+  categorySlugs?: string[] | null;
+}): Promise<MissingReviewProduct[]> {
+  const locale = options?.locale ?? "de";
+  const limit = Math.min(20, Math.max(1, Number(options?.limit || 5)));
+  const categorySlugs = (options?.categorySlugs || [])
+    .map((slug) => slug.trim())
+    .filter(Boolean);
+
+  const articles = await prisma.article.findMany({
+    where: {
+      type: "review",
+      locale,
+      status: "published",
+      productId: { not: null },
+      ...(options?.categorySlug || categorySlugs.length > 0
+        ? {
+            product: {
+              category: {
+                slug: options?.categorySlug
+                  ? options.categorySlug
+                  : { in: categorySlugs },
+              },
+            },
+          }
+        : {}),
+    },
+    orderBy: [{ publishedAt: "asc" }, { updatedAt: "asc" }],
+    take: Math.min(250, Math.max(40, limit * 25)),
+    select: {
+      contentJson: true,
+      product: {
+        select: {
+          id: true,
+          asin: true,
+          slug: true,
+          title: true,
+          rating: true,
+          reviewCount: true,
+          categoryId: true,
+          category: { select: { slug: true } },
+        },
+      },
+    },
+  });
+
+  const selected: MissingReviewProduct[] = [];
+  for (const article of articles) {
+    if (!article.product) continue;
+    const content = article.contentJson as {
+      sections?: ReviewSection[];
+    } | null;
+    const sections = Array.isArray(content?.sections) ? content.sections : [];
+    if (isDetailedSectionedReview(sections)) continue;
+
+    selected.push({
+      id: article.product.id,
+      asin: article.product.asin,
+      slug: article.product.slug,
+      title: article.product.title,
+      rating: article.product.rating,
+      reviewCount: article.product.reviewCount,
+      categoryId: article.product.categoryId,
+      categorySlug: article.product.category.slug,
+    });
+    if (selected.length >= limit) break;
+  }
+
+  return selected;
+}
+
+export async function countProductsNeedingDetailedReviewRefresh(
+  locale: Locale = "de",
+): Promise<number> {
+  const sample = await listProductsNeedingDetailedReviewRefresh({
+    locale,
+    limit: 20,
+  });
+  // Cheap signal for ops dashboards — exact global count would scan all articles.
+  return sample.length;
+}
+
 export async function resolveCategoryWithReviewBacklog(
   locale: Locale = "de",
 ): Promise<{ id: string; slug: string; missingCount: number } | null> {

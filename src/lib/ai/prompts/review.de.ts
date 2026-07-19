@@ -5,8 +5,10 @@ Stil-Regeln:
 - Schreibe wie ein Mensch, der das Produkt über Tage/Wochen im Alltag genutzt hat.
 - Konkrete Szenen statt Floskeln (Pendeln, Homeoffice, Sport, Küche, Reisen usw. – passend zur Kategorie).
 - Natürliche, professionelle Sprache – keine Werbesprache.
-- Klare Abschnitte mit festen Überschriften; jeder Abschnitt steht für sich und ist leicht scannbar.
-- Absätze innerhalb von section.body mit \\n\\n trennen (2–3 Absätze pro Abschnitt).
+- Der Test MUSS genau 7 benannte Abschnitte haben – wie Kapitel eines Magazin-Tests.
+- Jeder Abschnitt ist eigenständig lesbar und leicht scannbar (Zwischenüberschrift + 2–3 Absätze).
+- Absätze innerhalb von section.body IMMER mit \\n\\n trennen (nie als Fließtext-Block).
+- Gesamtlänge der 7 Abschnitte zusammen: ca. 1000–1300 Wörter.
 - Keine erfundenen Laborwerte, Messkammern oder Zertifikate.
 - Keine Fake-Claims wie "von Stiftung Warentest getestet".
 - Stütze dich auf Specs, Preis, Amazon-Rating und nachvollziehbare Praxis-Einschätzung.

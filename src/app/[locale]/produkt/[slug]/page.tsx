@@ -435,6 +435,25 @@ export default async function ProductPage({ params }: Props) {
             ) : null}
           </section>
 
+          {reviewSections.length > 0 ? (
+            <div className="mt-10 xl:hidden">
+              <p className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+                {locale === "en" ? "In this test" : "In diesem Test"}
+              </p>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {reviewSections.map((section, index) => (
+                  <a
+                    key={section.id}
+                    href={`#${section.id}`}
+                    className="shrink-0 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-primary transition hover:border-secondary/40 hover:text-secondary"
+                  >
+                    {index + 1}. {section.heading}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-10 space-y-6">
             {reviewSections.map((section, index) => (
               <section
@@ -443,7 +462,9 @@ export default async function ProductPage({ params }: Props) {
                 className="scroll-mt-24 rounded-2xl border border-border bg-surface p-6 md:p-7"
               >
                 <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
-                  {locale === "en" ? `Section ${index + 1}` : `Abschnitt ${index + 1}`}
+                  {locale === "en"
+                    ? `Section ${index + 1} of ${reviewSections.length}`
+                    : `Abschnitt ${index + 1} von ${reviewSections.length}`}
                 </p>
                 <h2 className="mt-2 font-display text-2xl font-semibold text-primary">
                   {section.heading}
@@ -453,8 +474,10 @@ export default async function ProductPage({ params }: Props) {
                     .split(/\n{2,}/)
                     .map((paragraph) => paragraph.trim())
                     .filter(Boolean)
-                    .map((paragraph) => (
-                      <p key={paragraph.slice(0, 64)}>{paragraph}</p>
+                    .map((paragraph, paragraphIndex) => (
+                      <p key={`${section.id}-${paragraphIndex}`}>
+                        {paragraph}
+                      </p>
                     ))}
                 </div>
               </section>

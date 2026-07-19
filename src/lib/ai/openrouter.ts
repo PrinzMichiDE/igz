@@ -27,6 +27,7 @@ export async function openRouterChatJson<T>(options: {
   messages: ChatMessage[];
   model?: string;
   temperature?: number;
+  maxTokens?: number;
   plugins?: Array<Record<string, unknown>>;
 }): Promise<T> {
   const config = getOpenRouterConfig();
@@ -37,6 +38,9 @@ export async function openRouterChatJson<T>(options: {
     body: JSON.stringify({
       model: options.model || config.model,
       temperature: options.temperature ?? 0.4,
+      ...(typeof options.maxTokens === "number"
+        ? { max_tokens: options.maxTokens }
+        : {}),
       response_format: { type: "json_object" },
       messages: options.messages,
       ...(options.plugins?.length ? { plugins: options.plugins } : {}),

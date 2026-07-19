@@ -25,6 +25,10 @@
       "schedule": "0 13 * * *"
     },
     {
+      "path": "/api/cron/generate-content?refresh=1&products=6&locales=de",
+      "schedule": "20 15 * * *"
+    },
+    {
       "path": "/api/cron/generate-entertainment",
       "schedule": "15 2 * * *"
     },

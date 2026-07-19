@@ -36,9 +36,17 @@ import {
   mediaReviewGuidanceDe,
   mediaReviewGuidanceEn,
 } from "@/lib/ai/prompts/media-review";
+import {
+  isDetailedSectionedReview,
+  normalizeReviewSections,
+  wordCount,
+} from "@/lib/ai/review-sections";
 import { isEntertainmentCategorySlug } from "@/lib/entertainment";
 import { slugify } from "@/lib/utils";
 import type { Locale } from "@prisma/client";
+
+/** Long structured reviews need enough room for 7 × ~160 words + meta JSON. */
+const REVIEW_MAX_TOKENS = 10000;
 
 type ReviewContent = {
   title: string;
@@ -114,10 +122,6 @@ type ExperienceCommentsResponse = {
   }>;
 };
 
-function wordCount(text: string) {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
 function buildFullMarkdown(content: ReviewContent) {
   const parts = [
     `# ${content.title}`,
@@ -136,7 +140,6 @@ function buildFullMarkdown(content: ReviewContent) {
 
 function passesReviewQualityGate(content: ReviewContent) {
   const sections = content.sections || [];
-  const longSections = sections.filter((s) => wordCount(s.body || "") >= 110);
   const takeaways = content.keyTakeaways || [];
 
   return (
@@ -148,13 +151,23 @@ function passesReviewQualityGate(content: ReviewContent) {
     content.pros.length >= 4 &&
     Array.isArray(content.cons) &&
     content.cons.length >= 3 &&
-    sections.length >= 7 &&
-    longSections.length >= 5 &&
+    isDetailedSectionedReview(sections) &&
     sections.every((section) => Boolean(section.heading?.trim())) &&
     typeof content.score === "number" &&
     content.score >= 0 &&
     content.score <= 10
   );
+}
+
+function withNormalizedSections(
+  content: ReviewContent,
+  locale: Locale,
+  categorySlug?: string | null,
+): ReviewContent {
+  return {
+    ...content,
+    sections: normalizeReviewSections(content.sections, locale, categorySlug),
+  };
 }
 
 export async function prepareProductReview(productId: string, locale: Locale) {
@@ -211,8 +224,10 @@ export async function prepareProductReview(productId: string, locale: Locale) {
     productId: product.id,
     asin: product.asin,
     productSlug: product.slug,
+    categorySlug: product.category.slug,
     locale,
     temperature: 0.5,
+    maxTokens: REVIEW_MAX_TOKENS,
     messages: [
       { role: "system" as const, content: system },
       { role: "user" as const, content: user },
@@ -225,24 +240,36 @@ export async function persistProductReview(input: {
   locale: Locale;
   jobId: string;
   content: ReviewContent;
+  categorySlug?: string | null;
 }) {
   const product = await prisma.product.findUniqueOrThrow({
     where: { id: input.productId },
-    select: { id: true, slug: true },
+    select: {
+      id: true,
+      slug: true,
+      category: { select: { slug: true } },
+    },
   });
 
   try {
-    const qualityGatePassed = passesReviewQualityGate(input.content);
+    const categorySlug =
+      input.categorySlug || product.category.slug || null;
+    const content = withNormalizedSections(
+      input.content,
+      input.locale,
+      categorySlug,
+    );
+    const qualityGatePassed = passesReviewQualityGate(content);
     if (!qualityGatePassed) {
-      // Still publish — shorter prompts should usually pass; avoid blocking pages.
+      // Still publish — avoid empty pages; refresh cron upgrades short reviews.
       console.warn(
         `Review quality gate soft-fail for ${product.id}/${input.locale}`,
       );
     }
 
     const publishedAt = new Date();
-    const slug = `${slugify(input.content.title) || product.slug}-${input.locale}`;
-    const bodyMarkdown = buildFullMarkdown(input.content);
+    const slug = `${slugify(content.title) || product.slug}-${input.locale}`;
+    const bodyMarkdown = buildFullMarkdown(content);
 
     const article = await prisma.article.upsert({
       where: {
@@ -256,24 +283,24 @@ export async function persistProductReview(input: {
         type: "review",
         locale: input.locale,
         status: "published",
-        title: input.content.title,
+        title: content.title,
         slug,
-        excerpt: input.content.excerpt,
-        seoTitle: input.content.seoTitle,
-        seoDescription: input.content.seoDescription,
-        contentJson: input.content,
+        excerpt: content.excerpt,
+        seoTitle: content.seoTitle,
+        seoDescription: content.seoDescription,
+        contentJson: content,
         bodyMarkdown,
         publishedAt,
         productId: product.id,
       },
       update: {
         status: "published",
-        title: input.content.title,
+        title: content.title,
         slug,
-        excerpt: input.content.excerpt,
-        seoTitle: input.content.seoTitle,
-        seoDescription: input.content.seoDescription,
-        contentJson: input.content,
+        excerpt: content.excerpt,
+        seoTitle: content.seoTitle,
+        seoDescription: content.seoDescription,
+        contentJson: content,
         bodyMarkdown,
         publishedAt,
       },
@@ -281,7 +308,7 @@ export async function persistProductReview(input: {
 
     await prisma.product.update({
       where: { id: product.id },
-      data: { editorialScore: input.content.score },
+      data: { editorialScore: content.score },
     });
 
     await prisma.jobRun.update({
@@ -292,8 +319,8 @@ export async function persistProductReview(input: {
         message: `Review published (qualityGate: ${qualityGatePassed})`,
         metricsJson: {
           articleId: article.id,
-          score: input.content.score,
-          sections: input.content.sections?.length ?? 0,
+          score: content.score,
+          sections: content.sections?.length ?? 0,
           words: wordCount(bodyMarkdown),
           qualityGatePassed,
         },
@@ -330,13 +357,46 @@ export async function failJob(jobId: string, error: unknown) {
 export async function generateProductReview(productId: string, locale: Locale) {
   const prepared = await prepareProductReview(productId, locale);
   try {
-    const content = await openRouterChatJson<ReviewContent>({
+    let content = await openRouterChatJson<ReviewContent>({
       messages: prepared.messages,
       temperature: prepared.temperature,
+      maxTokens: prepared.maxTokens,
     });
+    content = withNormalizedSections(
+      content,
+      prepared.locale,
+      prepared.categorySlug,
+    );
+
+    // One retry if the model returned a short/flat outline instead of 7 chapters.
+    if (!passesReviewQualityGate(content)) {
+      const retryReminder =
+        prepared.locale === "de"
+          ? "NACHBESSERUNG: Schreibe denselben Test NOCHMAL als gültiges JSON. Genau 7 Abschnitte mit den vorgegebenen Headings. Jeder section.body 130–190 Wörter, Absätze mit \\n\\n. Keine Kurzfassung."
+          : "REVISION: Rewrite the same review as valid JSON. Exactly 7 sections with the required headings. Each section.body 130–190 words, paragraphs separated by \\n\\n. No short version.";
+      content = await openRouterChatJson<ReviewContent>({
+        messages: [
+          ...prepared.messages,
+          {
+            role: "assistant",
+            content: JSON.stringify(content),
+          },
+          { role: "user", content: retryReminder },
+        ],
+        temperature: Math.max(0.3, prepared.temperature - 0.1),
+        maxTokens: prepared.maxTokens,
+      });
+      content = withNormalizedSections(
+        content,
+        prepared.locale,
+        prepared.categorySlug,
+      );
+    }
+
     return persistProductReview({
       productId: prepared.productId,
       locale: prepared.locale,
+      categorySlug: prepared.categorySlug,
       jobId: prepared.jobId,
       content,
     });

@@ -3,6 +3,7 @@ import {
   countCategoriesWithReviewBacklog,
   countProductsMissingReviews,
   listProductsMissingReviews,
+  listProductsNeedingDetailedReviewRefresh,
 } from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
@@ -49,10 +50,15 @@ export async function GET(req: NextRequest) {
     req.nextUrl.searchParams.get("chain") || defaultChainRemaining(),
   );
   const force = req.nextUrl.searchParams.get("force") === "1";
+  // Refresh short/old reviews into the 7-section detailed format.
+  const refreshShort =
+    req.nextUrl.searchParams.get("refresh") === "1" ||
+    req.nextUrl.searchParams.get("detailed") === "1";
   // Guides/comparisons are opt-in — reviews first (avoids extra OpenRouter timeouts).
   const skipGuides = req.nextUrl.searchParams.get("guides") !== "1";
   const forceTech =
-    force || req.nextUrl.searchParams.get("tech") === "1";
+    force || refreshShort || req.nextUrl.searchParams.get("tech") === "1";
+  const forceRegen = refreshShort || (force && Boolean(product));
   const primaryLocale = locales[0] ?? "de";
 
   try {
@@ -70,6 +76,8 @@ export async function GET(req: NextRequest) {
           productLimit,
           skipGuides,
           forceTech,
+          force: forceRegen,
+          refreshShort,
           backfillMissing: true,
           diversify: !slug,
           chainRemaining: Math.max(0, Math.min(40, chainRemaining)),
@@ -110,6 +118,17 @@ export async function GET(req: NextRequest) {
                 categorySlug: row.category.slug,
               },
             ];
+          } else if (refreshShort) {
+            const stale = await listProductsNeedingDetailedReviewRefresh({
+              locale: primaryLocale,
+              limit: productLimit,
+              categorySlug: slug,
+            });
+            products = stale.map((item) => ({
+              id: item.id,
+              categoryId: item.categoryId,
+              categorySlug: item.categorySlug,
+            }));
           } else {
             const missing = await listProductsMissingReviews({
               locale: primaryLocale,
@@ -168,7 +187,7 @@ export async function GET(req: NextRequest) {
                 },
                 select: { id: true },
               });
-              if (alreadyHasReview && !force) {
+              if (alreadyHasReview && !forceRegen) {
                 continue;
               }
 

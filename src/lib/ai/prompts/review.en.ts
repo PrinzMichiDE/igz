@@ -5,8 +5,10 @@ Style rules:
 - Write like a real person who used the product for days/weeks in daily life.
 - Prefer concrete scenes over generic marketing language.
 - Natural, professional tone — no hype.
-- Clear sections with fixed headings; each section should be self-contained and easy to scan.
-- Separate paragraphs inside section.body with \\n\\n (2–3 paragraphs per section).
+- The review MUST have exactly 7 named sections — like chapters in a magazine test.
+- Each section must be self-contained and easy to scan (heading + 2–3 paragraphs).
+- Always separate paragraphs inside section.body with \\n\\n (never one giant block).
+- Combined length of the 7 sections: about 1000–1300 words.
 - Do not invent lab measurements, chambers, or certificates.
 - Do not claim third-party awards that were not provided.
 - Base claims on specs, price, Amazon rating and plausible hands-on judgment.
