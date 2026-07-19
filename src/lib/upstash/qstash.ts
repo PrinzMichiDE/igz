@@ -34,14 +34,21 @@ export function getWorkflowClient() {
 export async function triggerWorkflow<T extends Record<string, unknown>>(
   path: string,
   body: T,
+  options?: { delaySeconds?: number },
 ) {
   const client = getWorkflowClient();
   const url = `${getWorkflowBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+
+  const delaySeconds =
+    options?.delaySeconds && options.delaySeconds > 0
+      ? Math.round(options.delaySeconds)
+      : undefined;
 
   const result = await client.trigger({
     url,
     body,
     retries: 2,
+    ...(delaySeconds ? { delay: delaySeconds } : {}),
   });
 
   return {

@@ -14,16 +14,19 @@ export type MissingReviewProduct = {
 
 /**
  * Find products that still need a published review for the given locale.
- * Prefer higher Amazon rating / review volume so the best pages go live first.
+ * Round-robins across categories so every category with a backlog gets coverage,
+ * instead of always draining a single high-rated niche first.
  */
 export async function listProductsMissingReviews(options?: {
   locale?: Locale;
   limit?: number;
   categoryId?: string | null;
   categorySlug?: string | null;
+  diversify?: boolean;
 }): Promise<MissingReviewProduct[]> {
   const locale = options?.locale ?? "de";
-  const limit = Math.min(20, Math.max(1, Number(options?.limit || 3)));
+  const limit = Math.min(30, Math.max(1, Number(options?.limit || 5)));
+  const diversify = options?.diversify !== false;
 
   let categoryId = options?.categoryId || null;
   if (!categoryId && options?.categorySlug) {
@@ -34,9 +37,53 @@ export async function listProductsMissingReviews(options?: {
     categoryId = category?.id ?? null;
   }
 
-  const products = await prisma.product.findMany({
+  // When scoped to one category, simple top-N is fine.
+  if (categoryId || !diversify) {
+    const products = await prisma.product.findMany({
+      where: {
+        ...(categoryId ? { categoryId } : {}),
+        articles: {
+          none: {
+            type: "review",
+            locale,
+            status: "published",
+          },
+        },
+      },
+      orderBy: [
+        { rating: "desc" },
+        { reviewCount: "desc" },
+        { updatedAt: "desc" },
+      ],
+      take: limit,
+      select: {
+        id: true,
+        asin: true,
+        slug: true,
+        title: true,
+        rating: true,
+        reviewCount: true,
+        categoryId: true,
+        category: { select: { slug: true } },
+      },
+    });
+
+    return products.map((product) => ({
+      id: product.id,
+      asin: product.asin,
+      slug: product.slug,
+      title: product.title,
+      rating: product.rating,
+      reviewCount: product.reviewCount,
+      categoryId: product.categoryId,
+      categorySlug: product.category.slug,
+    }));
+  }
+
+  // Global backfill: pull a pool, then round-robin one product per category.
+  const poolSize = Math.min(300, Math.max(limit * 25, 50));
+  const pool = await prisma.product.findMany({
     where: {
-      ...(categoryId ? { categoryId } : {}),
       articles: {
         none: {
           type: "review",
@@ -45,8 +92,12 @@ export async function listProductsMissingReviews(options?: {
         },
       },
     },
-    orderBy: [{ rating: "desc" }, { reviewCount: "desc" }, { updatedAt: "desc" }],
-    take: limit,
+    orderBy: [
+      { rating: "desc" },
+      { reviewCount: "desc" },
+      { updatedAt: "desc" },
+    ],
+    take: poolSize,
     select: {
       id: true,
       asin: true,
@@ -59,16 +110,35 @@ export async function listProductsMissingReviews(options?: {
     },
   });
 
-  return products.map((product) => ({
-    id: product.id,
-    asin: product.asin,
-    slug: product.slug,
-    title: product.title,
-    rating: product.rating,
-    reviewCount: product.reviewCount,
-    categoryId: product.categoryId,
-    categorySlug: product.category.slug,
-  }));
+  const queues = new Map<string, MissingReviewProduct[]>();
+  for (const product of pool) {
+    const mapped: MissingReviewProduct = {
+      id: product.id,
+      asin: product.asin,
+      slug: product.slug,
+      title: product.title,
+      rating: product.rating,
+      reviewCount: product.reviewCount,
+      categoryId: product.categoryId,
+      categorySlug: product.category.slug,
+    };
+    const list = queues.get(product.categoryId) || [];
+    list.push(mapped);
+    queues.set(product.categoryId, list);
+  }
+
+  const categoryQueues = [...queues.values()];
+  const selected: MissingReviewProduct[] = [];
+  let cursor = 0;
+
+  while (selected.length < limit && categoryQueues.some((queue) => queue.length > 0)) {
+    const queue = categoryQueues[cursor % categoryQueues.length];
+    cursor += 1;
+    if (!queue || queue.length === 0) continue;
+    selected.push(queue.shift()!);
+  }
+
+  return selected;
 }
 
 export async function countProductsMissingReviews(options?: {
@@ -90,10 +160,27 @@ export async function countProductsMissingReviews(options?: {
   });
 }
 
+export async function countCategoriesWithReviewBacklog(
+  locale: Locale = "de",
+): Promise<number> {
+  const grouped = await prisma.product.groupBy({
+    by: ["categoryId"],
+    where: {
+      articles: {
+        none: {
+          type: "review",
+          locale,
+          status: "published",
+        },
+      },
+    },
+    _count: { _all: true },
+  });
+  return grouped.length;
+}
+
 /**
  * Pick the category that currently has the largest review backlog.
- * Used when a cron run wants category-scoped side effects (guides/manuals)
- * but should still prioritize unfinished work.
  */
 export async function resolveCategoryWithReviewBacklog(
   locale: Locale = "de",

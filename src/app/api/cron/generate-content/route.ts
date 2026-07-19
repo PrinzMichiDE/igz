@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  countCategoriesWithReviewBacklog,
   countProductsMissingReviews,
   listProductsMissingReviews,
 } from "@/lib/content-backfill";
@@ -20,6 +21,19 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+function defaultBatchSize() {
+  const hour = new Date().getUTCHours();
+  // Night / early-morning UTC batches process more products.
+  if (hour >= 0 && hour < 6) return 8;
+  return 5;
+}
+
+function defaultChainRemaining() {
+  const hour = new Date().getUTCHours();
+  if (hour >= 0 && hour < 6) return 30;
+  return 12;
+}
+
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("category");
   const product = req.nextUrl.searchParams.get("product");
@@ -28,8 +42,12 @@ export async function GET(req: NextRequest) {
     .map((v) => v.trim())
     .filter((v): v is Locale => v === "de" || v === "en");
   const commentCount = Number(req.nextUrl.searchParams.get("comments") || 3);
-  // Default batch size for automatic backlog catch-up.
-  const productLimit = Number(req.nextUrl.searchParams.get("products") || 3);
+  const productLimit = Number(
+    req.nextUrl.searchParams.get("products") || defaultBatchSize(),
+  );
+  const chainRemaining = Number(
+    req.nextUrl.searchParams.get("chain") || defaultChainRemaining(),
+  );
   const force = req.nextUrl.searchParams.get("force") === "1";
   // Guides/comparisons are opt-in — reviews first (avoids extra OpenRouter timeouts).
   const skipGuides = req.nextUrl.searchParams.get("guides") !== "1";
@@ -42,7 +60,7 @@ export async function GET(req: NextRequest) {
       {
         lockKey: "cron:generate-content",
         workflowPath: "/api/workflows/generate-content",
-        lockTtlSeconds: 25 * 60,
+        lockTtlSeconds: 45 * 60,
         force,
         body: {
           category: slug,
@@ -53,6 +71,9 @@ export async function GET(req: NextRequest) {
           skipGuides,
           forceTech,
           backfillMissing: true,
+          diversify: !slug,
+          chainRemaining: Math.max(0, Math.min(40, chainRemaining)),
+          fromCron: true,
           lockKey: "cron:generate-content",
         },
       },
@@ -60,8 +81,10 @@ export async function GET(req: NextRequest) {
         return withDbRetry(async () => {
           const backlogBefore = await countProductsMissingReviews({
             locale: primaryLocale,
-            categoryId: null,
           });
+          const categoriesWithBacklog = await countCategoriesWithReviewBacklog(
+            primaryLocale,
+          );
 
           let products: Array<{
             id: string;
@@ -92,6 +115,7 @@ export async function GET(req: NextRequest) {
               locale: primaryLocale,
               limit: productLimit,
               categorySlug: slug,
+              diversify: !slug,
             });
             products = missing.map((item) => ({
               id: item.id,
@@ -106,6 +130,7 @@ export async function GET(req: NextRequest) {
               mode: "backfill",
               message: "No products missing published reviews",
               backlogRemaining: 0,
+              categoriesWithBacklog: 0,
               reviewsCreated: 0,
               commentsCreated: 0,
               techProfilesCreated: 0,
@@ -115,8 +140,10 @@ export async function GET(req: NextRequest) {
           const reviews = [];
           const comments = [];
           const techProfiles = [];
+          const touchedCategories = new Set<string>();
 
           for (const item of products) {
+            touchedCategories.add(item.categorySlug);
             const existing = await prisma.product.findUnique({
               where: { id: item.id },
               select: { techProfileAt: true, specsJson: true },
@@ -160,7 +187,6 @@ export async function GET(req: NextRequest) {
             }
           }
 
-          // Optional guides only for the first touched category.
           const primaryCategoryId = products[0]?.categoryId;
           const primaryCategorySlug = products[0]?.categorySlug;
           if (!skipGuides && primaryCategoryId) {
@@ -181,6 +207,8 @@ export async function GET(req: NextRequest) {
             ok: true,
             mode: "backfill",
             category: primaryCategorySlug || slug,
+            categoriesTouched: [...touchedCategories],
+            categoriesWithBacklog,
             backlogBefore,
             backlogRemaining: backlogAfter,
             productsProcessed: products.length,

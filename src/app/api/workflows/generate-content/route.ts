@@ -18,13 +18,14 @@ import {
   type OpenRouterChatCompletionResponse,
 } from "@/lib/ai/openrouter-request";
 import {
+  countCategoriesWithReviewBacklog,
   countProductsMissingReviews,
   listProductsMissingReviews,
 } from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 import type { ProductTechProfileAiResponse } from "@/lib/product-tech/types";
-import { getWorkflowBaseUrl } from "@/lib/upstash/qstash";
-import { releaseLock } from "@/lib/upstash/redis";
+import { getWorkflowBaseUrl, triggerWorkflow } from "@/lib/upstash/qstash";
+import { acquireLock, releaseLock } from "@/lib/upstash/redis";
 import type { Locale } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -42,6 +43,9 @@ type Payload = {
   skipGuides?: boolean;
   forceTech?: boolean;
   backfillMissing?: boolean;
+  diversify?: boolean;
+  chainRemaining?: number;
+  fromCron?: boolean;
   force?: boolean;
 };
 
@@ -64,14 +68,37 @@ export const { POST } = serve<Payload>(
       Math.max(2, Number(payload.comments || 3)),
     );
     const productLimit = Math.min(
-      5,
-      Math.max(1, Number(payload.productLimit || 3)),
+      12,
+      Math.max(1, Number(payload.productLimit || 5)),
     );
     const primaryLocale = locales[0] ?? "de";
     const forceRegen = payload.force === true;
+    const diversify = payload.diversify !== false && !payload.category;
+    const chainRemaining = Math.max(
+      0,
+      Math.min(40, Number(payload.chainRemaining ?? 0)),
+    );
+
+    // Cron entry already holds the lock; chained follow-up runs must acquire it.
+    if (!payload.fromCron) {
+      const locked = await context.run("acquire-lock", async () => {
+        return acquireLock(lockKey, 45 * 60);
+      });
+      if (!locked) {
+        return {
+          ok: true,
+          skipped: true,
+          reason: "lock_held",
+          lockKey,
+        };
+      }
+    }
 
     const backlogBefore = await context.run("count-backlog", async () => {
-      return countProductsMissingReviews({ locale: primaryLocale });
+      return {
+        products: await countProductsMissingReviews({ locale: primaryLocale }),
+        categories: await countCategoriesWithReviewBacklog(primaryLocale),
+      };
     });
 
     await context.run("publish-draft-reviews", async () => {
@@ -122,6 +149,7 @@ export const { POST } = serve<Payload>(
         locale: primaryLocale,
         limit: productLimit,
         categorySlug: payload.category || null,
+        diversify,
       });
 
       return missing.map((item) => ({
@@ -142,7 +170,8 @@ export const { POST } = serve<Payload>(
         ok: true,
         mode: "backfill",
         message: "No products missing published reviews",
-        backlogBefore,
+        backlogBefore: backlogBefore.products,
+        categoriesWithBacklog: backlogBefore.categories,
         backlogRemaining: 0,
         reviewsCreated: 0,
         commentsCreated: 0,
@@ -438,24 +467,63 @@ export const { POST } = serve<Payload>(
     }
 
     const backlogRemaining = await context.run("count-backlog-after", async () => {
-      return countProductsMissingReviews({ locale: primaryLocale });
+      return {
+        products: await countProductsMissingReviews({ locale: primaryLocale }),
+        categories: await countCategoriesWithReviewBacklog(primaryLocale),
+      };
     });
+
+    const categoriesTouched = [
+      ...new Set(products.map((product) => product.categorySlug)),
+    ];
 
     await context.run("release-lock", async () => {
       await releaseLock(lockKey);
       return { released: true };
     });
 
+    // Keep draining the global backlog across categories by chaining runs.
+    let chained: { workflowRunId?: string; remaining?: number } | null = null;
+    if (backlogRemaining.products > 0 && chainRemaining > 0) {
+      chained = await context.run("chain-next-backfill", async () => {
+        const next = await triggerWorkflow(
+          "/api/workflows/generate-content",
+          {
+            category: payload.category || null,
+            locales,
+            comments: commentCount,
+            productLimit,
+            skipGuides: true,
+            forceTech: false,
+            backfillMissing: true,
+            diversify,
+            chainRemaining: chainRemaining - 1,
+            fromCron: false,
+            lockKey,
+          },
+          { delaySeconds: 45 },
+        );
+        return {
+          workflowRunId: next.workflowRunId,
+          remaining: chainRemaining - 1,
+        };
+      });
+    }
+
     return {
       ok: true,
       mode: "backfill",
       category: category.slug,
-      backlogBefore,
-      backlogRemaining,
+      categoriesTouched,
+      backlogBefore: backlogBefore.products,
+      categoriesWithBacklog: backlogBefore.categories,
+      backlogRemaining: backlogRemaining.products,
+      categoriesWithBacklogRemaining: backlogRemaining.categories,
       productsProcessed: products.length,
       reviewsCreated: reviews.length,
       commentsCreated: comments.reduce((sum, c) => sum + c.count, 0),
       techProfilesCreated: techProfiles.length,
+      chained,
       reviews,
       comments,
       techProfiles,

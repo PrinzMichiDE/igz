@@ -119,7 +119,7 @@ export default async function AdminDashboardPage() {
             {missingReviewCount}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Wird alle 4h automatisch nachgezogen
+            Automatischer Nachzug 01:30 / 07:00 / 13:00 UTC, über alle Kategorien
           </p>
         </div>
       </div>

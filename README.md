@@ -84,7 +84,7 @@ Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal
 2. Nutzererfahrungs-Kommentare
 3. Kategorie-Vergleiche + Kaufberatung
 
-Schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content every 4h · indexnow 08:00.
+Schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content 01:30 / 07:00 / 13:00 (self-chains across all categories until backlog clears) · indexnow 08:00.
 
 Benötigte Env (auch auf Vercel setzen): `QSTASH_TOKEN`, `QSTASH_URL`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `UPSTASH_WORKFLOW_URL`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
 
