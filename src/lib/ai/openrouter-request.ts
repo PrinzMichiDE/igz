@@ -38,17 +38,22 @@ export function getOpenRouterReviewModel() {
   );
 }
 
-export function getOpenRouterFallbackModel(primaryModel?: string) {
-  const explicit = process.env.OPENROUTER_FALLBACK_MODEL?.trim();
-  if (explicit) return explicit;
+/** Free models that have produced valid JSON for this project. */
+export const OPENROUTER_FREE_REVIEW_MODELS = [
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "openrouter/free",
+] as const;
 
+export function getOpenRouterFallbackModel(primaryModel?: string) {
   const primary = primaryModel || getOpenRouterReviewModel();
-  // If the primary is paid/quota-limited, fall back to free instruct models.
-  if (!isFreeModel(primary)) {
-    return process.env.OPENROUTER_MODEL?.trim() || "openrouter/free";
+  const explicit = process.env.OPENROUTER_FALLBACK_MODEL?.trim();
+  if (explicit && explicit !== primary) return explicit;
+
+  for (const candidate of OPENROUTER_FREE_REVIEW_MODELS) {
+    if (candidate !== primary) return candidate;
   }
-  // If already on a free router, try a different free instruct checkpoint.
-  return "meta-llama/llama-3.3-70b-instruct:free";
+  return OPENROUTER_FREE_REVIEW_MODELS[0];
 }
 
 export function isOpenRouterFreeModel(model: string) {

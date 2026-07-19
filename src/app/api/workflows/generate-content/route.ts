@@ -15,6 +15,7 @@ import {
   buildOpenRouterJsonBody,
   getOpenRouterAuthHeaders,
   getOpenRouterFallbackModel,
+  OPENROUTER_FREE_REVIEW_MODELS,
   parseOpenRouterJsonContent,
   type OpenRouterChatCompletionResponse,
 } from "@/lib/ai/openrouter-request";
@@ -433,68 +434,102 @@ export const { POST } = serve<Payload>(
           }
         }
 
-        // Free/weak models often return prose instead of JSON — one paid fallback.
+        // Paid quota / weak free models: try a short list of JSON-capable free models.
         if (!reviewSaved) {
-          const fallbackBody = await context.run(
-            `cfg-review-fallback-${product.asin}-${locale}`,
-            async () =>
-              buildOpenRouterJsonBody({
-                messages: [
-                  ...prepared.messages,
-                  {
-                    role: "user",
-                    content:
-                      prepared.locale === "de"
-                        ? "Antworte NUR mit einem gültigen JSON-Objekt gemäß Schema. Kein Thinking, kein Markdown, kein Text davor."
-                        : "Reply with a valid JSON object only, matching the schema. No thinking, no markdown, no prose before it.",
-                  },
-                ],
-                temperature: 0.4,
-                maxTokens: prepared.maxTokens,
-                model: getOpenRouterFallbackModel(prepared.model),
-              }),
+          const fallbackModels = [
+            getOpenRouterFallbackModel(prepared.model),
+            ...OPENROUTER_FREE_REVIEW_MODELS,
+          ].filter(
+            (model, index, all) =>
+              model !== prepared.model && all.indexOf(model) === index,
           );
 
-          const aiFallback =
-            await context.call<OpenRouterChatCompletionResponse>(
-              `ai-review-fallback-${product.asin}-${locale}`,
-              {
-                url: OPENROUTER_CHAT_URL,
-                method: "POST",
-                headers: getOpenRouterAuthHeaders(),
-                body: JSON.stringify(fallbackBody),
-                retries: 1,
-                timeout: "180s",
+          for (const [index, fallbackModel] of fallbackModels
+            .slice(0, 2)
+            .entries()) {
+            if (reviewSaved) break;
+            const suffix = index === 0 ? "fallback" : `fallback${index + 1}`;
+            const fallbackBody = await context.run(
+              `cfg-review-${suffix}-${product.asin}-${locale}`,
+              async () =>
+                buildOpenRouterJsonBody({
+                  messages: [
+                    ...prepared.messages,
+                    {
+                      role: "user",
+                      content:
+                        prepared.locale === "de"
+                          ? "Antworte NUR mit einem gültigen JSON-Objekt gemäß Schema. Erstes Zeichen {, letztes }. Kein Thinking, kein Markdown, kein Text."
+                          : "Reply with a valid JSON object only. First char {, last }. No thinking, no markdown, no prose.",
+                    },
+                  ],
+                  temperature: 0.3,
+                  maxTokens: Math.min(prepared.maxTokens || 7000, 7000),
+                  model: fallbackModel,
+                }),
+            );
+
+            const aiFallback =
+              await context.call<OpenRouterChatCompletionResponse>(
+                `ai-review-${suffix}-${product.asin}-${locale}`,
+                {
+                  url: OPENROUTER_CHAT_URL,
+                  method: "POST",
+                  headers: getOpenRouterAuthHeaders(),
+                  body: JSON.stringify(fallbackBody),
+                  retries: 1,
+                  timeout: "180s",
+                },
+              );
+
+            if (aiFallback.status < 200 || aiFallback.status >= 300) {
+              continue;
+            }
+
+            const savedFallback = await context.run(
+              `save-review-${suffix}-${product.asin}-${locale}`,
+              async () => {
+                try {
+                  const content = parseOpenRouterJsonContent<ReviewContent>(
+                    aiFallback.body,
+                  );
+                  const article = await persistProductReview({
+                    productId: prepared.productId,
+                    locale: prepared.locale,
+                    jobId: prepared.jobId,
+                    categorySlug: prepared.categorySlug,
+                    content,
+                  });
+                  return {
+                    ok: true as const,
+                    id: article.id,
+                    productId: product.id,
+                    locale,
+                  };
+                } catch (error) {
+                  return {
+                    ok: false as const,
+                    error:
+                      error instanceof Error ? error.message : "parse_failed",
+                  };
+                }
               },
             );
 
-          if (aiFallback.status >= 200 && aiFallback.status < 300) {
-            const savedFallback = await context.run(
-              `save-review-fallback-${product.asin}-${locale}`,
-              async () => {
-                const content = parseOpenRouterJsonContent<ReviewContent>(
-                  aiFallback.body,
-                );
-                const article = await persistProductReview({
-                  productId: prepared.productId,
-                  locale: prepared.locale,
-                  jobId: prepared.jobId,
-                  categorySlug: prepared.categorySlug,
-                  content,
-                });
-                return { id: article.id, productId: product.id, locale };
-              },
-            );
-            reviews.push(savedFallback);
-            reviewSaved = true;
-          } else {
+            if (savedFallback.ok) {
+              reviews.push(savedFallback);
+              reviewSaved = true;
+            }
+          }
+
+          if (!reviewSaved) {
             await context.run(
               `fail-review-${product.asin}-${locale}`,
               async () => {
                 await failJob(
                   prepared.jobId,
                   new Error(
-                    `OpenRouter review failed (primary ${ai.status}, fallback ${aiFallback.status})`,
+                    `OpenRouter review failed (primary HTTP ${ai.status}; free fallbacks produced no valid JSON). Check OPENROUTER_API_KEY credits / OPENROUTER_REVIEW_MODEL.`,
                   ),
                 );
                 return { failed: true };
