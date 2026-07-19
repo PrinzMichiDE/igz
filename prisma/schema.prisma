@@ -12,6 +12,7 @@ enum ArticleType {
   review
   comparison
   buying_guide
+  advice_guide
 }
 
 enum ArticleStatus {
@@ -33,6 +34,7 @@ enum JobType {
   generate_comments
   generate_buying_guide
   generate_tech_profile
+  generate_advice_guide
 }
 
 enum JobStatus {
@@ -158,6 +160,8 @@ model Article {
   status         ArticleStatus @default(draft)
   title          String
   slug           String
+  /// Stable topic identity for free-form Ratgeber / advice guides
+  topicKey       String?
   excerpt        String?
   seoTitle       String?
   seoDescription String?
@@ -174,8 +178,10 @@ model Article {
 
   @@unique([productId, type, locale])
   @@unique([categoryId, type, locale])
+  @@unique([topicKey, locale])
   @@index([slug, locale])
   @@index([status])
+  @@index([type, status, publishedAt])
 }
 
 model Comparison {

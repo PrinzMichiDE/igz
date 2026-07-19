@@ -29,6 +29,9 @@ function previewHref(article: AdminArticleRow) {
   if (article.type === "buying_guide" && article.category?.slug) {
     return `/${article.locale}/kategorie/${article.category.slug}/kaufberatung`;
   }
+  if (article.type === "advice_guide") {
+    return `/${article.locale}/ratgeber/${article.slug}`;
+  }
   if (article.category?.slug) {
     return `/${article.locale}/kategorie/${article.category.slug}`;
   }
@@ -162,6 +165,7 @@ export function ArticleManager({
             <option value="review">Tests / Reviews</option>
             <option value="comparison">Vergleiche</option>
             <option value="buying_guide">Kaufberatungen</option>
+            <option value="advice_guide">Ratgeber</option>
           </select>
         </label>
         <label className="text-sm">

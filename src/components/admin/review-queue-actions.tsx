@@ -10,6 +10,7 @@ type ArticleRow = {
   type: string;
   locale: string;
   status: string;
+  slug?: string;
   product?: { slug: string } | null;
   category?: { slug: string } | null;
 };
@@ -20,6 +21,9 @@ function previewHref(article: ArticleRow) {
   }
   if (article.type === "buying_guide" && article.category?.slug) {
     return `/${article.locale}/kategorie/${article.category.slug}/kaufberatung`;
+  }
+  if (article.type === "advice_guide" && article.slug) {
+    return `/${article.locale}/ratgeber/${article.slug}`;
   }
   if (article.category?.slug) {
     return `/${article.locale}/kategorie/${article.category.slug}`;

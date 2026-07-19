@@ -11,6 +11,7 @@ export async function SiteFooter({ locale }: Props) {
 
   const links = [
     { href: `/${locale}/ueber-uns`, label: t("footer.about") },
+    { href: `/${locale}/ratgeber`, label: t("nav.guides") },
     {
       href: `/${locale}/redaktionelle-richtlinien`,
       label: t("footer.editorial"),

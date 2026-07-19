@@ -37,6 +37,14 @@ import {
   buyingGuideSystemPromptEn,
 } from "@/lib/ai/prompts/buying-guide.en";
 import {
+  buildAdviceGuideUserPromptDe,
+  adviceGuideSystemPromptDe,
+} from "@/lib/ai/prompts/advice-guide.de";
+import {
+  buildAdviceGuideUserPromptEn,
+  adviceGuideSystemPromptEn,
+} from "@/lib/ai/prompts/advice-guide.en";
+import {
   mediaReviewGuidanceDe,
   mediaReviewGuidanceEn,
 } from "@/lib/ai/prompts/media-review";
@@ -45,7 +53,14 @@ import {
   normalizeReviewSections,
   wordCount,
 } from "@/lib/ai/review-sections";
+import type { AdviceGuideContent } from "@/lib/content-types";
 import { isEntertainmentCategorySlug } from "@/lib/entertainment";
+import {
+  getAdviceGuideTopic,
+  type AdviceGuideTopic,
+} from "@/lib/ratgeber/topics";
+import { pickNextAdviceGuideTopic } from "@/lib/ratgeber/select-topic";
+import { pingAdviceGuideUrls } from "@/lib/seo/ping-after-publish";
 import { slugify } from "@/lib/utils";
 import type { Locale } from "@prisma/client";
 
@@ -847,6 +862,211 @@ export async function generateBuyingGuide(categoryId: string, locale: Locale) {
         error: message,
       },
     });
+    throw error;
+  }
+}
+
+async function resolveAdviceGuideContext(
+  topic: AdviceGuideTopic,
+  locale: Locale,
+) {
+  const category = topic.categorySlug
+    ? await prisma.category.findUnique({
+        where: { slug: topic.categorySlug },
+        include: {
+          products: {
+            orderBy: [{ editorialScore: "desc" }, { rating: "desc" }],
+            take: 6,
+          },
+        },
+      })
+    : null;
+
+  const products = (category?.products ?? []).map((p) => ({
+    title: p.title,
+    asin: p.asin,
+    price: p.price?.toString(),
+    rating: p.rating,
+    score: p.editorialScore,
+  }));
+
+  const categoryName = category
+    ? locale === "de"
+      ? category.nameDe
+      : category.nameEn
+    : null;
+
+  return { category, products, categoryName };
+}
+
+export async function prepareAdviceGuide(
+  topic: AdviceGuideTopic,
+  locale: Locale,
+) {
+  const { category, products, categoryName } = await resolveAdviceGuideContext(
+    topic,
+    locale,
+  );
+
+  const job = await prisma.jobRun.create({
+    data: {
+      type: "generate_advice_guide",
+      status: "running",
+      startedAt: new Date(),
+      message: `Advice guide ${locale} for ${topic.topicKey}`,
+    },
+  });
+
+  const system =
+    locale === "de" ? adviceGuideSystemPromptDe : adviceGuideSystemPromptEn;
+  const user =
+    locale === "de"
+      ? buildAdviceGuideUserPromptDe({
+          topicTitle: topic.titleDe,
+          keyword: topic.keywordDe,
+          audience: topic.audienceDe,
+          categoryName,
+          products,
+        })
+      : buildAdviceGuideUserPromptEn({
+          topicTitle: topic.titleEn,
+          keyword: topic.keywordEn,
+          audience: topic.audienceEn,
+          categoryName,
+          products,
+        });
+
+  return {
+    jobId: job.id,
+    locale,
+    topic,
+    categoryId: category?.id ?? null,
+    messages: [
+      { role: "system" as const, content: system },
+      { role: "user" as const, content: user },
+    ],
+    temperature: 0.45,
+    maxTokens: 8000,
+  };
+}
+
+export async function persistAdviceGuide(input: {
+  topic: AdviceGuideTopic;
+  locale: Locale;
+  jobId: string;
+  categoryId: string | null;
+  content: AdviceGuideContent;
+}) {
+  const topic = input.topic;
+  const content = input.content;
+  const slug = slugify(topic.topicKey) || topic.topicKey;
+  const title =
+    content.title?.trim() ||
+    (input.locale === "de" ? topic.titleDe : topic.titleEn);
+  const excerpt =
+    content.excerpt?.trim() ||
+    content.directAnswer?.trim()?.slice(0, 220) ||
+    null;
+
+  try {
+    const article = await prisma.article.upsert({
+      where: {
+        topicKey_locale: {
+          topicKey: topic.topicKey,
+          locale: input.locale,
+        },
+      },
+      create: {
+        type: "advice_guide",
+        locale: input.locale,
+        status: "published",
+        title,
+        slug,
+        topicKey: topic.topicKey,
+        excerpt,
+        seoTitle: content.seoTitle?.trim() || title,
+        seoDescription:
+          content.seoDescription?.trim() || excerpt || undefined,
+        contentJson: content,
+        bodyMarkdown: content.intro || content.directAnswer || null,
+        publishedAt: new Date(),
+        categoryId: input.categoryId,
+      },
+      update: {
+        status: "published",
+        title,
+        slug,
+        topicKey: topic.topicKey,
+        excerpt,
+        seoTitle: content.seoTitle?.trim() || title,
+        seoDescription:
+          content.seoDescription?.trim() || excerpt || undefined,
+        contentJson: content,
+        bodyMarkdown: content.intro || content.directAnswer || null,
+        publishedAt: new Date(),
+        categoryId: input.categoryId,
+      },
+    });
+
+    await prisma.jobRun.update({
+      where: { id: input.jobId },
+      data: {
+        status: "succeeded",
+        finishedAt: new Date(),
+        message: "Advice guide published",
+        metricsJson: {
+          articleId: article.id,
+          topicKey: topic.topicKey,
+          slug: article.slug,
+        },
+      },
+    });
+
+    void pingAdviceGuideUrls({
+      slug: article.slug,
+      locales: [input.locale],
+    }).catch(() => null);
+
+    return article;
+  } catch (error) {
+    await failJob(input.jobId, error);
+    throw error;
+  }
+}
+
+export async function generateAdviceGuide(options?: {
+  locale?: Locale;
+  topicKey?: string | null;
+}) {
+  const locale = options?.locale ?? "de";
+  const topic = options?.topicKey
+    ? getAdviceGuideTopic(options.topicKey)
+    : await pickNextAdviceGuideTopic(locale);
+
+  if (!topic) {
+    throw new Error(
+      options?.topicKey
+        ? `Unknown advice guide topic: ${options.topicKey}`
+        : "No unused advice guide topics remaining",
+    );
+  }
+
+  const prepared = await prepareAdviceGuide(topic, locale);
+  try {
+    const content = await openRouterChatJson<AdviceGuideContent>({
+      messages: prepared.messages,
+      temperature: prepared.temperature,
+      maxTokens: prepared.maxTokens,
+    });
+    return persistAdviceGuide({
+      topic: prepared.topic,
+      locale: prepared.locale,
+      jobId: prepared.jobId,
+      categoryId: prepared.categoryId,
+      content,
+    });
+  } catch (error) {
+    await failJob(prepared.jobId, error);
     throw error;
   }
 }

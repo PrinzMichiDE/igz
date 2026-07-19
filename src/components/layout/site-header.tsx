@@ -19,6 +19,10 @@ export async function SiteHeader({ locale }: Props) {
       label: t("nav.reviews"),
     },
     {
+      href: `/${locale}/ratgeber`,
+      label: t("nav.guides"),
+    },
+    {
       href: `/${locale}/vergleich`,
       label: t("nav.compare"),
     },

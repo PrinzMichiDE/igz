@@ -18,6 +18,7 @@ export async function GET() {
       urls.push(absoluteUrl(localizedPath(locale, "/kategorien")));
       urls.push(absoluteUrl(localizedPath(locale, "/bestenlisten")));
       urls.push(absoluteUrl(localizedPath(locale, "/reviews")));
+      urls.push(absoluteUrl(localizedPath(locale, "/ratgeber")));
       urls.push(absoluteUrl(localizedPath(locale, "/methodik")));
       urls.push(absoluteUrl(localizedPath(locale, "/ueber-uns")));
       urls.push(
@@ -29,12 +30,18 @@ export async function GET() {
       }
     }
 
-    const [categories, products] = await Promise.all([
+    const [categories, products, adviceGuides] = await Promise.all([
       prisma.category.findMany({ select: { slug: true } }),
       prisma.product.findMany({
         select: { slug: true },
         orderBy: { updatedAt: "desc" },
         take: 200,
+      }),
+      prisma.article.findMany({
+        where: { type: "advice_guide", status: "published" },
+        select: { slug: true, locale: true },
+        orderBy: { publishedAt: "desc" },
+        take: 100,
       }),
     ]);
 
@@ -47,6 +54,11 @@ export async function GET() {
       for (const product of products) {
         urls.push(
           absoluteUrl(localizedPath(locale, `/produkt/${product.slug}`)),
+        );
+      }
+      for (const guide of adviceGuides.filter((g) => g.locale === locale)) {
+        urls.push(
+          absoluteUrl(localizedPath(locale, `/ratgeber/${guide.slug}`)),
         );
       }
     }

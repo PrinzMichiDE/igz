@@ -65,6 +65,22 @@ export type BuyingGuideContent = {
   faq?: Array<{ question: string; answer: string }>;
 };
 
+export type AdviceGuideContent = {
+  title?: string;
+  excerpt?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  directAnswer?: string;
+  keyTakeaways?: string[];
+  intro?: string;
+  keyCriteria?: string[];
+  mistakesToAvoid?: string[];
+  checklist?: string[];
+  sections?: Array<{ heading: string; body: string }>;
+  faq?: Array<{ question: string; answer: string }>;
+  relatedAsins?: string[];
+};
+
 export function asReviewContent(value: unknown): ReviewContent {
   if (!value || typeof value !== "object") return {};
   return value as ReviewContent;
@@ -78,4 +94,9 @@ export function asComparisonContent(value: unknown): ComparisonContent {
 export function asBuyingGuideContent(value: unknown): BuyingGuideContent {
   if (!value || typeof value !== "object") return {};
   return value as BuyingGuideContent;
+}
+
+export function asAdviceGuideContent(value: unknown): AdviceGuideContent {
+  if (!value || typeof value !== "object") return {};
+  return value as AdviceGuideContent;
 }

@@ -22,6 +22,7 @@ Contact: ${site}/de/kontakt
 Categories: ${site}/de/kategorien
 Best lists: ${site}/de/bestenlisten
 Reviews: ${site}/de/reviews
+Guides: ${site}/de/ratgeber
 
 # Content usage
 - Editorial reviews and comparisons may be summarized with attribution.

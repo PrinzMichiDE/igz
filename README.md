@@ -75,6 +75,7 @@ Vercel Cron triggert nur noch **kurze** Endpoints. Die schwere Arbeit läuft als
 - `GET /api/cron/sync-categories?limit=50` → `/api/workflows/sync-categories`
 - `GET /api/cron/sync-products?category=…&top=3` → `/api/workflows/sync-products`
 - `GET /api/cron/generate-content?products=3&chain=0&locales=de` → `/api/workflows/generate-content` (OpenRouter via QStash `context.call`). **Daily budget: 3 new Amazon tests from different categories** (UTC day, enforced). Manual `?product=` / `?force=1` / `?refresh=1` bypass the budget.
+- `GET /api/cron/generate-ratgeber?locales=de` → `/api/workflows/generate-ratgeber` — **1 new Ratgeber/topic guide per UTC day** from a curated topic pool (`ArticleType.advice_guide`).
 - `GET /api/cron/generate-entertainment?reviews=0` — sync-only for Filme/Serien/Videospiele (reviews come from the daily 3-test budget)
 - `GET /api/cron/indexnow` — bleibt direkt (kurz)
 
@@ -85,7 +86,7 @@ Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal
 2. Nutzererfahrungs-Kommentare
 3. Kategorie-Vergleiche + Kaufberatung
 
-Schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content 01:30 / 07:00 / 13:00 (self-chains across all categories until backlog clears) · generate-entertainment 02:15 (Filme/Serien/Videospiele, 10–20 Tests/Tag) · indexnow 08:00.
+Schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content 07:00 (3 diversified tests) · generate-entertainment 02:15 (sync-only by default) · indexnow 08:00 · generate-ratgeber 09:00 (1 guide/day) · generate-content refresh 15:20.
 
 Benötigte Env (auch auf Vercel setzen): `QSTASH_TOKEN`, `QSTASH_URL`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `UPSTASH_WORKFLOW_URL`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
 

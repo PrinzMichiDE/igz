@@ -8,6 +8,11 @@ import { getQuotaStatus } from "@/lib/amazon/quota";
 import { countProductsMissingReviews } from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 import {
+  countSucceededAdviceGuidesToday,
+  DAILY_NEW_ADVICE_GUIDE_TARGET,
+} from "@/lib/ratgeber/daily-quota";
+import { countRemainingAdviceGuideTopics } from "@/lib/ratgeber/select-topic";
+import {
   countSucceededReviewsToday,
   DAILY_NEW_REVIEW_TARGET,
 } from "@/lib/review-daily-quota";
@@ -30,6 +35,9 @@ export default async function AdminDashboardPage() {
     missingReviewCount,
     pendingTestRequests,
     reviewsToday,
+    adviceGuidesToday,
+    adviceGuidesPublished,
+    adviceTopicsRemaining,
   ] = await Promise.all([
     getQuotaStatus(),
     getAffiliateAnalytics(30),
@@ -41,6 +49,7 @@ export default async function AdminDashboardPage() {
       select: {
         id: true,
         title: true,
+        slug: true,
         type: true,
         locale: true,
         status: true,
@@ -53,6 +62,11 @@ export default async function AdminDashboardPage() {
     countProductsMissingReviews({ locale: "de" }),
     prisma.productTestRequest.count({ where: { status: "pending" } }),
     countSucceededReviewsToday(),
+    countSucceededAdviceGuidesToday(),
+    prisma.article.count({
+      where: { type: "advice_guide", status: "published" },
+    }),
+    countRemainingAdviceGuideTopics("de"),
   ]);
 
   return (
@@ -153,6 +167,21 @@ export default async function AdminDashboardPage() {
             Tagesbudget: 3 Tests aus verschiedenen Kategorien · Cron 07:00 UTC
           </p>
         </div>
+        <Link
+          href="/admin/articles?type=advice_guide"
+          className="igz-card igz-card-hover block p-5"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Ratgeber heute (UTC)
+          </p>
+          <p className="mt-2 font-display text-3xl font-bold text-primary">
+            {adviceGuidesToday}/{DAILY_NEW_ADVICE_GUIDE_TARGET}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {adviceGuidesPublished} veröffentlicht · {adviceTopicsRemaining}{" "}
+            Themen offen · Cron 09:00 UTC
+          </p>
+        </Link>
       </div>
 
       <section className="mt-10">

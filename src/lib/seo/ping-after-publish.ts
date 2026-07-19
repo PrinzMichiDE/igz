@@ -25,3 +25,24 @@ export async function pingProductUrls(input: {
     };
   }
 }
+
+export async function pingAdviceGuideUrls(input: {
+  slug: string;
+  locales: Locale[];
+}) {
+  const urls = input.locales.flatMap((locale) => [
+    absoluteUrl(localizedPath(locale, `/ratgeber/${input.slug}`)),
+    absoluteUrl(localizedPath(locale, "/ratgeber")),
+  ]);
+
+  try {
+    return await submitIndexNow(urls);
+  } catch (error) {
+    return {
+      ok: false as const,
+      skipped: false as const,
+      submitted: 0,
+      error: error instanceof Error ? error.message : "IndexNow ping failed",
+    };
+  }
+}
