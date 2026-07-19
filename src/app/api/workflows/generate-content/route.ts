@@ -27,6 +27,10 @@ import {
 } from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
 import type { ProductTechProfileAiResponse } from "@/lib/product-tech/types";
+import {
+  DAILY_NEW_REVIEW_TARGET,
+  remainingDailyReviewSlots,
+} from "@/lib/review-daily-quota";
 import { getWorkflowBaseUrl, triggerWorkflow } from "@/lib/upstash/qstash";
 import { acquireLock, releaseLock } from "@/lib/upstash/redis";
 import type { Locale } from "@prisma/client";
@@ -52,6 +56,8 @@ type Payload = {
   fromCron?: boolean;
   force?: boolean;
   refreshShort?: boolean;
+  respectDailyQuota?: boolean;
+  dailyTarget?: number;
 };
 
 type ReviewContent = Parameters<typeof persistProductReview>[0]["content"];
@@ -71,23 +77,59 @@ export const { POST } = serve<Payload>(
     const rawComments = Number(payload.comments);
     const commentCount = Number.isFinite(rawComments)
       ? Math.min(6, Math.max(0, rawComments))
-      : 3;
-    const productLimit = Math.min(
-      20,
-      Math.max(1, Number(payload.productLimit || 5)),
-    );
+      : 2;
     const primaryLocale = locales[0] ?? "de";
     const forceRegen = payload.force === true;
     const refreshShort = payload.refreshShort === true;
+    const respectDailyQuota =
+      payload.respectDailyQuota === true &&
+      !forceRegen &&
+      !refreshShort &&
+      !payload.product;
+    const dailyTarget = Number(payload.dailyTarget || DAILY_NEW_REVIEW_TARGET);
     const categorySlugs = (payload.categorySlugs || [])
       .map((slug) => String(slug).trim())
       .filter(Boolean);
     const diversify =
       payload.diversify !== false && !payload.category && categorySlugs.length !== 1;
-    const chainRemaining = Math.max(
-      0,
-      Math.min(40, Number(payload.chainRemaining ?? 0)),
+
+    const quota = await context.run("daily-review-quota", async () => {
+      if (!respectDailyQuota) {
+        return {
+          remaining: DAILY_NEW_REVIEW_TARGET,
+          bypassed: true,
+          target: dailyTarget,
+        };
+      }
+      const remaining = await remainingDailyReviewSlots({ target: dailyTarget });
+      return { remaining, bypassed: false, target: dailyTarget };
+    });
+
+    const requestedLimit = Math.min(
+      20,
+      Math.max(1, Number(payload.productLimit || DAILY_NEW_REVIEW_TARGET)),
     );
+    const productLimit = respectDailyQuota
+      ? Math.min(requestedLimit, quota.remaining, DAILY_NEW_REVIEW_TARGET)
+      : requestedLimit;
+    // No chaining when we honor the daily 3-review budget.
+    const chainRemaining = respectDailyQuota
+      ? 0
+      : Math.max(0, Math.min(40, Number(payload.chainRemaining ?? 0)));
+
+    if (respectDailyQuota && productLimit <= 0) {
+      await context.run("release-lock-quota", async () => {
+        await releaseLock(lockKey);
+        return { released: true };
+      });
+      return {
+        ok: true,
+        skipped: true,
+        reason: "daily_review_quota_reached",
+        dailyTarget: quota.target,
+        remainingSlots: 0,
+      };
+    }
 
     // Cron entry already holds the lock; chained follow-up runs must acquire it.
     if (!payload.fromCron) {

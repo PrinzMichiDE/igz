@@ -90,8 +90,8 @@ export default async function MethodologyPage({ params }: Props) {
           <h2>{isDe ? "2. Testbericht-Erstellung" : "2. Review creation"}</h2>
           <p>
             {isDe
-              ? "Ausführliche Testberichte werden mit OpenRouter generiert und gegen ein Quality-Gate geprüft (Länge, Pros/Cons, Direktantwort, Takeaways). Der Ton orientiert sich an Alltagsszenarien statt Marketingfloskeln."
-              : "Long-form reviews are generated with OpenRouter and checked against a quality gate (length, pros/cons, direct answer, takeaways). The tone follows real-world scenarios instead of marketing fluff."}
+              ? "Ausführliche Testberichte werden mit OpenRouter generiert und gegen ein Quality-Gate geprüft (Länge, Pros/Cons, Direktantwort, Takeaways). Der Ton orientiert sich an Alltagsszenarien statt Marketingfloskeln. Automatisch erscheinen pro Tag bis zu drei neue Amazon-Tests aus verschiedenen Kategorien."
+              : "Long-form reviews are generated with OpenRouter and checked against a quality gate (length, pros/cons, direct answer, takeaways). The tone follows real-world scenarios instead of marketing fluff. Automatically we publish up to three new Amazon tests per day from different categories."}
           </p>
         </section>
         <section>

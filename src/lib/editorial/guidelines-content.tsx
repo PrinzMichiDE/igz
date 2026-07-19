@@ -156,6 +156,11 @@ const guidelinesDe = (): Section[] => [
           Für Medien (Filme, Serien, Videospiele) gelten angepasste Abschnitte –
           spoilerarm und mit Fokus auf Edition bzw. Spielspaß.
         </p>
+        <p className="mt-3">
+          Veröffentlichungsrhythmus: bis zu drei neue Amazon-Produkttests pro Tag,
+          möglichst aus verschiedenen Kategorien (Round-Robin über den
+          Backlog).
+        </p>
       </>
     ),
   },
@@ -450,6 +455,10 @@ const guidelinesEn = (): Section[] => [
         <p className="mt-3">
           For media (movies, series, games) we use adapted section headings —
           spoiler-light, with focus on the edition or play experience.
+        </p>
+        <p className="mt-3">
+          Publishing cadence: up to three new Amazon product tests per day,
+          preferably from different categories (round-robin across the backlog).
         </p>
       </>
     ),

@@ -15,6 +15,10 @@ import {
 } from "@/lib/ai/generate";
 import { generateProductTechProfile } from "@/lib/ai/generate-tech-profile";
 import { enrichCategoryManuals } from "@/lib/product-manuals";
+import {
+  DAILY_NEW_REVIEW_TARGET,
+  remainingDailyReviewSlots,
+} from "@/lib/review-daily-quota";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 import type { Locale } from "@prisma/client";
 
@@ -22,17 +26,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+/** Default: 3 diversified new tests/day — no chaining. */
 function defaultBatchSize() {
-  const hour = new Date().getUTCHours();
-  // Night / early-morning UTC batches process more products.
-  if (hour >= 0 && hour < 6) return 8;
-  return 5;
+  return DAILY_NEW_REVIEW_TARGET;
 }
 
 function defaultChainRemaining() {
-  const hour = new Date().getUTCHours();
-  if (hour >= 0 && hour < 6) return 30;
-  return 12;
+  return 0;
 }
 
 export async function GET(req: NextRequest) {
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     rawComments == null || rawComments === ""
       ? 3
       : Math.min(6, Math.max(0, Number(rawComments)));
-  const productLimit = Number(
+  const requestedLimit = Number(
     req.nextUrl.searchParams.get("products") || defaultBatchSize(),
   );
   const chainRemaining = Number(
@@ -64,8 +64,25 @@ export async function GET(req: NextRequest) {
   const forceTech = req.nextUrl.searchParams.get("tech") === "1";
   const forceRegen = refreshShort || (force && Boolean(product));
   const primaryLocale = locales[0] ?? "de";
+  const bypassDailyQuota = Boolean(product) || refreshShort || force;
+  const dailySlots = await remainingDailyReviewSlots({
+    bypass: bypassDailyQuota,
+  });
+  const productLimit = bypassDailyQuota
+    ? Math.min(20, Math.max(1, requestedLimit))
+    : Math.min(DAILY_NEW_REVIEW_TARGET, Math.max(0, dailySlots), requestedLimit);
 
   try {
+    if (!bypassDailyQuota && productLimit <= 0) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: "daily_review_quota_reached",
+        dailyTarget: DAILY_NEW_REVIEW_TARGET,
+        remainingSlots: 0,
+      });
+    }
+
     return await enqueueOrRunInline(
       {
         lockKey: "cron:generate-content",
@@ -77,13 +94,15 @@ export async function GET(req: NextRequest) {
           product,
           locales,
           comments: commentCount,
-          productLimit,
+          productLimit: Math.max(1, productLimit),
           skipGuides,
           forceTech,
           force: forceRegen,
           refreshShort,
           backfillMissing: true,
           diversify: !slug,
+          respectDailyQuota: !bypassDailyQuota,
+          dailyTarget: DAILY_NEW_REVIEW_TARGET,
           chainRemaining: Math.max(0, Math.min(40, chainRemaining)),
           fromCron: true,
           lockKey: "cron:generate-content",
@@ -125,7 +144,7 @@ export async function GET(req: NextRequest) {
           } else if (refreshShort) {
             const stale = await listProductsNeedingDetailedReviewRefresh({
               locale: primaryLocale,
-              limit: productLimit,
+              limit: Math.max(1, productLimit),
               categorySlug: slug,
             });
             products = stale.map((item) => ({
@@ -136,7 +155,7 @@ export async function GET(req: NextRequest) {
           } else {
             const missing = await listProductsMissingReviews({
               locale: primaryLocale,
-              limit: productLimit,
+              limit: Math.max(1, productLimit),
               categorySlug: slug,
               diversify: !slug,
             });

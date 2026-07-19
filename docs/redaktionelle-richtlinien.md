@@ -9,6 +9,7 @@
 - Tests mit fester 7-Abschnitts-Struktur, Praxisbezug und klarer Kaufhaltung
 - KI-gestützt, aber ohne erfundene Labormessungen oder Fake-Awards
 - Nutzerberichte werden geprüft und gekennzeichnet
+- **Rhythmus:** bis zu **3 neue Amazon-Produkttests pro Tag** aus verschiedenen Kategorien
 
 ## Verbindliche Abschnitte (Produkttests)
 

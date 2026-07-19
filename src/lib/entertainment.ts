@@ -27,10 +27,8 @@ export function entertainmentSyncSlugForToday(
   ]!;
 }
 
-export function entertainmentDailyReviewTarget(now = new Date()) {
-  // 10–20 reviews/day for the entertainment group.
-  // Slight weekday boost, weekend slightly lower OpenRouter load.
-  const day = now.getUTCDay(); // 0=Sun … 6=Sat
-  if (day === 0 || day === 6) return 12;
-  return 16;
+export function entertainmentDailyReviewTarget(_now = new Date()) {
+  // Entertainment reviews share the global daily budget (3 tests/day).
+  // Dedicated entertainment cron is sync-only unless ?reviews=1 is passed.
+  return 0;
 }

@@ -74,7 +74,8 @@ Vercel Cron triggert nur noch **kurze** Endpoints. Die schwere Arbeit läuft als
 - `GET /api/cron/setup` → Workflow `/api/workflows/setup`
 - `GET /api/cron/sync-categories?limit=50` → `/api/workflows/sync-categories`
 - `GET /api/cron/sync-products?category=…&top=3` → `/api/workflows/sync-products`
-- `GET /api/cron/generate-content?category=…&product=asin-or-slug&locales=de&comments=3&products=3&force=1&guides=0` → `/api/workflows/generate-content` (OpenRouter via QStash `context.call`, no Vercel 60s wait). Automatically backfills products that still lack a published review (highest Amazon rating first).
+- `GET /api/cron/generate-content?products=3&chain=0&locales=de` → `/api/workflows/generate-content` (OpenRouter via QStash `context.call`). **Daily budget: 3 new Amazon tests from different categories** (UTC day, enforced). Manual `?product=` / `?force=1` / `?refresh=1` bypass the budget.
+- `GET /api/cron/generate-entertainment?reviews=0` — sync-only for Filme/Serien/Videospiele (reviews come from the daily 3-test budget)
 - `GET /api/cron/indexnow` — bleibt direkt (kurz)
 
 Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal).

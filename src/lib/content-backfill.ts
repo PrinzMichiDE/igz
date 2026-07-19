@@ -147,9 +147,20 @@ export async function listProductsMissingReviews(options?: {
 
   const categoryQueues = [...queues.values()];
   const selected: MissingReviewProduct[] = [];
-  let cursor = 0;
 
-  while (selected.length < limit && categoryQueues.some((queue) => queue.length > 0)) {
+  // Pass 1: at most one product per category (verschiedene Kategorien).
+  for (const queue of categoryQueues) {
+    if (selected.length >= limit) break;
+    if (queue.length === 0) continue;
+    selected.push(queue.shift()!);
+  }
+
+  // Pass 2: fill only if fewer categories have backlog than requested slots.
+  let cursor = 0;
+  while (
+    selected.length < limit &&
+    categoryQueues.some((queue) => queue.length > 0)
+  ) {
     const queue = categoryQueues[cursor % categoryQueues.length];
     cursor += 1;
     if (!queue || queue.length === 0) continue;

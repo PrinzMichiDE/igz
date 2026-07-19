@@ -7,6 +7,10 @@ import { getAffiliateAnalytics } from "@/lib/affiliate-analytics";
 import { getQuotaStatus } from "@/lib/amazon/quota";
 import { countProductsMissingReviews } from "@/lib/content-backfill";
 import { prisma } from "@/lib/db/prisma";
+import {
+  countSucceededReviewsToday,
+  DAILY_NEW_REVIEW_TARGET,
+} from "@/lib/review-daily-quota";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +29,7 @@ export default async function AdminDashboardPage() {
     publishedReviewCount,
     missingReviewCount,
     pendingTestRequests,
+    reviewsToday,
   ] = await Promise.all([
     getQuotaStatus(),
     getAffiliateAnalytics(30),
@@ -47,6 +52,7 @@ export default async function AdminDashboardPage() {
     prisma.article.count({ where: { type: "review", status: "published" } }),
     countProductsMissingReviews({ locale: "de" }),
     prisma.productTestRequest.count({ where: { status: "pending" } }),
+    countSucceededReviewsToday(),
   ]);
 
   return (
@@ -136,6 +142,17 @@ export default async function AdminDashboardPage() {
           </p>
           <p className="mt-2 text-xs text-secondary">Anfragen prüfen →</p>
         </Link>
+        <div className="igz-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Neue Tests heute (UTC)
+          </p>
+          <p className="mt-2 font-display text-3xl font-bold text-primary">
+            {reviewsToday}/{DAILY_NEW_REVIEW_TARGET}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Tagesbudget: 3 Tests aus verschiedenen Kategorien · Cron 07:00 UTC
+          </p>
+        </div>
       </div>
 
       <section className="mt-10">

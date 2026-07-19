@@ -10,9 +10,9 @@ import { prisma } from "@/lib/db/prisma";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
 import {
   ENTERTAINMENT_CATEGORY_SLUGS,
-  entertainmentDailyReviewTarget,
   entertainmentSyncSlugForToday,
 } from "@/lib/entertainment";
+import { remainingDailyReviewSlots } from "@/lib/review-daily-quota";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 import type { Locale } from "@prisma/client";
 
@@ -24,7 +24,10 @@ export const maxDuration = 60;
  * Daily entertainment pipeline:
  * 1) Ensure Filme / Serien / Videospiele categories exist
  * 2) Sync one rotating entertainment category (saves RapidAPI quota)
- * 3) Enqueue 10–20 missing reviews diversified across those categories
+ * 3) Optionally enqueue reviews — default is sync-only so the global
+ *    budget of 3 diversified Amazon tests/day stays intact.
+ *
+ * Opt-in reviews: `?reviews=1` (uses remaining daily slots) or `?products=N`.
  */
 export async function GET(req: NextRequest) {
   const locales = (req.nextUrl.searchParams.get("locales") || "de")
@@ -33,17 +36,13 @@ export async function GET(req: NextRequest) {
     .filter((v): v is Locale => v === "de" || v === "en");
   const force = req.nextUrl.searchParams.get("force") === "1";
   const skipSync = req.nextUrl.searchParams.get("skipSync") === "1";
-  const productLimit = Math.min(
-    20,
-    Math.max(
-      10,
-      Number(
-        req.nextUrl.searchParams.get("products") ||
-          entertainmentDailyReviewTarget(),
-      ),
-    ),
-  );
-  const chainRemaining = Number(req.nextUrl.searchParams.get("chain") || 4);
+  const reviewsParam = req.nextUrl.searchParams.get("reviews");
+  const productsParam = req.nextUrl.searchParams.get("products");
+  const wantReviews =
+    reviewsParam === "1" ||
+    (productsParam != null &&
+      productsParam !== "" &&
+      Number(productsParam) > 0);
   const primaryLocale = locales[0] ?? "de";
   const syncSlug =
     req.nextUrl.searchParams.get("syncCategory") ||
@@ -105,7 +104,7 @@ export async function GET(req: NextRequest) {
 
       const preview = await listProductsMissingReviews({
         locale: primaryLocale,
-        limit: Math.min(productLimit, 8),
+        limit: 3,
         categorySlugs: [...ENTERTAINMENT_CATEGORY_SLUGS],
         diversify: true,
       });
@@ -117,6 +116,34 @@ export async function GET(req: NextRequest) {
         previewAsins: preview.map((p) => p.asin),
       };
     });
+
+    if (!wantReviews) {
+      return NextResponse.json({
+        ok: true,
+        mode: "sync-only",
+        message:
+          "Entertainment catalog synced; reviews come from the daily 3-test budget",
+        entertainmentPrep: prep,
+        targetReviews: 0,
+      });
+    }
+
+    const remaining = await remainingDailyReviewSlots({ bypass: force });
+    const productLimit = Math.min(
+      remaining,
+      Math.max(1, Number(productsParam || remaining || 1)),
+      3,
+    );
+
+    if (productLimit <= 0) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: "daily_review_quota_reached",
+        entertainmentPrep: prep,
+        targetReviews: 0,
+      });
+    }
 
     if (prep.backlog === 0) {
       return NextResponse.json({
@@ -142,18 +169,19 @@ export async function GET(req: NextRequest) {
           productLimit,
           skipGuides: true,
           forceTech: false,
-          force,
-          refreshShort: force,
+          force: false,
+          refreshShort: false,
           backfillMissing: true,
           diversify: true,
-          chainRemaining: Math.max(0, Math.min(8, chainRemaining)),
+          respectDailyQuota: !force,
+          chainRemaining: 0,
           fromCron: true,
           lockKey: "cron:generate-entertainment",
         },
       },
       async () => ({
         mode: "inline-prep-only",
-        hint: "Configure QStash for full entertainment review generation",
+        hint: "Configure QStash for entertainment review generation",
         ...prep,
         targetReviews: productLimit,
       }),
