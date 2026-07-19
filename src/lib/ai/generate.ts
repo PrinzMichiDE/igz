@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { openRouterChatJson } from "@/lib/ai/openrouter";
+import { getOpenRouterReviewModel } from "@/lib/ai/openrouter-request";
 import {
   buildReviewUserPromptDe,
   reviewSystemPromptDe,
@@ -226,6 +227,7 @@ export async function prepareProductReview(productId: string, locale: Locale) {
     productSlug: product.slug,
     categorySlug: product.category.slug,
     locale,
+    model: getOpenRouterReviewModel(),
     // Slightly higher for natural editorial variation; still constrained by JSON schema.
     temperature: 0.55,
     maxTokens: REVIEW_MAX_TOKENS,
@@ -362,6 +364,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
       messages: prepared.messages,
       temperature: prepared.temperature,
       maxTokens: prepared.maxTokens,
+      model: prepared.model,
     });
     content = withNormalizedSections(
       content,
@@ -386,6 +389,7 @@ export async function generateProductReview(productId: string, locale: Locale) {
         ],
         temperature: Math.max(0.3, prepared.temperature - 0.1),
         maxTokens: prepared.maxTokens,
+        model: prepared.model,
       });
       content = withNormalizedSections(
         content,

@@ -1,3 +1,5 @@
+import { extractJsonObject } from "@/lib/ai/openrouter-request";
+
 export type ChatMessage = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -61,7 +63,7 @@ export async function openRouterChatJson<T>(options: {
     throw new Error("OpenRouter returned empty content");
   }
 
-  return JSON.parse(content) as T;
+  return JSON.parse(extractJsonObject(content)) as T;
 }
 
 export async function openRouterChatText(options: {

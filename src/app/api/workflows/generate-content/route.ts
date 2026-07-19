@@ -14,6 +14,7 @@ import {
   OPENROUTER_CHAT_URL,
   buildOpenRouterJsonBody,
   getOpenRouterAuthHeaders,
+  getOpenRouterFallbackModel,
   parseOpenRouterJsonContent,
   type OpenRouterChatCompletionResponse,
 } from "@/lib/ai/openrouter-request";
@@ -247,16 +248,14 @@ export const { POST } = serve<Payload>(
           async () => prepareProductTechProfile(product.id),
         );
 
-        const techConfig = await context.run(
+        const techBody = await context.run(
           `cfg-tech-${product.asin}`,
-          async () => ({
-            headers: getOpenRouterAuthHeaders(),
-            body: buildOpenRouterJsonBody({
+          async () =>
+            buildOpenRouterJsonBody({
               messages: preparedTech.messages,
               temperature: preparedTech.temperature,
               plugins: preparedTech.plugins,
             }),
-          }),
         );
 
         const techAi = await context.call<OpenRouterChatCompletionResponse>(
@@ -264,8 +263,8 @@ export const { POST } = serve<Payload>(
           {
             url: OPENROUTER_CHAT_URL,
             method: "POST",
-            headers: techConfig.headers,
-            body: JSON.stringify(techConfig.body),
+            headers: getOpenRouterAuthHeaders(),
+            body: JSON.stringify(techBody),
             retries: 1,
             timeout: "180s",
           },
@@ -273,15 +272,13 @@ export const { POST } = serve<Payload>(
 
         if (techAi.status < 200 || techAi.status >= 300) {
           // Fallback without web plugin
-          const techConfigPlain = await context.run(
+          const techBodyPlain = await context.run(
             `cfg-tech-plain-${product.asin}`,
-            async () => ({
-              headers: getOpenRouterAuthHeaders(),
-              body: buildOpenRouterJsonBody({
+            async () =>
+              buildOpenRouterJsonBody({
                 messages: preparedTech.messages,
                 temperature: preparedTech.temperature,
               }),
-            }),
           );
           const techAiPlain =
             await context.call<OpenRouterChatCompletionResponse>(
@@ -289,8 +286,8 @@ export const { POST } = serve<Payload>(
               {
                 url: OPENROUTER_CHAT_URL,
                 method: "POST",
-                headers: techConfigPlain.headers,
-                body: JSON.stringify(techConfigPlain.body),
+                headers: getOpenRouterAuthHeaders(),
+                body: JSON.stringify(techBodyPlain),
                 retries: 1,
                 timeout: "180s",
               },
@@ -376,16 +373,15 @@ export const { POST } = serve<Payload>(
           async () => prepareProductReview(product.id, locale),
         );
 
-        const callConfig = await context.run(
+        const reviewBody = await context.run(
           `cfg-review-${product.asin}-${locale}`,
-          async () => ({
-            headers: getOpenRouterAuthHeaders(),
-            body: buildOpenRouterJsonBody({
+          async () =>
+            buildOpenRouterJsonBody({
               messages: prepared.messages,
               temperature: prepared.temperature,
               maxTokens: prepared.maxTokens,
+              model: prepared.model,
             }),
-          }),
         );
 
         const ai = await context.call<OpenRouterChatCompletionResponse>(
@@ -393,37 +389,122 @@ export const { POST } = serve<Payload>(
           {
             url: OPENROUTER_CHAT_URL,
             method: "POST",
-            headers: callConfig.headers,
-            body: JSON.stringify(callConfig.body),
+            headers: getOpenRouterAuthHeaders(),
+            body: JSON.stringify(reviewBody),
             retries: 2,
             timeout: "180s",
           },
         );
 
-        if (ai.status < 200 || ai.status >= 300) {
-          await context.run(`fail-review-${product.asin}-${locale}`, async () => {
-            await failJob(
-              prepared.jobId,
-              new Error(`OpenRouter HTTP ${ai.status}`),
-            );
-            return { failed: true, status: ai.status };
-          });
-        } else {
+        let reviewSaved = false;
+        if (ai.status >= 200 && ai.status < 300) {
           const savedReview = await context.run(
             `save-review-${product.asin}-${locale}`,
             async () => {
-              const content = parseOpenRouterJsonContent<ReviewContent>(ai.body);
-              const article = await persistProductReview({
-                productId: prepared.productId,
-                locale: prepared.locale,
-                jobId: prepared.jobId,
-                categorySlug: prepared.categorySlug,
-                content,
-              });
-              return { id: article.id, productId: product.id, locale };
+              try {
+                const content = parseOpenRouterJsonContent<ReviewContent>(
+                  ai.body,
+                );
+                const article = await persistProductReview({
+                  productId: prepared.productId,
+                  locale: prepared.locale,
+                  jobId: prepared.jobId,
+                  categorySlug: prepared.categorySlug,
+                  content,
+                });
+                return {
+                  ok: true as const,
+                  id: article.id,
+                  productId: product.id,
+                  locale,
+                };
+              } catch (error) {
+                return {
+                  ok: false as const,
+                  error:
+                    error instanceof Error ? error.message : "parse_failed",
+                };
+              }
             },
           );
-          reviews.push(savedReview);
+          if (savedReview.ok) {
+            reviews.push(savedReview);
+            reviewSaved = true;
+          }
+        }
+
+        // Free/weak models often return prose instead of JSON — one paid fallback.
+        if (!reviewSaved) {
+          const fallbackBody = await context.run(
+            `cfg-review-fallback-${product.asin}-${locale}`,
+            async () =>
+              buildOpenRouterJsonBody({
+                messages: [
+                  ...prepared.messages,
+                  {
+                    role: "user",
+                    content:
+                      prepared.locale === "de"
+                        ? "Antworte NUR mit einem gültigen JSON-Objekt gemäß Schema. Kein Thinking, kein Markdown, kein Text davor."
+                        : "Reply with a valid JSON object only, matching the schema. No thinking, no markdown, no prose before it.",
+                  },
+                ],
+                temperature: 0.4,
+                maxTokens: prepared.maxTokens,
+                model: getOpenRouterFallbackModel(),
+              }),
+          );
+
+          const aiFallback =
+            await context.call<OpenRouterChatCompletionResponse>(
+              `ai-review-fallback-${product.asin}-${locale}`,
+              {
+                url: OPENROUTER_CHAT_URL,
+                method: "POST",
+                headers: getOpenRouterAuthHeaders(),
+                body: JSON.stringify(fallbackBody),
+                retries: 1,
+                timeout: "180s",
+              },
+            );
+
+          if (aiFallback.status >= 200 && aiFallback.status < 300) {
+            const savedFallback = await context.run(
+              `save-review-fallback-${product.asin}-${locale}`,
+              async () => {
+                const content = parseOpenRouterJsonContent<ReviewContent>(
+                  aiFallback.body,
+                );
+                const article = await persistProductReview({
+                  productId: prepared.productId,
+                  locale: prepared.locale,
+                  jobId: prepared.jobId,
+                  categorySlug: prepared.categorySlug,
+                  content,
+                });
+                return { id: article.id, productId: product.id, locale };
+              },
+            );
+            reviews.push(savedFallback);
+            reviewSaved = true;
+          } else {
+            await context.run(
+              `fail-review-${product.asin}-${locale}`,
+              async () => {
+                await failJob(
+                  prepared.jobId,
+                  new Error(
+                    `OpenRouter review failed (primary ${ai.status}, fallback ${aiFallback.status})`,
+                  ),
+                );
+                return { failed: true };
+              },
+            );
+          }
+        }
+
+        if (commentCount <= 0) {
+          continue;
         }
 
         const preparedComments = await context.run(
@@ -432,15 +513,13 @@ export const { POST } = serve<Payload>(
             prepareProductExperienceComments(product.id, locale, commentCount),
         );
 
-        const commentsConfig = await context.run(
+        const commentsBody = await context.run(
           `cfg-comments-${product.asin}-${locale}`,
-          async () => ({
-            headers: getOpenRouterAuthHeaders(),
-            body: buildOpenRouterJsonBody({
+          async () =>
+            buildOpenRouterJsonBody({
               messages: preparedComments.messages,
               temperature: preparedComments.temperature,
             }),
-          }),
         );
 
         const commentsAi = await context.call<OpenRouterChatCompletionResponse>(
@@ -448,8 +527,8 @@ export const { POST } = serve<Payload>(
           {
             url: OPENROUTER_CHAT_URL,
             method: "POST",
-            headers: commentsConfig.headers,
-            body: JSON.stringify(commentsConfig.body),
+            headers: getOpenRouterAuthHeaders(),
+            body: JSON.stringify(commentsBody),
             retries: 1,
             timeout: "120s",
           },

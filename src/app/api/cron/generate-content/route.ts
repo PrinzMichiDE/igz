@@ -56,8 +56,8 @@ export async function GET(req: NextRequest) {
     req.nextUrl.searchParams.get("detailed") === "1";
   // Guides/comparisons are opt-in — reviews first (avoids extra OpenRouter timeouts).
   const skipGuides = req.nextUrl.searchParams.get("guides") !== "1";
-  const forceTech =
-    force || refreshShort || req.nextUrl.searchParams.get("tech") === "1";
+  // Tech refresh is opt-in — don't burn OpenRouter quota on every review rewrite.
+  const forceTech = req.nextUrl.searchParams.get("tech") === "1";
   const forceRegen = refreshShort || (force && Boolean(product));
   const primaryLocale = locales[0] ?? "de";
 
