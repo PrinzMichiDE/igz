@@ -14,6 +14,8 @@ BANNED (typical AI/marketing patterns):
 - Phrases like "game changer", "absolute must-have", "revolutionary", "blown away", "perfect for everyone", "in a nutshell" spam, "seamless experience" without detail.
 - Empty superlatives, clickbait, ad-speak, influencer slang.
 - Same section opener every time ("Right out of the box…" at most once in the whole piece).
+- Repeating the same criticism phrase across sections (e.g. "not as strong as premium models" only once in the whole piece).
+- Wrong form factor: don't treat earbuds as over-ears (no headband/earcups if it's an in-ear).
 - Bullet-list prose inside section.body.
 - Invented lab scores, chambers, certificates, or unverifiable awards.
 

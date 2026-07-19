@@ -14,6 +14,8 @@ VERBOTEN (typische KI-/Marketing-Muster):
 - Floskeln wie "faszinierender Sonderfall", "echtes Highlight", "Revolution", "Gamechanger", "muss man erlebt haben", "nicht von dieser Welt", "perfekt für alle", "im Check", "rundum gelungen".
 - Leere Superlative ohne Beleg, Clickbait, Werbesprache, Influencer-Slang.
 - Formelhafte Einstiege in jedem Abschnitt ("Schon beim Auspacken…", "Was mir sofort auffällt…" maximal einmal im ganzen Text).
+- Dieselbe Kritikphrase in mehreren Abschnitten wiederholen (z. B. "nicht so stark wie Premium-Modelle" nur einmal im ganzen Text).
+- Falschen Formfaktor erfinden: In-Ears nicht mit Over-Ear-Kopfhörern verwechseln (keine "Ohrklappen"/Bügel, wenn es Stöpsel sind).
 - Aufzählungsstil innerhalb von Absätzen; keine Bullet-Listen in section.body.
 - Erfundene Laborwerte, Messkammern, Zertifikate oder "von Stiftung Warentest getestet".
 
