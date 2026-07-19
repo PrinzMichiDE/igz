@@ -1,17 +1,27 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CtaButton } from "@/components/affiliate/cta-button";
+import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { ProsCons } from "@/components/content/pros-cons";
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
 import { SpecComparisonMatrix } from "@/components/comparison/spec-comparison-matrix";
 import { ScoreBadge } from "@/components/product/score-badge";
+import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
 import { asReviewContent } from "@/lib/content-types";
 import { collectFeatureList } from "@/lib/product-metadata";
 import { buildFeatureMatrix } from "@/lib/product-ranking";
 import { buildSpecMatrix } from "@/lib/product-tech/matrix";
 import { productOutHref } from "@/lib/product-links";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import {
+  aeoAnswerJsonLd,
+  organizationJsonLd,
+  websiteJsonLd,
+} from "@/lib/seo/jsonld";
+import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 import { formatPrice } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 
@@ -21,6 +31,28 @@ type Props = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ a?: string; b?: string }>;
 };
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const sp = await searchParams;
+  const locale = localeParam as AppLocale;
+  return buildPageMetadata({
+    locale,
+    title:
+      locale === "en"
+        ? "Compare two products side by side"
+        : "Zwei Produkte im Direktvergleich",
+    description:
+      locale === "en"
+        ? "Pick two Amazon products and compare IGZ scores, specs, price and pros/cons side by side."
+        : "Wähle zwei Amazon-Produkte und vergleiche IGZ-Scores, Specs, Preis sowie Pros/Cons nebeneinander.",
+    pathWithoutLocale: "/vergleich",
+    noIndex: Boolean(sp.a || sp.b),
+  });
+}
 
 export default async function ComparePage({ params, searchParams }: Props) {
   const { locale: localeParam } = await params;
@@ -46,13 +78,55 @@ export default async function ComparePage({ params, searchParams }: Props) {
     const selected = a
       ? await prisma.product.findUnique({ where: { slug: a }, include: { category: true } })
       : null;
+    const isDe = locale === "de";
+    const pageUrl = absoluteUrl(localizedPath(locale, "/vergleich"));
 
     return (
       <div className="igz-container py-10 md:py-14">
+        <JsonLd
+          data={[
+            organizationJsonLd(locale),
+            websiteJsonLd(locale),
+            aeoAnswerJsonLd({
+              question: isDe
+                ? "Wie vergleiche ich zwei Produkte bei IGZ?"
+                : "How do I compare two products on IGZ?",
+              answer: isDe
+                ? "Wähle Produkt A und B – IGZ zeigt Scores, Specs, Preis und Pros/Cons im Side-by-Side-Vergleich."
+                : "Pick product A and B — IGZ shows scores, specs, price and pros/cons in a side-by-side comparison.",
+              url: pageUrl,
+              locale,
+            }),
+          ]}
+        />
         <h1 className="font-display text-4xl font-bold text-primary">
           {t("compare.title")}
         </h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">{t("compare.subtitle")}</p>
+        <div className="mt-6 max-w-3xl">
+          <AeoAnswerBlock
+            eyebrow={t("product.directAnswer")}
+            answer={
+              isDe
+                ? "Der IGZ-Direktvergleich stellt Specs und redaktionelle Bewertungen zweier Amazon-Produkte gegenüber – ideal vor der Kaufentscheidung."
+                : "The IGZ head-to-head puts specs and editorial scores of two Amazon products side by side — ideal before you buy."
+            }
+            takeawaysTitle={t("product.keyTakeaways")}
+            takeaways={
+              isDe
+                ? [
+                    "Zuerst Kategorie wählen, dann zwei Modelle",
+                    "Canonical SEO-Duells unter /vergleich/a-vs-b",
+                    "Affiliate-Links klar gekennzeichnet",
+                  ]
+                : [
+                    "Pick a category, then two models",
+                    "Canonical SEO duels at /vergleich/a-vs-b",
+                    "Affiliate links clearly disclosed",
+                  ]
+            }
+          />
+        </div>
 
         {selected ? (
           <div className="mt-8 igz-card p-5">

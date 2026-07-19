@@ -4,14 +4,15 @@ Ziel: maximale organische Auffindbarkeit. **Platz 1 kann niemand garantieren** �
 
 ## Was technisch bereits gebaut ist
 
-- Canonical, hreflang, Open Graph, Twitter
-- `sitemap.xml`, `robots.txt`, `feed.xml`
-- `llms.txt`, `ai.txt`, `humans.txt`
-- IndexNow-Ping (Bing/Copilot/ChatGPT-Discovery-Hilfe)
-- JSON-LD: Product/Review, FAQ, QAPage, ItemList, Breadcrumb, Organization
-- AEO-Blöcke: Direct Answer, Key Takeaways, Speakable
-- E-E-A-T-Seiten: Methodik, Über uns, Bestenlisten
-- Interne Verlinkung zwischen Produkt, Kategorie, Bestenlisten, Methodik
+- Canonical, hreflang, Open Graph, Twitter via `buildPageMetadata` auf Money-Pages
+- `sitemap.xml`, `robots.txt` (inkl. AI-Bot-Allow), `feed.xml` (Reviews, Vergleiche, Kaufberatungen, Ratgeber)
+- `llms.txt` (DE+EN Hubs), `ai.txt`, `humans.txt`
+- IndexNow-Ping (Bing/Copilot/ChatGPT-Discovery-Hilfe) + Publish-Pings
+- JSON-LD: Organization, WebSite+SearchAction, Product/Review, Article, FAQ, QAPage, HowTo, ItemList, Breadcrumb, Speakable
+- AEO-Blöcke (`.aeo-direct-answer`, `.aeo-key-takeaways`) auf Home, Produkt, Kategorie, Reviews, Ratgeber, Vergleich, Kaufberatung
+- E-E-A-T-Seiten: Methodik, Über uns, Redaktionelle Richtlinien, Bestenlisten
+- Interne Verlinkung: Produkt ↔ Kategorie ↔ Reviews ↔ Ratgeber ↔ Methodik (+ Nischen-Cluster)
+- Filter-/Pagination-URLs mit `noindex` (Reviews, Ratgeber Seite>1, Vergleich mit Query)
 
 ## Sofort nach Deploy (Pflicht)
 

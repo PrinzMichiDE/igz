@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { ProductCard } from "@/components/product/product-card";
 import { ReviewsToolbar } from "@/components/reviews/reviews-toolbar";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
@@ -12,6 +13,7 @@ import {
 } from "@/lib/reviews/list-reviews";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
+  aeoAnswerJsonLd,
   breadcrumbJsonLd,
   itemListJsonLd,
   organizationJsonLd,
@@ -32,9 +34,21 @@ type Props = {
   }>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
   const { locale: localeParam } = await params;
+  const sp = await searchParams;
   const locale = localeParam as AppLocale;
+  const page = Math.max(1, Number(sp.page || 1) || 1);
+  const hasFilters = Boolean(
+    sp.q ||
+      sp.category ||
+      sp.minScore ||
+      (sp.sort && sp.sort !== "newest") ||
+      page > 1,
+  );
   return buildPageMetadata({
     locale,
     title:
@@ -46,6 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? "Browse all IGZ Amazon product tests. Filter by category and score, sort by date, price or rating."
         : "Alle IGZ Amazon-Produkttests im Überblick. Filtern nach Kategorie und Score, sortieren nach Datum, Preis oder Bewertung.",
     pathWithoutLocale: "/reviews",
+    noIndex: hasFilters,
   });
 }
 
@@ -130,6 +145,16 @@ export default async function ReviewsPage({ params, searchParams }: Props) {
               ),
             })),
           }),
+          aeoAnswerJsonLd({
+            question: isDe
+              ? "Wo finde ich alle IGZ Produkttests?"
+              : "Where can I find all IGZ product reviews?",
+            answer: isDe
+              ? `Hier findest du ${result.total} veröffentlichte Amazon-Tests mit IGZ-Score, Filtern und Sortierung.`
+              : `Here you can browse ${result.total} published Amazon tests with IGZ score, filters and sorting.`,
+            url: pageUrl,
+            locale,
+          }),
         ]}
       />
 
@@ -147,9 +172,33 @@ export default async function ReviewsPage({ params, searchParams }: Props) {
         <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-primary md:text-5xl">
           {t("reviewsPage.title")}
         </h1>
-        <p className="aeo-direct-answer mt-4 text-lg text-muted-foreground">
+        <p className="mt-4 text-lg text-muted-foreground">
           {t("reviewsPage.subtitle", { count: result.total })}
         </p>
+        <div className="mt-6">
+          <AeoAnswerBlock
+            eyebrow={t("product.directAnswer")}
+            answer={
+              isDe
+                ? `IGZ veröffentlicht ausführliche Amazon-Produkttests mit redaktionellem Score, Pros/Cons und Fazit. Aktuell ${result.total} freigegebene Berichte.`
+                : `IGZ publishes long-form Amazon product tests with editorial scores, pros/cons and verdicts. Currently ${result.total} published reports.`
+            }
+            takeawaysTitle={t("product.keyTakeaways")}
+            takeaways={
+              isDe
+                ? [
+                    "Filtern nach Kategorie und Mindest-Score",
+                    "Sortieren nach Datum, Preis oder Amazon-Rating",
+                    "Jeder Test verlinkt zur Kategorie und zu Amazon",
+                  ]
+                : [
+                    "Filter by category and minimum score",
+                    "Sort by date, price or Amazon rating",
+                    "Every test links to its category and Amazon",
+                  ]
+            }
+          />
+        </div>
       </div>
 
       <div className="mt-8">

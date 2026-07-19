@@ -51,11 +51,17 @@ export async function GET() {
   const items = articles
     .map((article) => {
       const path =
-        article.type === "comparison" && article.category
-          ? `/${article.locale}/kategorie/${article.category.slug}`
-          : article.product
-            ? `/${article.locale}/produkt/${article.product.slug}`
-            : `/${article.locale}`;
+        article.type === "review" && article.product
+          ? `/${article.locale}/produkt/${article.product.slug}`
+          : article.type === "comparison" && article.category
+            ? `/${article.locale}/kategorie/${article.category.slug}`
+            : article.type === "buying_guide" && article.category
+              ? `/${article.locale}/kategorie/${article.category.slug}/kaufberatung`
+              : article.type === "advice_guide"
+                ? `/${article.locale}/ratgeber/${article.slug}`
+                : article.product
+                  ? `/${article.locale}/produkt/${article.product.slug}`
+                  : `/${article.locale}`;
       const link = absoluteUrl(path);
       return `
     <item>

@@ -13,14 +13,21 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   ),
   title: {
-    default: "IGZ Vergleich",
-    template: "%s | IGZ Vergleich",
+    default: process.env.NEXT_PUBLIC_SITE_NAME || "IGZ Vergleich",
+    template: `%s | ${process.env.NEXT_PUBLIC_SITE_NAME || "IGZ"}`,
   },
   description:
-    "Affiliate-getriebene Produktvergleiche und Testberichte für Amazon.",
+    "Unabhängige Amazon-Produktvergleiche und Testberichte mit redaktionellen Scores.",
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 

@@ -5,6 +5,7 @@ import { HeroSearch } from "@/components/layout/hero-search";
 import { ProductCard } from "@/components/product/product-card";
 import { productOutHref } from "@/lib/product-links";
 import { searchSite } from "@/lib/search";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
 
@@ -15,13 +16,23 @@ type Props = {
   searchParams: Promise<{ q?: string }>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
-  const messages = (await import(`../../../../messages/${locale}.json`)).default;
-  return {
-    title: messages.search.title,
-    description: messages.search.subtitle,
-  };
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const { q } = await searchParams;
+  const locale = localeParam as AppLocale;
+  return buildPageMetadata({
+    locale,
+    title: locale === "en" ? "Search" : "Suche",
+    description:
+      locale === "en"
+        ? "Search IGZ product tests, categories and buying guides."
+        : "Durchsuche IGZ-Produkttests, Kategorien und Ratgeber.",
+    pathWithoutLocale: "/suche",
+    noIndex: Boolean(q && q.trim()),
+  });
 }
 
 export default async function SearchPage({ params, searchParams }: Props) {

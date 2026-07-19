@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { getTopDeals } from "@/lib/deals";
 import { productOutHref } from "@/lib/product-links";
 import { prisma } from "@/lib/db/prisma";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
 
@@ -16,12 +17,17 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
-  const messages = (await import(`../../../../messages/${locale}.json`)).default;
-  return {
-    title: messages.deals.title,
-    description: messages.deals.subtitle,
-  };
+  const { locale: localeParam } = await params;
+  const locale = localeParam as AppLocale;
+  return buildPageMetadata({
+    locale,
+    title: locale === "en" ? "Top Amazon deals" : "Top Amazon Deals",
+    description:
+      locale === "en"
+        ? "Current Amazon deals with strong value based on IGZ scores and savings signals."
+        : "Aktuelle Amazon-Deals mit starker Preis-Leistung anhand IGZ-Scores und Spar-Signalen.",
+    pathWithoutLocale: "/deals",
+  });
 }
 
 export default async function DealsPage({ params }: Props) {

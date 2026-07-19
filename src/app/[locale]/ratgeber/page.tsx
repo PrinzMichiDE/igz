@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { listPublishedAdviceGuides } from "@/lib/ratgeber/list-guides";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
+  aeoAnswerJsonLd,
   breadcrumbJsonLd,
   itemListJsonLd,
   organizationJsonLd,
@@ -20,9 +22,14 @@ type Props = {
   searchParams: Promise<{ page?: string }>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
   const { locale: localeParam } = await params;
+  const sp = await searchParams;
   const locale = localeParam as AppLocale;
+  const page = Math.max(1, Number(sp.page || 1) || 1);
   return buildPageMetadata({
     locale,
     title: locale === "en" ? "Guides & buying advice" : "Ratgeber & Kaufhilfen",
@@ -31,6 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? "Practical IGZ guides on choosing products – criteria, mistakes to avoid and checklists."
         : "Praxisnahe IGZ-Ratgeber zur Produktauswahl – Kriterien, Fehlkäufe und Checklisten.",
     pathWithoutLocale: "/ratgeber",
+    noIndex: page > 1,
   });
 }
 
@@ -81,6 +89,16 @@ export default async function RatgeberIndexPage({
                 })),
               })
             : null,
+          aeoAnswerJsonLd({
+            question: isDe
+              ? "Welche Kauf-Ratgeber bietet IGZ?"
+              : "Which buying guides does IGZ offer?",
+            answer: isDe
+              ? `Praxisnahe Ratgeber mit Kriterien, Fehlkäufen und Checklisten – ${totalArticles} redaktionelle Guides plus Nischen-Seiten. Täglich kommt ein neues Thema dazu.`
+              : `Practical guides with criteria, pitfalls and checklists — ${totalArticles} editorial guides plus niche pages. A new topic is added daily.`,
+            url: pageUrl,
+            locale,
+          }),
         ]}
       />
 
@@ -100,6 +118,30 @@ export default async function RatgeberIndexPage({
       <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
         {t("guidesPage.subtitle", { count: totalArticles })}
       </p>
+      <div className="mt-6 max-w-3xl">
+        <AeoAnswerBlock
+          eyebrow={t("product.directAnswer")}
+          answer={
+            isDe
+              ? "IGZ-Ratgeber beantworten eine klar definierte Kauffrage mit Direktantwort, Kriterien und Checkliste – zitierfähig für Answer Engines."
+              : "IGZ guides answer one clear buying question with a direct answer, criteria and checklist — citeable for answer engines."
+          }
+          takeawaysTitle={t("product.keyTakeaways")}
+          takeaways={
+            isDe
+              ? [
+                  "Täglich ein neuer Themen-Ratgeber",
+                  "Verlinkung zu Kategorie-Vergleichen und Tests",
+                  "FAQ und Speakable-Blöcke für AEO",
+                ]
+              : [
+                  "One new topic guide every day",
+                  "Links to category comparisons and tests",
+                  "FAQ and speakable blocks for AEO",
+                ]
+          }
+        />
+      </div>
 
       {items.length === 0 ? (
         <p className="mt-10 text-sm text-muted-foreground">{t("guidesPage.empty")}</p>

@@ -15,6 +15,7 @@ export function organizationJsonLd(locale: AppLocale) {
 }
 
 export function websiteJsonLd(locale: AppLocale) {
+  const searchUrl = absoluteUrl(`/${locale}/suche`);
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -23,7 +24,10 @@ export function websiteJsonLd(locale: AppLocale) {
     inLanguage: locale,
     potentialAction: {
       "@type": "SearchAction",
-      target: `${absoluteUrl(`/${locale}`)}?q={search_term_string}`,
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${searchUrl}?q={search_term_string}`,
+      },
       "query-input": "required name=search_term_string",
     },
   };
@@ -206,5 +210,77 @@ export function extractAeoFields(content: ReviewContent) {
     keyTakeaways: content.keyTakeaways || [],
     scoreBreakdown: content.scoreBreakdown,
     decisionGuide: content.decisionGuide,
+  };
+}
+
+export function howToJsonLd(input: {
+  name: string;
+  description?: string;
+  url: string;
+  locale: AppLocale;
+  steps: string[];
+}) {
+  if (!input.steps.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: input.name,
+    description: input.description,
+    url: input.url,
+    inLanguage: input.locale,
+    step: input.steps.map((text, index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      name: `${input.locale === "en" ? "Step" : "Schritt"} ${index + 1}`,
+      text,
+    })),
+  };
+}
+
+export function articleJsonLd(input: {
+  locale: AppLocale;
+  headline: string;
+  description?: string;
+  url: string;
+  image?: string | null;
+  datePublished?: string | Date | null;
+  dateModified?: string | Date | null;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: input.headline,
+    description: input.description,
+    url: input.url,
+    inLanguage: input.locale,
+    image: input.image ? [input.image] : undefined,
+    datePublished: input.datePublished
+      ? new Date(input.datePublished).toISOString()
+      : undefined,
+    dateModified: input.dateModified
+      ? new Date(input.dateModified).toISOString()
+      : input.datePublished
+        ? new Date(input.datePublished).toISOString()
+        : undefined,
+    author: {
+      "@type": "Organization",
+      name: getSiteName(input.locale),
+    },
+    publisher: {
+      "@type": "Organization",
+      name: getSiteName(input.locale),
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/og-default.svg"),
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": input.url,
+    },
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: [".aeo-direct-answer", ".aeo-key-takeaways"],
+    },
   };
 }

@@ -45,10 +45,29 @@ import {
   parseStoredErrorCodes,
   parseStoredKnownIssues,
 } from "@/lib/product-tech/parse";
+import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+import { InternalLinks } from "@/components/seo/internal-links";
+import { JsonLd } from "@/components/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import {
+  aeoAnswerJsonLd,
+  articleJsonLd,
+  breadcrumbJsonLd,
+  extractAeoFields,
+  faqJsonLd,
+  organizationJsonLd,
+  productReviewJsonLd,
+} from "@/lib/seo/jsonld";
+import {
+  getClusterPages,
+  getPillarPage,
+  NICHE_CATEGORY_SLUG,
+} from "@/lib/seo/niche/bluetooth-headphones";
+import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 import { formatPrice, slugify } from "@/lib/utils";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
-import { ProductJsonLd } from "@/components/seo/product-json-ld";
 
 function estimateReadMinutes(content: {
   verdict?: string;
@@ -91,12 +110,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const article = product.articles[0];
+  const title = article?.seoTitle || article?.title || product.title;
+  const description =
+    article?.seoDescription ||
+    article?.excerpt ||
+    (appLocale === "en"
+      ? `Independent IGZ review of ${product.title}.`
+      : `Unabhängiger IGZ-Testbericht zu ${product.title}.`);
 
-  return {
-    title: article?.seoTitle || article?.title || product.title,
-    description:
-      article?.seoDescription || article?.excerpt || product.title,
-  };
+  return buildPageMetadata({
+    locale: appLocale,
+    title,
+    description,
+    pathWithoutLocale: `/produkt/${product.slug}`,
+    image: product.imageUrl,
+    type: "article",
+    publishedTime: article?.publishedAt,
+    modifiedTime: product.updatedAt,
+  });
 }
 
 export default async function ProductPage({ params }: Props) {
@@ -127,9 +158,14 @@ export default async function ProductPage({ params }: Props) {
 
   const article = product.articles[0];
   const content = asReviewContent(article?.contentJson);
+  const aeo = extractAeoFields(content);
   const ctaHref = productOutHref(product, locale, pagePath);
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
+  const isDe = locale === "de";
   const score = content.score ?? product.editorialScore ?? product.rating;
+  const pageUrl = absoluteUrl(localizedPath(locale, `/produkt/${product.slug}`));
+  const categoryName =
+    locale === "en" ? product.category.nameEn : product.category.nameDe;
   const trustSignals = extractTrustSignals(
     product.rawSearchJson,
     product.price?.toString(),
@@ -252,20 +288,81 @@ export default async function ProductPage({ params }: Props) {
     { id: "nutzererfahrungen", label: t("product.experiences") },
   ];
 
+  const nicheLinks =
+    product.category.slug === NICHE_CATEGORY_SLUG
+      ? getClusterPages()
+          .slice(0, 4)
+          .map((page) => ({
+            href: `/${locale}${page.path}`,
+            title: isDe ? page.h1De : page.h1En,
+            description: isDe ? page.descriptionDe : page.descriptionEn,
+          }))
+      : [];
+  const pillar = getPillarPage();
+
   return (
     <div className="igz-container py-10 pb-24 md:py-14 md:pb-24 xl:pb-14">
-      <ProductJsonLd
-        locale={locale}
-        productTitle={article?.title || product.title}
-        productSlug={product.slug}
-        imageUrl={product.imageUrl}
-        description={article?.excerpt || content.verdict || undefined}
-        price={product.price?.toString()}
-        currency={product.currency}
-        rating={product.rating ?? undefined}
-        reviewCount={product.reviewCount}
-        score={score ?? undefined}
-        faq={content.faq}
+      <JsonLd
+        data={[
+          organizationJsonLd(locale),
+          breadcrumbJsonLd([
+            { name: t("nav.home"), url: absoluteUrl(localizedPath(locale)) },
+            {
+              name: categoryName,
+              url: absoluteUrl(
+                localizedPath(locale, `/kategorie/${product.category.slug}`),
+              ),
+            },
+            {
+              name: article?.title || product.title,
+              url: pageUrl,
+            },
+          ]),
+          productReviewJsonLd({
+            locale,
+            name: product.title,
+            description:
+              article?.excerpt ||
+              aeo.directAnswer ||
+              content.verdict ||
+              product.title,
+            image: product.imageUrl,
+            asin: product.asin,
+            price: product.price?.toString(),
+            currency: product.currency,
+            rating: product.rating,
+            reviewCount: product.reviewCount,
+            editorialScore:
+              typeof score === "number" ? score : product.editorialScore,
+            url: pageUrl,
+            reviewBody: aeo.directAnswer || content.verdict || article?.excerpt || undefined,
+            reviewTitle: article?.title || product.title,
+            datePublished: article?.publishedAt,
+            keyTakeaways: aeo.keyTakeaways,
+          }),
+          articleJsonLd({
+            locale,
+            headline: article?.title || product.title,
+            description:
+              article?.seoDescription ||
+              article?.excerpt ||
+              aeo.directAnswer ||
+              undefined,
+            url: pageUrl,
+            image: product.imageUrl,
+            datePublished: article?.publishedAt,
+            dateModified: product.updatedAt,
+          }),
+          aeo.directAnswer
+            ? aeoAnswerJsonLd({
+                question: article?.title || product.title,
+                answer: aeo.directAnswer,
+                url: pageUrl,
+                locale,
+              })
+            : null,
+          faqJsonLd(content.faq || []),
+        ]}
       />
       <div className="grid gap-8 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
         <div className="hidden xl:block">
@@ -288,7 +385,18 @@ export default async function ProductPage({ params }: Props) {
         </div>
 
         <div>
-          <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
+          <Breadcrumbs
+            items={[
+              { label: t("nav.home"), href: `/${locale}` },
+              {
+                label: categoryName,
+                href: `/${locale}/kategorie/${product.category.slug}`,
+              },
+              { label: article?.title || product.title },
+            ]}
+          />
+
+          <div className="mb-6 mt-4 flex flex-wrap items-center gap-3 text-sm">
             <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
               {t("product.reviewBadge")}
             </span>
@@ -359,6 +467,20 @@ export default async function ProductPage({ params }: Props) {
             <AffiliateDisclosure text={t("disclosure.short")} />
           </div>
 
+          <div className="mt-6">
+            <AeoAnswerBlock
+              eyebrow={t("product.directAnswer")}
+              answer={
+                aeo.directAnswer ||
+                content.verdict ||
+                article?.excerpt ||
+                product.title
+              }
+              takeawaysTitle={t("product.keyTakeaways")}
+              takeaways={aeo.keyTakeaways}
+            />
+          </div>
+
           <section className="mt-8 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
             <div className="igz-card flex flex-col items-center justify-center p-5 text-center">
               <p className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
@@ -380,28 +502,49 @@ export default async function ProductPage({ params }: Props) {
               </h2>
               <div className="mt-4 space-y-4">
                 {[
-                  { label: t("product.performance"), value: score },
-                  { label: t("product.value"), value: product.rating },
-                  { label: t("product.build"), value: product.editorialScore },
+                  {
+                    label: t("product.performance"),
+                    display:
+                      typeof score === "number" ? `${score.toFixed(1)}/10` : "—",
+                    width:
+                      typeof score === "number"
+                        ? Math.min(score * 10, 100)
+                        : 0,
+                  },
+                  {
+                    label: isDe ? "Amazon-Bewertung" : "Amazon rating",
+                    display:
+                      typeof product.rating === "number"
+                        ? `${product.rating.toFixed(1)}/5 · ${product.reviewCount}`
+                        : "—",
+                    width:
+                      typeof product.rating === "number"
+                        ? Math.min((product.rating / 5) * 100, 100)
+                        : 0,
+                  },
+                  {
+                    label: t("product.build"),
+                    display:
+                      typeof product.editorialScore === "number"
+                        ? `${product.editorialScore.toFixed(1)}/10`
+                        : "—",
+                    width:
+                      typeof product.editorialScore === "number"
+                        ? Math.min(product.editorialScore * 10, 100)
+                        : 0,
+                  },
                 ].map((item) => (
                   <div key={item.label}>
                     <div className="mb-2 flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{item.label}</span>
                       <span className="font-medium text-primary">
-                        {typeof item.value === "number"
-                          ? `${item.value.toFixed(1)}/10`
-                          : "—"}
+                        {item.display}
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-surface-muted">
                       <div
                         className="h-2 rounded-full bg-secondary"
-                        style={{
-                          width:
-                            typeof item.value === "number"
-                              ? `${Math.min(item.value * 10, 100)}%`
-                              : "0%",
-                        }}
+                        style={{ width: `${item.width}%` }}
                       />
                     </div>
                   </div>
@@ -412,27 +555,7 @@ export default async function ProductPage({ params }: Props) {
 
           <section id="fazit" className="prose-article mt-10">
             <h2>{t("product.verdict")}</h2>
-            {content.directAnswer ? (
-              <p className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3 text-base leading-7 text-primary">
-                {content.directAnswer}
-              </p>
-            ) : null}
             <p>{content.verdict || article?.excerpt || product.title}</p>
-            {content.keyTakeaways && content.keyTakeaways.length > 0 ? (
-              <div className="not-prose mt-6 rounded-xl border border-border bg-surface-muted/60 p-5">
-                <h3 className="font-display text-sm font-semibold tracking-[0.14em] text-muted uppercase">
-                  {locale === "en" ? "Key takeaways" : "Die wichtigsten Punkte"}
-                </h3>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-                  {content.keyTakeaways.map((item) => (
-                    <li key={item} className="flex gap-2">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
           </section>
 
           {reviewSections.length > 0 ? (
@@ -750,7 +873,7 @@ export default async function ProductPage({ params }: Props) {
           </h2>
           {related[0] ? (
             <Link
-              href={`/${locale}/vergleich?a=${product.slug}&b=${related[0].slug}`}
+              href={`/${locale}/vergleich/${product.slug}-vs-${related[0].slug}`}
               className="text-sm font-semibold text-secondary hover:underline"
             >
               {t("compare.compareWith", { product: related[0].title })} →
@@ -777,6 +900,46 @@ export default async function ProductPage({ params }: Props) {
           ))}
         </div>
       </section>
+
+      <InternalLinks
+        title={t("product.internalLinks")}
+        items={[
+          {
+            href: `/${locale}/kategorie/${product.category.slug}`,
+            title: `${categoryName} ${t("category.comparison")}`,
+            description:
+              (isDe
+                ? product.category.descriptionDe
+                : product.category.descriptionEn) || undefined,
+          },
+          {
+            href: `/${locale}/reviews?category=${product.category.slug}`,
+            title: isDe ? "Alle Tests dieser Kategorie" : "All tests in this category",
+            description: isDe
+              ? "Weitere redaktionelle Amazon-Tests im Überblick"
+              : "More editorial Amazon tests at a glance",
+          },
+          {
+            href: `/${locale}/methodik`,
+            title: t("footer.methodology"),
+            description: isDe
+              ? "So entstehen IGZ-Scores und Testberichte"
+              : "How IGZ scores and reviews are created",
+          },
+          ...(product.category.slug === NICHE_CATEGORY_SLUG
+            ? [
+                {
+                  href: `/${locale}${pillar.path}`,
+                  title: isDe ? pillar.h1De : pillar.h1En,
+                  description: isDe
+                    ? pillar.descriptionDe
+                    : pillar.descriptionEn,
+                },
+                ...nicheLinks,
+              ]
+            : []),
+        ]}
+      />
 
       <StickyAmazonBar
         title={product.title}

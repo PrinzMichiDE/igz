@@ -1,9 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { FaqAccordion } from "@/components/content/faq-accordion";
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+import { JsonLd } from "@/components/seo/json-ld";
 import { prisma } from "@/lib/db/prisma";
 import { asBuyingGuideContent } from "@/lib/content-types";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import {
+  aeoAnswerJsonLd,
+  articleJsonLd,
+  breadcrumbJsonLd,
+  faqJsonLd,
+  howToJsonLd,
+  organizationJsonLd,
+} from "@/lib/seo/jsonld";
+import { absoluteUrl, localizedPath } from "@/lib/seo/site";
 import type { AppLocale } from "@/i18n/routing";
 import type { Metadata } from "next";
 
@@ -17,7 +30,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const appLocale = locale as AppLocale;
 
-  const category = await prisma.category.findUnique({ where: { slug } }).catch(() => null);
+  const category = await prisma.category
+    .findUnique({ where: { slug } })
+    .catch(() => null);
   if (!category) return { title: "Buying guide" };
 
   const article = await prisma.article
@@ -31,10 +46,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     })
     .catch(() => null);
 
-  return {
-    title: article?.seoTitle || article?.title || "Kaufberatung",
-    description: article?.seoDescription || article?.excerpt || undefined,
-  };
+  const categoryName =
+    appLocale === "en" ? category.nameEn : category.nameDe;
+  const title =
+    article?.seoTitle ||
+    article?.title ||
+    (appLocale === "en"
+      ? `${categoryName} buying guide`
+      : `${categoryName} Kaufberatung`);
+  const description =
+    article?.seoDescription ||
+    article?.excerpt ||
+    (appLocale === "en"
+      ? `Practical buying guide for ${categoryName}: criteria, mistakes and checklist.`
+      : `Praxisnahe Kaufberatung für ${categoryName}: Kriterien, Fehlkäufe und Checkliste.`);
+
+  return buildPageMetadata({
+    locale: appLocale,
+    title,
+    description,
+    pathWithoutLocale: `/kategorie/${slug}/kaufberatung`,
+    type: "article",
+    publishedTime: article?.publishedAt,
+    modifiedTime: article?.updatedAt,
+  });
 }
 
 export default async function BuyingGuidePage({ params }: Props) {
@@ -42,6 +77,7 @@ export default async function BuyingGuidePage({ params }: Props) {
   const locale = localeParam as AppLocale;
   setRequestLocale(locale);
   const t = await getTranslations();
+  const isDe = locale === "de";
 
   const category = await prisma.category
     .findUnique({ where: { slug } })
@@ -64,6 +100,15 @@ export default async function BuyingGuidePage({ params }: Props) {
 
   const content = asBuyingGuideContent(article.contentJson);
   const categoryName = locale === "en" ? category.nameEn : category.nameDe;
+  const pageUrl = absoluteUrl(
+    localizedPath(locale, `/kategorie/${slug}/kaufberatung`),
+  );
+  const directAnswer =
+    content.intro?.slice(0, 320) ||
+    article.excerpt ||
+    (isDe
+      ? `Kaufberatung ${categoryName}: worauf du achten solltest, bevor du bestellst.`
+      : `Buying guide for ${categoryName}: what to check before you buy.`);
 
   const products = await prisma.product.findMany({
     where: { categoryId: category.id },
@@ -75,17 +120,56 @@ export default async function BuyingGuidePage({ params }: Props) {
 
   return (
     <div className="igz-container py-10 md:py-14">
-      <nav className="text-sm text-muted">
-        <Link href={`/${locale}`} className="hover:text-secondary">
-          {t("nav.home")}
-        </Link>
-        <span className="mx-2">›</span>
-        <Link href={`/${locale}/kategorie/${slug}`} className="hover:text-secondary">
-          {categoryName}
-        </Link>
-        <span className="mx-2">›</span>
-        <span className="text-primary">{t("guide.badge")}</span>
-      </nav>
+      <JsonLd
+        data={[
+          organizationJsonLd(locale),
+          breadcrumbJsonLd([
+            { name: t("nav.home"), url: absoluteUrl(localizedPath(locale)) },
+            {
+              name: categoryName,
+              url: absoluteUrl(localizedPath(locale, `/kategorie/${slug}`)),
+            },
+            { name: t("guide.badge"), url: pageUrl },
+          ]),
+          articleJsonLd({
+            locale,
+            headline: article.title,
+            description: article.excerpt || undefined,
+            url: pageUrl,
+            datePublished: article.publishedAt,
+            dateModified: article.updatedAt,
+          }),
+          aeoAnswerJsonLd({
+            question: isDe
+              ? `${categoryName} kaufen – worauf achten?`
+              : `Buying ${categoryName} – what matters?`,
+            answer: directAnswer,
+            url: pageUrl,
+            locale,
+          }),
+          faqJsonLd(content.faq || []),
+          howToJsonLd({
+            name: isDe
+              ? `${categoryName} richtig auswählen`
+              : `How to choose ${categoryName}`,
+            description: article.excerpt || undefined,
+            url: pageUrl,
+            locale,
+            steps: content.checklist || [],
+          }),
+        ]}
+      />
+
+      <Breadcrumbs
+        items={[
+          { label: t("nav.home"), href: `/${locale}` },
+          {
+            label: categoryName,
+            href: `/${locale}/kategorie/${slug}`,
+          },
+          { label: t("guide.badge") },
+        ]}
+      />
 
       <p className="mt-6 font-display text-sm font-medium tracking-[0.18em] text-secondary uppercase">
         {t("guide.badge")}
@@ -98,6 +182,15 @@ export default async function BuyingGuidePage({ params }: Props) {
           {article.excerpt}
         </p>
       ) : null}
+
+      <div className="mt-6">
+        <AeoAnswerBlock
+          eyebrow={t("product.directAnswer")}
+          answer={directAnswer}
+          takeawaysTitle={t("product.keyTakeaways")}
+          takeaways={content.keyCriteria?.slice(0, 5) || []}
+        />
+      </div>
 
       <section className="prose-article mt-10">
         {content.intro ? <p>{content.intro}</p> : null}
@@ -118,7 +211,10 @@ export default async function BuyingGuidePage({ params }: Props) {
           </h2>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {content.keyCriteria.map((item) => (
-              <li key={item} className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
+              <li
+                key={item}
+                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
+              >
                 {item}
               </li>
             ))}
