@@ -226,7 +226,8 @@ export async function prepareProductReview(productId: string, locale: Locale) {
     productSlug: product.slug,
     categorySlug: product.category.slug,
     locale,
-    temperature: 0.5,
+    // Slightly higher for natural editorial variation; still constrained by JSON schema.
+    temperature: 0.55,
     maxTokens: REVIEW_MAX_TOKENS,
     messages: [
       { role: "system" as const, content: system },
@@ -372,8 +373,8 @@ export async function generateProductReview(productId: string, locale: Locale) {
     if (!passesReviewQualityGate(content)) {
       const retryReminder =
         prepared.locale === "de"
-          ? "NACHBESSERUNG: Schreibe denselben Test NOCHMAL als gültiges JSON. Genau 7 Abschnitte mit den vorgegebenen Headings. Jeder section.body 130–190 Wörter, Absätze mit \\n\\n. Keine Kurzfassung."
-          : "REVISION: Rewrite the same review as valid JSON. Exactly 7 sections with the required headings. Each section.body 130–190 words, paragraphs separated by \\n\\n. No short version.";
+          ? "NACHBESSERUNG: Schreibe denselben Test NOCHMAL als gültiges JSON. Genau 7 Abschnitte mit den vorgegebenen Headings. Jeder section.body 130–190 Wörter, Absätze mit \\n\\n. Redaktionsstil wie ein echter Magazin-Tester (Ich-Form, konkrete Szenen, klare Meinung) – keine KI-Floskeln, keine Kurzfassung."
+          : "REVISION: Rewrite the same review as valid JSON. Exactly 7 sections with the required headings. Each section.body 130–190 words, paragraphs separated by \\n\\n. Magazine-editor voice (first person, concrete scenes, clear opinions) — no AI fluff, no short version.";
       content = await openRouterChatJson<ReviewContent>({
         messages: [
           ...prepared.messages,

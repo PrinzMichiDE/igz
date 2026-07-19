@@ -12,7 +12,8 @@ Medien-Hinweise (Film) – nutze diese 7 Headings statt der Standard-Headings:
 6. "Schwächen & Kritik"
 7. "Kaufempfehlung"
 - Keine Spoiler der Pointe; bei Bedarf nur vorsichtige Andeutungen.
-- "testingPeriod" z. B. "Abendlicher Filmcheck inkl. Menü & Extras".
+- Ton wie Filmkritik in einer guten Zeitung: Beobachtung, Tempo, Atmosphäre – keine Fanfiction.
+- "testingPeriod" z. B. "Abendlicher Filmabend inkl. Menü & Extras".
 `;
   }
   if (slug === "serien") {
@@ -26,6 +27,7 @@ Medien-Hinweise (Serie) – nutze diese 7 Headings statt der Standard-Headings:
 6. "Schwächen & Kritik"
 7. "Kaufempfehlung"
 - Spoiler vermeiden; Fokus auf Kaufentscheidung der Edition.
+- Ton wie Serien-Kritik: Figuren, Einstieg, Bingewürdigkeit – redaktionell, nicht spoilernd.
 - "testingPeriod" z. B. "Mehrere Episoden / Einstieg in die Staffel".
 `;
   }
@@ -39,6 +41,7 @@ Medien-Hinweise (Videospiel) – nutze diese 7 Headings statt der Standard-Headi
 6. "Schwächen & Kritik"
 7. "Kaufempfehlung"
 - Keine erfundenen FPS-Benchmarks; formuliere vorsichtig.
+- Ton wie Spiele-Redaktion: Session-Feeling, Steuerung, Frust/Spaß – keine Trailer-Sprache.
 - "testingPeriod" z. B. "mehrere Sessions über einige Tage".
 `;
 }
@@ -55,6 +58,7 @@ Media notes (movie) — use these 7 headings instead of the default ones:
 6. "Weaknesses & criticism"
 7. "Buying recommendation"
 - Avoid spoilers of the ending.
+- Tone like a newspaper film critic: observation, pacing, atmosphere — not fan copy.
 - testingPeriod e.g. "one evening screening including menus/extras".
 `;
   }
@@ -69,6 +73,7 @@ Media notes (TV series) — use these 7 headings instead of the default ones:
 6. "Weaknesses & criticism"
 7. "Buying recommendation"
 - Avoid spoilers; focus on the buying decision for the edition.
+- Tone like a TV critic: characters, entry point, bingeability — editorial, not spoiler-y.
 - testingPeriod e.g. "several episodes / season opener".
 `;
   }
@@ -82,6 +87,7 @@ Media notes (video game) — use these 7 headings instead of the default ones:
 6. "Weaknesses & criticism"
 7. "Buying recommendation"
 - Do not invent FPS benches; stay cautious.
+- Tone like a games desk: session feel, controls, friction/fun — no trailer speak.
 - testingPeriod e.g. "multiple sessions over a few days".
 `;
 }
