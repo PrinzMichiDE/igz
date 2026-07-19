@@ -41,10 +41,16 @@ export async function GET() {
           fetchFromApi: false,
         });
 
+        const { backfillReviewPublishedDates } = await import(
+          "@/lib/reviews/backfill-published-at"
+        );
+        const reviewDates = await backfillReviewPublishedDates({ limit: 200 });
+
         return {
           seeded,
           purgedDemo,
           topCategories,
+          reviewDates,
           categoryCount: await prisma.category.count(),
           productCount: await prisma.product.count(),
           databaseHost: new URL(databaseUrl).hostname,

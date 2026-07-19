@@ -157,17 +157,45 @@ export const { POST } = serve<Payload>(
     });
 
     await context.run("publish-draft-reviews", async () => {
-      const publishedBacklog = await prisma.article.updateMany({
+      const { resolveReviewPublishedAt } = await import(
+        "@/lib/reviews/published-at"
+      );
+      const drafts = await prisma.article.findMany({
         where: {
           status: "needs_review",
           type: "review",
         },
-        data: {
-          status: "published",
-          publishedAt: new Date(),
+        take: 50,
+        select: {
+          id: true,
+          product: {
+            select: {
+              id: true,
+              asin: true,
+              createdAt: true,
+              rawDetailsJson: true,
+            },
+          },
         },
       });
-      return { count: publishedBacklog.count };
+
+      let count = 0;
+      for (const draft of drafts) {
+        const publishedAt = draft.product
+          ? resolveReviewPublishedAt({
+              productId: draft.product.id,
+              asin: draft.product.asin,
+              rawDetailsJson: draft.product.rawDetailsJson,
+              createdAt: draft.product.createdAt,
+            })
+          : new Date();
+        await prisma.article.update({
+          where: { id: draft.id },
+          data: { status: "published", publishedAt },
+        });
+        count += 1;
+      }
+      return { count };
     });
 
     const products = await context.run("list-missing-reviews", async () => {

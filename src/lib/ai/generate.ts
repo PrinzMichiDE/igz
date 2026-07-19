@@ -61,6 +61,7 @@ import {
 } from "@/lib/ratgeber/topics";
 import { pickNextAdviceGuideTopic } from "@/lib/ratgeber/select-topic";
 import { pingAdviceGuideUrls } from "@/lib/seo/ping-after-publish";
+import { resolveReviewPublishedAt } from "@/lib/reviews/published-at";
 import { slugify } from "@/lib/utils";
 import type { Locale } from "@prisma/client";
 
@@ -284,6 +285,9 @@ export async function persistProductReview(input: {
     select: {
       id: true,
       slug: true,
+      asin: true,
+      createdAt: true,
+      rawDetailsJson: true,
       category: { select: { slug: true } },
     },
   });
@@ -304,7 +308,13 @@ export async function persistProductReview(input: {
       );
     }
 
-    const publishedAt = new Date();
+    // Align test publication with product age (pre-2020 → 2020…now).
+    const publishedAt = resolveReviewPublishedAt({
+      productId: product.id,
+      asin: product.asin,
+      rawDetailsJson: product.rawDetailsJson,
+      createdAt: product.createdAt,
+    });
     const slug = `${slugify(content.title) || product.slug}-${input.locale}`;
     const bodyMarkdown = buildFullMarkdown(content);
 
@@ -339,6 +349,7 @@ export async function persistProductReview(input: {
         seoDescription: content.seoDescription,
         contentJson: content,
         bodyMarkdown,
+        // Keep historical/product-age date on refresh (do not bump to "today").
         publishedAt,
       },
     });

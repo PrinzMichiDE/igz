@@ -52,6 +52,13 @@ export const { POST } = serve<Payload>(
       });
     });
 
+    const reviewDates = await context.run("backfill-review-dates", async () => {
+      const { backfillReviewPublishedDates } = await import(
+        "@/lib/reviews/backfill-published-at"
+      );
+      return backfillReviewPublishedDates({ limit: 200 });
+    });
+
     await context.run("release-lock", async () => {
       await releaseLock(lockKey);
       return { released: true };
@@ -63,6 +70,7 @@ export const { POST } = serve<Payload>(
       seeded,
       purgedDemo,
       topCategories,
+      reviewDates,
     };
   },
   {
