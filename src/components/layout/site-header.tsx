@@ -15,7 +15,7 @@ export async function SiteHeader({ locale }: Props) {
       label: t("nav.categories"),
     },
     {
-      href: `/${locale}#reviews`,
+      href: `/${locale}/reviews`,
       label: t("nav.reviews"),
     },
     {

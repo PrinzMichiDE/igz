@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "",
     "/kategorien",
     "/bestenlisten",
+    "/reviews",
     "/deals",
     "/suche",
     "/vergleich",
