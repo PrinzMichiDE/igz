@@ -309,5 +309,23 @@
     "affiliate": "Affiliate-Hinweis",
     "contact": "Kontakt",
     "disclaimer": "IGZ ist eine unabhängige Vergleichsplattform. Preise und Verfügbarkeit können variieren. Amazon und das Amazon-Logo sind Warenzeichen von Amazon.com, Inc. oder verbundenen Unternehmen. Amazon-Links können Affiliate-Links sein."
+  },
+  "contact": {
+    "formName": "Name",
+    "formEmail": "E-Mail",
+    "formCompany": "Firma / Marke (optional)",
+    "formProductTitle": "Produktname",
+    "formAmazonUrl": "Amazon-URL",
+    "formAsin": "ASIN (optional)",
+    "formCategory": "Kategorie-Hinweis (optional)",
+    "formMessage": "Warum sollen wir das Produkt testen?",
+    "formCanShip": "Ich kann ein Testmuster zusenden",
+    "formCanShipHint": "Bitte erst nach unserer Rückmeldung versenden – wir nennen dann die passende Adresse.",
+    "formPrivacy": "Ich habe die Datenschutzerklärung gelesen und willige in die Verarbeitung meiner Angaben zur Bearbeitung der Testanfrage ein",
+    "formSubmit": "Testanfrage absenden",
+    "formSubmitting": "Wird gesendet…",
+    "formSuccess": "Danke! Deine Testanfrage ist eingegangen. Wir melden uns, wenn wir das Produkt in die Redaktionsplanung aufnehmen.",
+    "formError": "Senden fehlgeschlagen. Bitte Felder prüfen und erneut versuchen.",
+    "formRequiredNote": "* Pflichtfelder. Amazon-URL oder ASIN bitte angeben."
   }
 }

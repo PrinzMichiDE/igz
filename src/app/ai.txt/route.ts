@@ -18,6 +18,7 @@ Feed: ${site}/feed.xml
 Methodology: ${site}/de/methodik
 Editorial guidelines: ${site}/de/redaktionelle-richtlinien
 About: ${site}/de/ueber-uns
+Contact: ${site}/de/kontakt
 Categories: ${site}/de/kategorien
 Best lists: ${site}/de/bestenlisten
 

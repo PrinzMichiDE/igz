@@ -43,6 +43,7 @@ export async function GET() {
     `- ${absoluteUrl("/de/methodik")}: Editorial methodology (E-E-A-T)`,
     `- ${absoluteUrl("/de/redaktionelle-richtlinien")}: Editorial guidelines (voice, structure, independence)`,
     `- ${absoluteUrl("/de/ueber-uns")}: About`,
+    `- ${absoluteUrl("/de/kontakt")}: Contact / suggest a product for testing`,
     `- ${absoluteUrl("/de/impressum")}: Imprint`,
     `- ${absoluteUrl("/de/datenschutz")}: Privacy`,
     `- ${absoluteUrl("/sitemap.xml")}: Sitemap`,

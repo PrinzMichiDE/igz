@@ -205,8 +205,36 @@ const privacyDe = (imprintHref: string): Section[] => [
     ),
   },
   {
+    id: "testanfragen",
+    title: "7. Produkt-Testanfragen (Kontakt)",
+    body: (
+      <>
+        <p>
+          Über das Kontaktformular „Produkt zum Test vorschlagen“ können Sie
+          freiwillig Produktvorschläge einreichen. Dabei können verarbeitet
+          werden:
+        </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5">
+          <li>Name und E-Mail-Adresse</li>
+          <li>optional Firma/Marke</li>
+          <li>Produktname, Amazon-URL/ASIN, Kategorie-Hinweis</li>
+          <li>Nachrichtentext und Angabe zum möglichen Musterversand</li>
+          <li>gehashte IP-Adresse (Spam-/Missbrauchsabwehr)</li>
+          <li>Zeitpunkt der Einreichung</li>
+        </ul>
+        <p className="mt-3">
+          Die Verarbeitung erfolgt zur Bearbeitung Ihrer Anfrage und zur
+          redaktionellen Planung (Art. 6 Abs. 1 lit. a DSGVO bei Einwilligung
+          durch das Formular bzw. Art. 6 Abs. 1 lit. b/f DSGVO). Es besteht kein
+          Anspruch auf Test, Veröffentlichung oder Rückmeldung. Bitte senden Sie
+          keine physischen Muster ohne vorherige Absprache.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "ki-chat",
-    title: "7. KI-Chat / Einkaufsassistent",
+    title: "8. KI-Chat / Einkaufsassistent",
     body: (
       <>
         <p>
@@ -235,7 +263,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "scanner",
-    title: "8. Barcode-Scanner (Kamera)",
+    title: "9. Barcode-Scanner (Kamera)",
     body: (
       <>
         <p>
@@ -257,7 +285,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "amazon",
-    title: "9. Amazon-Affiliate-Links",
+    title: "10. Amazon-Affiliate-Links",
     body: (
       <>
         <p>
@@ -286,7 +314,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "server-dienste",
-    title: "10. Server-seitige Dienstleister",
+    title: "11. Server-seitige Dienstleister",
     body: (
       <>
         <p>
@@ -328,7 +356,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "speicherdauer",
-    title: "11. Speicherdauer",
+    title: "12. Speicherdauer",
     body: (
       <>
         <p>
@@ -349,7 +377,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "weitergabe",
-    title: "12. Weitergabe von Daten",
+    title: "13. Weitergabe von Daten",
     body: (
       <p>
         Eine Übermittlung Ihrer personenbezogenen Daten an Dritte erfolgt nur,
@@ -363,7 +391,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "rechte",
-    title: "13. Ihre Rechte",
+    title: "14. Ihre Rechte",
     body: (
       <>
         <p>Sie haben gegenüber uns folgende Rechte:</p>
@@ -388,7 +416,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "beschwerde",
-    title: "14. Beschwerderecht bei einer Aufsichtsbehörde",
+    title: "15. Beschwerderecht bei einer Aufsichtsbehörde",
     body: (
       <>
         <p>
@@ -412,7 +440,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "pflicht",
-    title: "15. Pflicht zur Bereitstellung von Daten",
+    title: "16. Pflicht zur Bereitstellung von Daten",
     body: (
       <p>
         Die Bereitstellung personenbezogener Daten ist weder gesetzlich noch
@@ -425,7 +453,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "profiling",
-    title: "16. Keine automatisierte Entscheidungsfindung",
+    title: "17. Keine automatisierte Entscheidungsfindung",
     body: (
       <p>
         Es findet keine automatisierte Entscheidungsfindung einschließlich
@@ -436,7 +464,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "kinder",
-    title: "17. Kinder",
+    title: "18. Kinder",
     body: (
       <p>
         Unser Angebot richtet sich nicht an Kinder unter 16 Jahren. Wir fordern
@@ -446,7 +474,7 @@ const privacyDe = (imprintHref: string): Section[] => [
   },
   {
     id: "aenderungen",
-    title: "18. Aktualität und Änderung dieser Datenschutzerklärung",
+    title: "19. Aktualität und Änderung dieser Datenschutzerklärung",
     body: (
       <p>
         Diese Datenschutzerklärung hat den Stand {new Date().toLocaleDateString("de-DE", {
@@ -603,8 +631,34 @@ const privacyEn = (imprintHref: string): Section[] => [
     ),
   },
   {
+    id: "test-requests",
+    title: "7. Product test requests (contact)",
+    body: (
+      <>
+        <p>
+          Via the contact form “Suggest a product for testing” you may
+          voluntarily submit product suggestions. We may process:
+        </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5">
+          <li>Name and email address</li>
+          <li>optional company/brand</li>
+          <li>product name, Amazon URL/ASIN, category hint</li>
+          <li>message text and whether a sample can be shipped</li>
+          <li>hashed IP address (anti-spam)</li>
+          <li>submission time</li>
+        </ul>
+        <p className="mt-3">
+          Processing is for handling your request and editorial planning (Art.
+          6(1)(a) GDPR with consent via the form and/or Art. 6(1)(b)/(f) GDPR).
+          There is no entitlement to a test, publication or reply. Please do not
+          ship physical samples without prior agreement.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "ai-chat",
-    title: "7. AI chat / shopping assistant",
+    title: "8. AI chat / shopping assistant",
     body: (
       <>
         <p>
@@ -622,7 +676,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "scanner",
-    title: "8. Barcode scanner (camera)",
+    title: "9. Barcode scanner (camera)",
     body: (
       <p>
         The optional barcode scanner may access your device camera only after
@@ -635,7 +689,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "amazon",
-    title: "9. Amazon affiliate links",
+    title: "10. Amazon affiliate links",
     body: (
       <>
         <p>
@@ -652,7 +706,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "processors",
-    title: "10. Server-side service providers",
+    title: "11. Server-side service providers",
     body: (
       <>
         <p>
@@ -666,7 +720,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "retention",
-    title: "11. Retention",
+    title: "12. Retention",
     body: (
       <p>
         We retain personal data only as long as necessary for the respective
@@ -678,7 +732,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "sharing",
-    title: "12. Sharing of data",
+    title: "13. Sharing of data",
     body: (
       <p>
         We share personal data with third parties only where necessary for
@@ -690,7 +744,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "rights",
-    title: "13. Your rights",
+    title: "14. Your rights",
     body: (
       <>
         <p>
@@ -703,7 +757,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "complaint",
-    title: "14. Right to lodge a complaint",
+    title: "15. Right to lodge a complaint",
     body: (
       <>
         <p>
@@ -725,7 +779,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "obligation",
-    title: "15. Obligation to provide data",
+    title: "16. Obligation to provide data",
     body: (
       <p>
         Providing personal data is generally neither legally nor contractually
@@ -737,7 +791,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "profiling",
-    title: "16. No automated decision-making",
+    title: "17. No automated decision-making",
     body: (
       <p>
         We do not carry out automated decision-making including profiling under
@@ -748,7 +802,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "children",
-    title: "17. Children",
+    title: "18. Children",
     body: (
       <p>
         Our service is not directed at children under 16. We do not knowingly
@@ -758,7 +812,7 @@ const privacyEn = (imprintHref: string): Section[] => [
   },
   {
     id: "changes",
-    title: "18. Changes to this privacy policy",
+    title: "19. Changes to this privacy policy",
     body: (
       <p>
         This privacy policy is current as of{" "}

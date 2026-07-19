@@ -17,8 +17,8 @@ export async function SiteFooter({ locale }: Props) {
     },
     { href: `/${locale}/methodik`, label: t("footer.methodology") },
     { href: `/${locale}/datenschutz`, label: t("nav.privacy") },
+    { href: `/${locale}/kontakt`, label: t("footer.contact") },
     { href: `/${locale}/impressum`, label: t("nav.imprint") },
-    { href: `/${locale}/impressum`, label: t("footer.contact") },
   ];
 
   return (

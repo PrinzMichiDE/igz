@@ -29,6 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/methodik",
     "/ueber-uns",
     "/redaktionelle-richtlinien",
+    "/kontakt",
     "/impressum",
     "/datenschutz",
   ];

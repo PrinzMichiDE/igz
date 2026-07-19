@@ -273,7 +273,11 @@ const guidelinesDe = (): Section[] => [
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5">
           <li>
-            Kontaktdaten stehen im{" "}
+            Produktvorschläge zum Test:{" "}
+            <InternalLink href="/de/kontakt">Kontaktformular</InternalLink>
+          </li>
+          <li>
+            Korrekturen/Impressum:{" "}
             <InternalLink href="/de/impressum">Impressum</InternalLink>
           </li>
           <li>
@@ -557,7 +561,11 @@ const guidelinesEn = (): Section[] => [
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5">
           <li>
-            Contact details are in the{" "}
+            Product suggestions for testing:{" "}
+            <InternalLink href="/en/kontakt">contact form</InternalLink>
+          </li>
+          <li>
+            Corrections / imprint:{" "}
             <InternalLink href="/en/impressum">imprint</InternalLink>
           </li>
           <li>Please include the product URL and a short description</li>

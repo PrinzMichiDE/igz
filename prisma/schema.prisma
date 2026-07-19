@@ -49,6 +49,13 @@ enum ExperienceCommentStatus {
   rejected
 }
 
+enum ProductTestRequestStatus {
+  pending
+  reviewed
+  accepted
+  declined
+}
+
 model Category {
   id               String    @id @default(cuid())
   slug             String    @unique
@@ -237,4 +244,29 @@ model ProductPriceSnapshot {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, recordedAt])
+}
+
+/// Reader / brand submissions suggesting a product for an IGZ test.
+model ProductTestRequest {
+  id              String                   @id @default(cuid())
+  locale          Locale
+  status          ProductTestRequestStatus @default(pending)
+  name            String
+  email           String
+  company         String?
+  productTitle    String
+  amazonUrl       String?
+  asin            String?
+  categoryHint    String?
+  message         String
+  canShipSample   Boolean                  @default(false)
+  privacyAccepted Boolean                  @default(false)
+  ipHash          String?
+  adminNote       String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([status, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([email, createdAt])
 }

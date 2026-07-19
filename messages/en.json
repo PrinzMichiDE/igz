@@ -309,5 +309,23 @@
     "affiliate": "Affiliate disclosure",
     "contact": "Contact",
     "disclaimer": "IGZ is an independent comparison platform. Prices and availability may vary. Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Amazon links may be affiliate links."
+  },
+  "contact": {
+    "formName": "Name",
+    "formEmail": "Email",
+    "formCompany": "Company / brand (optional)",
+    "formProductTitle": "Product name",
+    "formAmazonUrl": "Amazon URL",
+    "formAsin": "ASIN (optional)",
+    "formCategory": "Category hint (optional)",
+    "formMessage": "Why should we test this product?",
+    "formCanShip": "I can ship a test sample",
+    "formCanShipHint": "Please wait for our reply before shipping — we will provide an address if needed.",
+    "formPrivacy": "I have read the privacy policy and consent to processing my details to handle this test request",
+    "formSubmit": "Submit test request",
+    "formSubmitting": "Sending…",
+    "formSuccess": "Thanks! Your test request was received. We will get in touch if we add the product to the editorial plan.",
+    "formError": "Submission failed. Please check the fields and try again.",
+    "formRequiredNote": "* Required fields. Please provide an Amazon URL or ASIN."
   }
 }

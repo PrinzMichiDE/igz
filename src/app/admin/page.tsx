@@ -24,6 +24,7 @@ export default async function AdminDashboardPage() {
     reviewCount,
     publishedReviewCount,
     missingReviewCount,
+    pendingTestRequests,
   ] = await Promise.all([
     getQuotaStatus(),
     getAffiliateAnalytics(30),
@@ -45,6 +46,7 @@ export default async function AdminDashboardPage() {
     prisma.article.count({ where: { type: "review" } }),
     prisma.article.count({ where: { type: "review", status: "published" } }),
     countProductsMissingReviews({ locale: "de" }),
+    prisma.productTestRequest.count({ where: { status: "pending" } }),
   ]);
 
   return (
@@ -122,6 +124,18 @@ export default async function AdminDashboardPage() {
             Automatischer Nachzug 01:30 / 07:00 / 13:00 UTC, über alle Kategorien
           </p>
         </div>
+        <Link
+          href="/admin/test-requests"
+          className="igz-card igz-card-hover block p-5"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Offene Testanfragen
+          </p>
+          <p className="mt-2 font-display text-3xl font-bold text-primary">
+            {pendingTestRequests}
+          </p>
+          <p className="mt-2 text-xs text-secondary">Anfragen prüfen →</p>
+        </Link>
       </div>
 
       <section className="mt-10">

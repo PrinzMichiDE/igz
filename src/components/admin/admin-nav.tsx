@@ -4,6 +4,7 @@ const links = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/articles", label: "Tests & Artikel" },
   { href: "/admin/experiences", label: "Nutzererfahrungen" },
+  { href: "/admin/test-requests", label: "Testanfragen" },
 ];
 
 export function AdminNav({ currentPath }: { currentPath: string }) {
