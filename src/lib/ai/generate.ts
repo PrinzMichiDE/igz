@@ -32,6 +32,11 @@ import {
   buildBuyingGuideUserPromptEn,
   buyingGuideSystemPromptEn,
 } from "@/lib/ai/prompts/buying-guide.en";
+import {
+  mediaReviewGuidanceDe,
+  mediaReviewGuidanceEn,
+} from "@/lib/ai/prompts/media-review";
+import { isEntertainmentCategorySlug } from "@/lib/entertainment";
 import { slugify } from "@/lib/utils";
 import type { Locale } from "@prisma/client";
 
@@ -170,6 +175,12 @@ export async function prepareProductReview(productId: string, locale: Locale) {
     ? (product.features as string[])
     : [];
 
+  const mediaGuidance = isEntertainmentCategorySlug(product.category.slug)
+    ? locale === "de"
+      ? mediaReviewGuidanceDe(product.category.slug)
+      : mediaReviewGuidanceEn(product.category.slug)
+    : null;
+
   const system = locale === "de" ? reviewSystemPromptDe : reviewSystemPromptEn;
   const user =
     locale === "de"
@@ -181,6 +192,7 @@ export async function prepareProductReview(productId: string, locale: Locale) {
           reviewCount: product.reviewCount,
           features,
           categoryName: product.category.nameDe,
+          mediaGuidance,
         })
       : buildReviewUserPromptEn({
           title: product.title,
@@ -190,6 +202,7 @@ export async function prepareProductReview(productId: string, locale: Locale) {
           reviewCount: product.reviewCount,
           features,
           categoryName: product.category.nameEn,
+          mediaGuidance,
         });
 
   return {

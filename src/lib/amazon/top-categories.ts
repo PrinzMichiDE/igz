@@ -297,6 +297,54 @@ export const AMAZON_TOP_CATEGORIES_DE: TopCategorySeed[] = [
     searchKeywords: ["gaming headset", "controller"],
   },
   {
+    slug: "videospiele",
+    amazonCategoryId: "videogames",
+    nameDe: "Videospiele",
+    nameEn: "Video Games",
+    descriptionDe:
+      "Aktuelle Videospiele für PS5, Nintendo Switch, Xbox und PC im Vergleich.",
+    descriptionEn:
+      "Current video games for PS5, Nintendo Switch, Xbox and PC compared.",
+    searchKeywords: [
+      "ps5 spiele",
+      "nintendo switch spiele",
+      "xbox series spiele",
+      "pc games",
+    ],
+  },
+  {
+    slug: "filme",
+    amazonCategoryId: "dvd",
+    nameDe: "Filme",
+    nameEn: "Movies",
+    descriptionDe:
+      "Filme auf Blu-ray, DVD und 4K UHD – Vergleiche zu Inhalt, Bild und Kaufentscheidung.",
+    descriptionEn:
+      "Movies on Blu-ray, DVD and 4K UHD — comparisons of content, picture and buying advice.",
+    searchKeywords: [
+      "bluray 4k",
+      "filme bluray",
+      "dvd filme bestseller",
+      "4k uhd film",
+    ],
+  },
+  {
+    slug: "serien",
+    amazonCategoryId: "dvd",
+    nameDe: "Serien",
+    nameEn: "TV Series",
+    descriptionDe:
+      "Serien-Boxen und Staffeln auf Blu-ray/DVD im Überblick und Vergleich.",
+    descriptionEn:
+      "TV series box sets and seasons on Blu-ray/DVD compared.",
+    searchKeywords: [
+      "serie bluray",
+      "serien box",
+      "tv serie dvd",
+      "staffel bluray",
+    ],
+  },
+  {
     slug: "musikinstrumente",
     amazonCategoryId: "musical-instruments",
     nameDe: "Musikinstrumente",

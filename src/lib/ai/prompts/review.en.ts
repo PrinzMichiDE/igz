@@ -21,6 +21,7 @@ export function buildReviewUserPromptEn(input: {
   reviewCount?: number | null;
   features?: string[] | null;
   categoryName: string;
+  mediaGuidance?: string | null;
 }) {
   return `Create a long-form authentic hands-on test report for this Amazon product in category "${input.categoryName}".
 
@@ -30,6 +31,7 @@ Product data:
 - Price: ${input.price ?? "unknown"}
 - Amazon rating: ${input.rating ?? "unknown"} (${input.reviewCount ?? 0} ratings)
 - Features: ${(input.features || []).join(" | ") || "none"}
+${input.mediaGuidance || ""}
 
 Depth requirements (concise and practical — not novel-length):
 - Exactly 5 sections in "sections"
@@ -38,7 +40,7 @@ Depth requirements (concise and practical — not novel-length):
 - pros: 4–5 items, cons: 2–3 items
 - faq: 3–4 practical questions
 
-Required themes:
+Required themes (follow media notes when provided):
 1. First impressions
 2. Daily-use scenarios
 3. Build quality & handling

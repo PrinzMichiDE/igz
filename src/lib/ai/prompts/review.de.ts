@@ -21,6 +21,7 @@ export function buildReviewUserPromptDe(input: {
   reviewCount?: number | null;
   features?: string[] | null;
   categoryName: string;
+  mediaGuidance?: string | null;
 }) {
   return `Erstelle einen ausführlichen, authentischen Langzeit-Testbericht für dieses Amazon-Produkt in der Kategorie "${input.categoryName}".
 
@@ -30,6 +31,7 @@ Produktdaten:
 - Preis: ${input.price ?? "unbekannt"}
 - Amazon-Rating: ${input.rating ?? "unbekannt"} (${input.reviewCount ?? 0} Bewertungen)
 - Features: ${(input.features || []).join(" | ") || "keine"}
+${input.mediaGuidance || ""}
 
 Anforderungen an Länge/Tiefe (knapp und praxisnah – nicht romanhaft):
 - Genau 5 Abschnitte in "sections"
@@ -38,7 +40,7 @@ Anforderungen an Länge/Tiefe (knapp und praxisnah – nicht romanhaft):
 - pros: 4–5 Punkte, cons: 2–3 Punkte
 - faq: 3–4 praxisnahe Fragen
 
-Pflicht-Abschnitte (Headings sinngemäß):
+Pflicht-Abschnitte (Headings sinngemäß – bei Medien ggf. die Medien-Hinweise nutzen):
 1. Erster Eindruck
 2. Alltagstest
 3. Verarbeitung & Komfort

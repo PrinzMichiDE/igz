@@ -7,9 +7,10 @@ import {
   type TopCategorySeed,
 } from "@/lib/amazon/top-categories";
 import { ensureCategoryImages } from "@/lib/category-images";
+import { ENTERTAINMENT_CATEGORY_SLUGS } from "@/lib/entertainment";
 import { slugify } from "@/lib/utils";
 
-const TARGET_COUNT = 50;
+const TARGET_COUNT = 60;
 
 function buildFromApiCategory(item: { id?: string; name?: string }): TopCategorySeed | null {
   if (!item.id || !item.name || isDeniedAmazonCategoryId(item.id)) {
@@ -71,8 +72,18 @@ export async function ensureTopAmazonCategories(options?: {
 
   let upserted = 0;
   const curated = AMAZON_TOP_CATEGORIES_DE.slice(0, limit);
+  const entertainmentSeeds = AMAZON_TOP_CATEGORIES_DE.filter((seed) =>
+    (ENTERTAINMENT_CATEGORY_SLUGS as readonly string[]).includes(seed.slug),
+  );
+  // Always upsert entertainment niches even if they fall outside the slice window.
+  const seeds = [
+    ...curated,
+    ...entertainmentSeeds.filter(
+      (seed) => !curated.some((item) => item.slug === seed.slug),
+    ),
+  ];
 
-  for (const seed of curated) {
+  for (const seed of seeds) {
     await upsertCategory(seed);
     upserted += 1;
   }
@@ -147,7 +158,7 @@ export async function ensureTopAmazonCategories(options?: {
   return {
     ok: true,
     target: limit,
-    curatedUpserted: curated.length,
+    curatedUpserted: seeds.length,
     apiFetched,
     apiUpserted,
     upserted,

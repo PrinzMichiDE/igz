@@ -22,14 +22,18 @@ export async function listProductsMissingReviews(options?: {
   limit?: number;
   categoryId?: string | null;
   categorySlug?: string | null;
+  categorySlugs?: string[] | null;
   diversify?: boolean;
 }): Promise<MissingReviewProduct[]> {
   const locale = options?.locale ?? "de";
   const limit = Math.min(30, Math.max(1, Number(options?.limit || 5)));
   const diversify = options?.diversify !== false;
+  const categorySlugs = (options?.categorySlugs || [])
+    .map((slug) => slug.trim())
+    .filter(Boolean);
 
   let categoryId = options?.categoryId || null;
-  if (!categoryId && options?.categorySlug) {
+  if (!categoryId && options?.categorySlug && categorySlugs.length === 0) {
     const category = await prisma.category.findUnique({
       where: { slug: options.categorySlug },
       select: { id: true },
@@ -37,11 +41,20 @@ export async function listProductsMissingReviews(options?: {
     categoryId = category?.id ?? null;
   }
 
+  const categoryFilter =
+    categoryId
+      ? { categoryId }
+      : categorySlugs.length > 0
+        ? { category: { slug: { in: categorySlugs } } }
+        : options?.categorySlug
+          ? { category: { slug: options.categorySlug } }
+          : {};
+
   // When scoped to one category, simple top-N is fine.
-  if (categoryId || !diversify) {
+  if ((categoryId || options?.categorySlug) && categorySlugs.length <= 1 && !diversify) {
     const products = await prisma.product.findMany({
       where: {
-        ...(categoryId ? { categoryId } : {}),
+        ...categoryFilter,
         articles: {
           none: {
             type: "review",
@@ -80,10 +93,11 @@ export async function listProductsMissingReviews(options?: {
     }));
   }
 
-  // Global backfill: pull a pool, then round-robin one product per category.
+  // Global / multi-category backfill: pull a pool, then round-robin per category.
   const poolSize = Math.min(300, Math.max(limit * 25, 50));
   const pool = await prisma.product.findMany({
     where: {
+      ...categoryFilter,
       articles: {
         none: {
           type: "review",
@@ -144,11 +158,19 @@ export async function listProductsMissingReviews(options?: {
 export async function countProductsMissingReviews(options?: {
   locale?: Locale;
   categoryId?: string | null;
+  categorySlugs?: string[] | null;
 }) {
   const locale = options?.locale ?? "de";
+  const categorySlugs = (options?.categorySlugs || [])
+    .map((slug) => slug.trim())
+    .filter(Boolean);
   return prisma.product.count({
     where: {
-      ...(options?.categoryId ? { categoryId: options.categoryId } : {}),
+      ...(options?.categoryId
+        ? { categoryId: options.categoryId }
+        : categorySlugs.length > 0
+          ? { category: { slug: { in: categorySlugs } } }
+          : {}),
       articles: {
         none: {
           type: "review",

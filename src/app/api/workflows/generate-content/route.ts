@@ -35,6 +35,7 @@ export const maxDuration = 60;
 
 type Payload = {
   category?: string | null;
+  categorySlugs?: string[] | null;
   product?: string | null;
   locales?: Locale[];
   comments?: number;
@@ -68,12 +69,16 @@ export const { POST } = serve<Payload>(
       Math.max(2, Number(payload.comments || 3)),
     );
     const productLimit = Math.min(
-      12,
+      20,
       Math.max(1, Number(payload.productLimit || 5)),
     );
     const primaryLocale = locales[0] ?? "de";
     const forceRegen = payload.force === true;
-    const diversify = payload.diversify !== false && !payload.category;
+    const categorySlugs = (payload.categorySlugs || [])
+      .map((slug) => String(slug).trim())
+      .filter(Boolean);
+    const diversify =
+      payload.diversify !== false && !payload.category && categorySlugs.length !== 1;
     const chainRemaining = Math.max(
       0,
       Math.min(40, Number(payload.chainRemaining ?? 0)),
@@ -96,7 +101,10 @@ export const { POST } = serve<Payload>(
 
     const backlogBefore = await context.run("count-backlog", async () => {
       return {
-        products: await countProductsMissingReviews({ locale: primaryLocale }),
+        products: await countProductsMissingReviews({
+          locale: primaryLocale,
+          categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
+        }),
         categories: await countCategoriesWithReviewBacklog(primaryLocale),
       };
     });
@@ -149,6 +157,7 @@ export const { POST } = serve<Payload>(
         locale: primaryLocale,
         limit: productLimit,
         categorySlug: payload.category || null,
+        categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
         diversify,
       });
 
@@ -468,7 +477,10 @@ export const { POST } = serve<Payload>(
 
     const backlogRemaining = await context.run("count-backlog-after", async () => {
       return {
-        products: await countProductsMissingReviews({ locale: primaryLocale }),
+        products: await countProductsMissingReviews({
+          locale: primaryLocale,
+          categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
+        }),
         categories: await countCategoriesWithReviewBacklog(primaryLocale),
       };
     });
@@ -490,6 +502,7 @@ export const { POST } = serve<Payload>(
           "/api/workflows/generate-content",
           {
             category: payload.category || null,
+            categorySlugs: categorySlugs.length > 0 ? categorySlugs : null,
             locales,
             comments: commentCount,
             productLimit,
