@@ -59,7 +59,19 @@ if (deployCode === 0) {
 console.warn(
   "[prisma-prepare] migrate deploy failed – falling back to prisma db push",
 );
-const pushCode = runPrisma(["db", "push"]);
+const pushArgs = ["db", "push"];
+if (
+  isVercel ||
+  process.env.PRISMA_ACCEPT_DATA_LOSS === "1" ||
+  process.env.CI === "1" ||
+  process.env.CI === "true"
+) {
+  pushArgs.push("--accept-data-loss");
+  console.warn(
+    "[prisma-prepare] Using --accept-data-loss for non-interactive schema sync",
+  );
+}
+const pushCode = runPrisma(pushArgs);
 if (pushCode === 0) {
   console.log("[prisma-prepare] db push succeeded");
   process.exit(0);
