@@ -83,6 +83,13 @@ export default async function AboutPage({ params }: Props) {
               Mehr zur Arbeitsweise findest du auf der{" "}
               <Link href={`/${locale}/methodik`} className="text-blue-700">
                 Methodik-Seite
+              </Link>{" "}
+              und in den{" "}
+              <Link
+                href={`/${locale}/redaktionelle-richtlinien`}
+                className="text-blue-700"
+              >
+                redaktionellen Richtlinien
               </Link>
               . Aktuelle Bestenlisten gibt es unter{" "}
               <Link href={`/${locale}/bestenlisten`} className="text-blue-700">
@@ -95,6 +102,13 @@ export default async function AboutPage({ params }: Props) {
               Learn more on our{" "}
               <Link href={`/${locale}/methodik`} className="text-blue-700">
                 methodology page
+              </Link>{" "}
+              and in the{" "}
+              <Link
+                href={`/${locale}/redaktionelle-richtlinien`}
+                className="text-blue-700"
+              >
+                editorial guidelines
               </Link>
               . Current best-of lists live at{" "}
               <Link href={`/${locale}/bestenlisten`} className="text-blue-700">

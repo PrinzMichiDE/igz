@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -131,6 +132,37 @@ export default async function MethodologyPage({ params }: Props) {
             {isDe
               ? "Amazon-Links sind Affiliate-Links. Provisionen beeinflussen nicht die Rangfolge in Vergleichstabellen. Aktualisierungsdaten werden je Produkt ausgewiesen."
               : "Amazon links are affiliate links. Commissions do not determine ranking in comparison tables. Update timestamps are shown per product."}
+          </p>
+        </section>
+        <section>
+          <h2>
+            {isDe ? "8. Redaktionelle Richtlinien" : "8. Editorial guidelines"}
+          </h2>
+          <p>
+            {isDe ? (
+              <>
+                Stil, Verbote, Teststruktur und Unabhängigkeitsregeln sind in den{" "}
+                <Link
+                  href={`/${locale}/redaktionelle-richtlinien`}
+                  className="text-blue-700"
+                >
+                  redaktionellen Richtlinien
+                </Link>{" "}
+                festgehalten.
+              </>
+            ) : (
+              <>
+                Voice, bans, review structure and independence rules are documented
+                in our{" "}
+                <Link
+                  href={`/${locale}/redaktionelle-richtlinien`}
+                  className="text-blue-700"
+                >
+                  editorial guidelines
+                </Link>
+                .
+              </>
+            )}
           </p>
         </section>
       </div>

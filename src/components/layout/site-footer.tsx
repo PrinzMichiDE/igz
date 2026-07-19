@@ -10,11 +10,14 @@ export async function SiteFooter({ locale }: Props) {
   const t = await getTranslations();
 
   const links = [
-    { href: `/${locale}`, label: t("footer.about") },
-    { href: `/${locale}`, label: t("footer.editorial") },
+    { href: `/${locale}/ueber-uns`, label: t("footer.about") },
+    {
+      href: `/${locale}/redaktionelle-richtlinien`,
+      label: t("footer.editorial"),
+    },
+    { href: `/${locale}/methodik`, label: t("footer.methodology") },
     { href: `/${locale}/datenschutz`, label: t("nav.privacy") },
     { href: `/${locale}/impressum`, label: t("nav.imprint") },
-    { href: `/${locale}`, label: t("footer.affiliate") },
     { href: `/${locale}/impressum`, label: t("footer.contact") },
   ];
 

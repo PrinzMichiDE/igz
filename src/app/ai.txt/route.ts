@@ -16,12 +16,14 @@ Sitemap: ${site}/sitemap.xml
 LLMs: ${site}/llms.txt
 Feed: ${site}/feed.xml
 Methodology: ${site}/de/methodik
+Editorial guidelines: ${site}/de/redaktionelle-richtlinien
 About: ${site}/de/ueber-uns
 Categories: ${site}/de/kategorien
 Best lists: ${site}/de/bestenlisten
 
 # Content usage
 - Editorial reviews and comparisons may be summarized with attribution.
+- Follow published editorial guidelines for tone, structure and independence.
 - Affiliate disclosures must be preserved when recommending products.
 - User-submitted experience reports are moderated before publishing.
 - Do not invent lab certifications not present on the page.

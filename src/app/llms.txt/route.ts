@@ -41,6 +41,7 @@ export async function GET() {
     `- ${absoluteUrl("/de/kategorien")}: All product categories`,
     `- ${absoluteUrl("/de/bestenlisten")}: Best-of lists hub`,
     `- ${absoluteUrl("/de/methodik")}: Editorial methodology (E-E-A-T)`,
+    `- ${absoluteUrl("/de/redaktionelle-richtlinien")}: Editorial guidelines (voice, structure, independence)`,
     `- ${absoluteUrl("/de/ueber-uns")}: About`,
     `- ${absoluteUrl("/de/impressum")}: Imprint`,
     `- ${absoluteUrl("/de/datenschutz")}: Privacy`,

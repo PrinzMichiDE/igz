@@ -19,6 +19,9 @@ export async function GET() {
       urls.push(absoluteUrl(localizedPath(locale, "/bestenlisten")));
       urls.push(absoluteUrl(localizedPath(locale, "/methodik")));
       urls.push(absoluteUrl(localizedPath(locale, "/ueber-uns")));
+      urls.push(
+        absoluteUrl(localizedPath(locale, "/redaktionelle-richtlinien")),
+      );
       for (const page of BLUETOOTH_HEADPHONES_PAGES) {
         urls.push(absoluteUrl(localizedPath(locale, page.path)));
       }

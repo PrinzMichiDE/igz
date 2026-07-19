@@ -26,6 +26,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/suche",
     "/vergleich",
     "/scanner",
+    "/methodik",
+    "/ueber-uns",
+    "/redaktionelle-richtlinien",
     "/impressum",
     "/datenschutz",
   ];
