@@ -5,6 +5,7 @@ import {
   ComparisonTable,
   type ComparisonRow,
 } from "@/components/comparison/comparison-table";
+import type { SpecFacetDefinition } from "@/lib/comparison/facets";
 
 export type CategoryFilterState = {
   priceMin: number;
@@ -16,8 +17,13 @@ export type CategoryFilterState = {
 type FilterLabels = {
   filters: string;
   filterPrice: string;
+  filterBrand: string;
+  filterAllBrands: string;
   filterUseCase: string;
   filterMinScore: string;
+  filterMinRating: string;
+  filterAnyRating: string;
+  filterSpecs: string;
   reset: string;
   results: string;
 };
@@ -37,6 +43,8 @@ type TableLabels = {
 type Props = {
   rows: ComparisonRow[];
   useCaseOptions: string[];
+  brandOptions: string[];
+  specFacets: SpecFacetDefinition[];
   priceBounds: { min: number; max: number };
   locale: string;
   filterLabels: FilterLabels;
@@ -52,6 +60,8 @@ function rowPrice(row: ComparisonRow): number | null {
 export function FilteredComparisonSection({
   rows,
   useCaseOptions,
+  brandOptions,
+  specFacets,
   priceBounds,
   locale,
   filterLabels,
@@ -60,7 +70,12 @@ export function FilteredComparisonSection({
   const [priceMin, setPriceMin] = useState(priceBounds.min);
   const [priceMax, setPriceMax] = useState(priceBounds.max);
   const [minScore, setMinScore] = useState(0);
+  const [minRating, setMinRating] = useState(0);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedUseCases, setSelectedUseCases] = useState<string[]>([]);
+  const [selectedSpecs, setSelectedSpecs] = useState<Record<string, string[]>>(
+    {},
+  );
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -75,6 +90,18 @@ export function FilteredComparisonSection({
       ) {
         return false;
       }
+      if (
+        minRating > 0 &&
+        (typeof row.rating !== "number" || row.rating < minRating)
+      ) {
+        return false;
+      }
+      if (
+        selectedBrands.length > 0 &&
+        (!row.brand || !selectedBrands.includes(row.brand))
+      ) {
+        return false;
+      }
       if (selectedUseCases.length > 0) {
         const haystack = `${row.title} ${row.excerpt ?? ""}`.toLowerCase();
         const matches = selectedUseCases.some((useCase) =>
@@ -82,9 +109,23 @@ export function FilteredComparisonSection({
         );
         if (!matches) return false;
       }
+      for (const [key, values] of Object.entries(selectedSpecs)) {
+        if (!values.length) continue;
+        const productValue = row.specValues?.[key];
+        if (!productValue || !values.includes(productValue)) return false;
+      }
       return true;
     });
-  }, [rows, priceMin, priceMax, minScore, selectedUseCases]);
+  }, [
+    rows,
+    priceMin,
+    priceMax,
+    minScore,
+    minRating,
+    selectedBrands,
+    selectedUseCases,
+    selectedSpecs,
+  ]);
 
   function toggleUseCase(useCase: string) {
     setSelectedUseCases((current) =>
@@ -94,11 +135,32 @@ export function FilteredComparisonSection({
     );
   }
 
+  function toggleBrand(brand: string) {
+    setSelectedBrands((current) =>
+      current.includes(brand)
+        ? current.filter((item) => item !== brand)
+        : [...current, brand],
+    );
+  }
+
+  function toggleSpecValue(key: string, value: string) {
+    setSelectedSpecs((current) => {
+      const existing = current[key] || [];
+      const next = existing.includes(value)
+        ? existing.filter((item) => item !== value)
+        : [...existing, value];
+      return { ...current, [key]: next };
+    });
+  }
+
   function resetFilters() {
     setPriceMin(priceBounds.min);
     setPriceMax(priceBounds.max);
     setMinScore(0);
+    setMinRating(0);
+    setSelectedBrands([]);
     setSelectedUseCases([]);
+    setSelectedSpecs({});
   }
 
   const numberLocale = locale === "en" ? "en-US" : "de-DE";
@@ -124,15 +186,36 @@ export function FilteredComparisonSection({
             {filterLabels.filterPrice}
           </h3>
           <div className="mt-4 space-y-3">
-            <input
-              type="range"
-              min={priceBounds.min}
-              max={priceBounds.max}
-              step={10}
-              value={priceMax}
-              onChange={(event) => setPriceMax(Number(event.target.value))}
-              className="w-full accent-secondary"
-            />
+            <label className="block text-xs text-muted-foreground">
+              Min
+              <input
+                type="range"
+                min={priceBounds.min}
+                max={priceBounds.max}
+                step={10}
+                value={priceMin}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  setPriceMin(Math.min(next, priceMax));
+                }}
+                className="mt-1 w-full accent-secondary"
+              />
+            </label>
+            <label className="block text-xs text-muted-foreground">
+              Max
+              <input
+                type="range"
+                min={priceBounds.min}
+                max={priceBounds.max}
+                step={10}
+                value={priceMax}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  setPriceMax(Math.max(next, priceMin));
+                }}
+                className="mt-1 w-full accent-secondary"
+              />
+            </label>
             <div className="flex justify-between text-xs text-muted">
               <span>
                 {priceMin.toLocaleString(numberLocale, {
@@ -152,6 +235,33 @@ export function FilteredComparisonSection({
           </div>
         </div>
 
+        {brandOptions.length > 0 ? (
+          <div className="mt-8">
+            <h3 className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+              {filterLabels.filterBrand}
+            </h3>
+            <div className="mt-3 flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+              {brandOptions.map((brand) => {
+                const active = selectedBrands.includes(brand);
+                return (
+                  <button
+                    key={brand}
+                    type="button"
+                    onClick={() => toggleBrand(brand)}
+                    className={
+                      active
+                        ? "rounded-full border border-secondary bg-secondary/10 px-3 py-1.5 text-xs font-semibold text-secondary"
+                        : "rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-secondary/40"
+                    }
+                  >
+                    {brand}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-8">
           <h3 className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
             {filterLabels.filterMinScore}
@@ -167,6 +277,26 @@ export function FilteredComparisonSection({
           />
           <p className="mt-1 text-sm text-muted-foreground">
             {minScore > 0 ? `${minScore.toFixed(1)}+` : "—"}
+          </p>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+            {filterLabels.filterMinRating}
+          </h3>
+          <input
+            type="range"
+            min={0}
+            max={5}
+            step={0.5}
+            value={minRating}
+            onChange={(event) => setMinRating(Number(event.target.value))}
+            className="mt-4 w-full accent-amazon"
+          />
+          <p className="mt-1 text-sm text-muted-foreground">
+            {minRating > 0
+              ? `${minRating.toFixed(1)}★+`
+              : filterLabels.filterAnyRating}
           </p>
         </div>
 
@@ -194,6 +324,40 @@ export function FilteredComparisonSection({
                 );
               })}
             </div>
+          </div>
+        ) : null}
+
+        {specFacets.length > 0 ? (
+          <div className="mt-8 space-y-5">
+            <h3 className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+              {filterLabels.filterSpecs}
+            </h3>
+            {specFacets.map((facet) => (
+              <div key={facet.key}>
+                <p className="text-sm font-medium text-primary">{facet.label}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {facet.values.map((value) => {
+                    const active = (selectedSpecs[facet.key] || []).includes(
+                      value,
+                    );
+                    return (
+                      <button
+                        key={`${facet.key}-${value}`}
+                        type="button"
+                        onClick={() => toggleSpecValue(facet.key, value)}
+                        className={
+                          active
+                            ? "rounded-full border border-secondary bg-secondary/10 px-2.5 py-1 text-[11px] font-semibold text-secondary"
+                            : "rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                        }
+                      >
+                        {value}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : null}
 

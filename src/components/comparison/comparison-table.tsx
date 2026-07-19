@@ -14,6 +14,11 @@ export type ComparisonRow = {
   imageUrl?: string | null;
   imageMimeType?: string | null;
   score?: number | null;
+  rating?: number | null;
+  reviewCount?: number;
+  brand?: string | null;
+  /** Adaptive tech facets: datasheet key → display value */
+  specValues?: Record<string, string>;
   price?: number | string | null;
   currency?: string;
   ctaHref: string;
@@ -87,6 +92,11 @@ export function ComparisonTable({
                       {row.badge}
                     </span>
                   ) : null}
+                  {row.brand ? (
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
+                      {row.brand}
+                    </p>
+                  ) : null}
                   <h3 className="font-display text-lg font-semibold text-primary">
                     <Link href={row.href} className="hover:text-secondary">
                       {row.title}
@@ -97,14 +107,22 @@ export function ComparisonTable({
                       {row.excerpt}
                     </p>
                   ) : null}
-                  <div className="mt-2 flex items-center gap-3 text-sm">
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
                     {typeof row.score === "number" ? (
                       <span className="inline-flex items-center gap-1 text-primary">
                         <Star
                           className="h-4 w-4 fill-accent text-accent"
                           aria-hidden
                         />
-                        {row.score.toFixed(1)}
+                        {row.score.toFixed(1)} IGZ
+                      </span>
+                    ) : null}
+                    {typeof row.rating === "number" ? (
+                      <span className="text-muted-foreground">
+                        ★ {row.rating.toFixed(1)} Amazon
+                        {typeof row.reviewCount === "number"
+                          ? ` (${row.reviewCount.toLocaleString(numberLocale)})`
+                          : ""}
                       </span>
                     ) : null}
                     <Link
@@ -122,6 +140,12 @@ export function ComparisonTable({
                   <span className="text-muted">Score</span>
                   <ScoreBadge score={row.score} size="sm" />
                 </div>
+                {row.brand ? (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted">Brand</span>
+                    <span className="font-medium text-primary">{row.brand}</span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between gap-4">
                   <span className="text-muted">#{row.rank}</span>
                   <span className="font-medium text-primary">{row.rank}</span>
@@ -182,11 +206,24 @@ export function ComparisonTable({
               </div>
               <ScoreBadge score={row.score} size="sm" />
             </div>
+            {row.brand ? (
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                {row.brand}
+              </p>
+            ) : null}
             <h3 className="font-display text-base font-semibold text-primary">
               <Link href={row.href} className="hover:text-secondary">
                 {row.title}
               </Link>
             </h3>
+            {typeof row.rating === "number" ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                ★ {row.rating.toFixed(1)} Amazon
+                {typeof row.reviewCount === "number"
+                  ? ` (${row.reviewCount.toLocaleString(numberLocale)})`
+                  : ""}
+              </p>
+            ) : null}
             <a
               href={row.ctaHref}
               target="_blank"

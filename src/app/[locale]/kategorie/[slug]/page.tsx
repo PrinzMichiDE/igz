@@ -7,8 +7,15 @@ import { AwardBadge } from "@/components/comparison/award-badge";
 import { AwardPicker } from "@/components/comparison/award-picker";
 import { FilteredComparisonSection } from "@/components/comparison/filtered-comparison-section";
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
+import { MultiComparePicker } from "@/components/comparison/multi-compare-picker";
 import { SpecComparisonMatrix } from "@/components/comparison/spec-comparison-matrix";
 import { ProductMatchFinder } from "@/components/comparison/product-match-finder";
+import {
+  buildSpecFacetDefinitions,
+  collectBrands,
+  extractProductSpecMap,
+  resolveProductBrand,
+} from "@/lib/comparison/facets";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { FaqAccordion } from "@/components/content/faq-accordion";
@@ -167,15 +174,38 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     imageMimeType: category.imageMimeType,
   });
 
+  const facetProducts = category.products.map((product) => ({
+    id: product.id,
+    title: product.title,
+    rating: product.rating,
+    specsJson: product.specsJson,
+    rawSearchJson: product.rawSearchJson,
+    rawDetailsJson: product.rawDetailsJson,
+  }));
+  const brandOptions = collectBrands(facetProducts);
+  const specFacets = buildSpecFacetDefinitions(facetProducts, locale, 6);
+
   const rows = category.products.map((product, index) => {
     const review = reviewContentByProductId.get(product.id);
     const bestFor = review?.bestFor ?? [];
+    const facetProduct = {
+      id: product.id,
+      title: product.title,
+      rating: product.rating,
+      specsJson: product.specsJson,
+      rawSearchJson: product.rawSearchJson,
+      rawDetailsJson: product.rawDetailsJson,
+    };
     return {
       rank: index + 1,
       title: product.title,
       href: `/${locale}/produkt/${product.slug}`,
       imageUrl: product.imageUrl,
-      score: product.editorialScore ?? product.rating,
+      score: product.editorialScore ?? null,
+      rating: product.rating,
+      reviewCount: product.reviewCount,
+      brand: resolveProductBrand(facetProduct),
+      specValues: extractProductSpecMap(facetProduct, locale),
       price: product.price?.toString(),
       currency: product.currency,
       ctaHref: productOutHref(product, locale, pagePath),
@@ -553,6 +583,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               ctaLabel={t("cta.amazon")}
               columns={specMatrix.columns}
               rows={specMatrix.rows}
+              hideIdenticalLabel={t("category.hideIdentical")}
+              showAllLabel={t("category.showAllSpecs")}
+              differencesHint={t("category.differencesHint")}
             />
           ) : (
             <FeatureComparisonMatrix
@@ -566,6 +599,24 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             />
           )}
 
+          <div className="mb-10">
+            <MultiComparePicker
+              locale={locale}
+              options={category.products.slice(0, 24).map((product) => ({
+                slug: product.slug,
+                title: product.title,
+              }))}
+              labels={{
+                title: t("category.multiCompareTitle"),
+                helper: t("category.multiCompareHelper"),
+                selected: t("category.multiCompareSelected"),
+                cta: t("category.multiCompareCta"),
+                clear: t("category.multiCompareClear"),
+                maxHint: t("category.multiCompareMaxHint"),
+              }}
+            />
+          </div>
+
           <section className="mb-10">
             <h2 className="mb-4 font-display text-2xl font-semibold text-primary">
               {t("category.tableTitle")}
@@ -573,13 +624,20 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             <FilteredComparisonSection
               rows={rows}
               useCaseOptions={useCaseOptions}
+              brandOptions={brandOptions}
+              specFacets={specFacets}
               priceBounds={priceBounds}
               locale={locale}
               filterLabels={{
                 filters: t("category.filters"),
                 filterPrice: t("category.filterPrice"),
+                filterBrand: t("category.filterBrand"),
+                filterAllBrands: t("category.filterAllBrands"),
                 filterUseCase: t("category.filterUseCase"),
                 filterMinScore: t("category.filterMinScore"),
+                filterMinRating: t("category.filterMinRating"),
+                filterAnyRating: t("category.filterAnyRating"),
+                filterSpecs: t("category.filterSpecs"),
                 reset: t("category.filterReset"),
                 results: t("category.filterResults"),
               }}

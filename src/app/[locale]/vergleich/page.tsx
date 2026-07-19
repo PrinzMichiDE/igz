@@ -6,6 +6,7 @@ import { CtaButton } from "@/components/affiliate/cta-button";
 import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
 import { ProsCons } from "@/components/content/pros-cons";
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
+import { MultiComparePicker } from "@/components/comparison/multi-compare-picker";
 import { SpecComparisonMatrix } from "@/components/comparison/spec-comparison-matrix";
 import { ScoreBadge } from "@/components/product/score-badge";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -27,10 +28,33 @@ import type { AppLocale } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
 
+const MAX_COMPARE = 4;
+
 type Props = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ a?: string; b?: string }>;
+  searchParams: Promise<{ a?: string; b?: string; slugs?: string }>;
 };
+
+function parseCompareSlugs(searchParams: {
+  a?: string;
+  b?: string;
+  slugs?: string;
+}): string[] {
+  if (searchParams.slugs) {
+    return [
+      ...new Set(
+        searchParams.slugs
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+      ),
+    ].slice(0, MAX_COMPARE);
+  }
+  const pair = [searchParams.a, searchParams.b].filter(
+    (value): value is string => Boolean(value),
+  );
+  return [...new Set(pair)].slice(0, MAX_COMPARE);
+}
 
 export async function generateMetadata({
   params,
@@ -39,28 +63,60 @@ export async function generateMetadata({
   const { locale: localeParam } = await params;
   const sp = await searchParams;
   const locale = localeParam as AppLocale;
+  const slugs = parseCompareSlugs(sp);
+  const isDe = locale === "de";
+
+  if (slugs.length >= 2) {
+    const products = await prisma.product
+      .findMany({
+        where: { slug: { in: slugs } },
+        select: { slug: true, title: true },
+      })
+      .catch(() => []);
+    const ordered = slugs
+      .map((slug) => products.find((product) => product.slug === slug))
+      .filter((product): product is NonNullable<typeof product> =>
+        Boolean(product),
+      );
+    if (ordered.length >= 2) {
+      const names = ordered.map((product) => product.title);
+      return buildPageMetadata({
+        locale,
+        title: isDe
+          ? `${names.join(" vs. ")} – Vergleich`
+          : `${names.join(" vs. ")} – Comparison`,
+        description: isDe
+          ? `Side-by-Side-Vergleich von ${names.join(", ")}: IGZ-Scores, Specs, Preis und Pros/Cons.`
+          : `Side-by-side comparison of ${names.join(", ")}: IGZ scores, specs, price and pros/cons.`,
+        pathWithoutLocale: "/vergleich",
+        noIndex: true,
+      });
+    }
+  }
+
   return buildPageMetadata({
     locale,
-    title:
-      locale === "en"
-        ? "Compare two products side by side"
-        : "Zwei Produkte im Direktvergleich",
-    description:
-      locale === "en"
-        ? "Pick two Amazon products and compare IGZ scores, specs, price and pros/cons side by side."
-        : "Wähle zwei Amazon-Produkte und vergleiche IGZ-Scores, Specs, Preis sowie Pros/Cons nebeneinander.",
+    title: isDe
+      ? "Zwei bis vier Produkte im Direktvergleich"
+      : "Compare two to four products side by side",
+    description: isDe
+      ? "Wähle 2–4 Amazon-Produkte und vergleiche IGZ-Scores, Specs, Preis sowie Pros/Cons – inkl. Nur-Unterschiede-Ansicht."
+      : "Pick 2–4 Amazon products and compare IGZ scores, specs, price and pros/cons — including a differences-only view.",
     pathWithoutLocale: "/vergleich",
-    noIndex: Boolean(sp.a || sp.b),
+    noIndex: Boolean(sp.a || sp.b || sp.slugs),
   });
 }
 
 export default async function ComparePage({ params, searchParams }: Props) {
   const { locale: localeParam } = await params;
-  const { a, b } = await searchParams;
+  const sp = await searchParams;
   const locale = localeParam as AppLocale;
   setRequestLocale(locale);
   const t = await getTranslations();
   const pagePath = `/${locale}/vergleich`;
+  const isDe = locale === "de";
+  const numberLocale = locale === "en" ? "en-US" : "de-DE";
+  const slugs = parseCompareSlugs(sp);
 
   const categories = await prisma.category
     .findMany({
@@ -74,12 +130,18 @@ export default async function ComparePage({ params, searchParams }: Props) {
     })
     .catch(() => []);
 
-  if (!a || !b) {
-    const selected = a
-      ? await prisma.product.findUnique({ where: { slug: a }, include: { category: true } })
+  if (slugs.length < 2) {
+    const selected = sp.a
+      ? await prisma.product.findUnique({
+          where: { slug: sp.a },
+          include: { category: true },
+        })
       : null;
-    const isDe = locale === "de";
     const pageUrl = absoluteUrl(localizedPath(locale, "/vergleich"));
+    const hubOptions = categories
+      .flatMap((category) => category.products)
+      .slice(0, 36)
+      .map((product) => ({ slug: product.slug, title: product.title }));
 
     return (
       <div className="igz-container py-10 md:py-14">
@@ -89,11 +151,11 @@ export default async function ComparePage({ params, searchParams }: Props) {
             websiteJsonLd(locale),
             aeoAnswerJsonLd({
               question: isDe
-                ? "Wie vergleiche ich zwei Produkte bei IGZ?"
-                : "How do I compare two products on IGZ?",
+                ? "Wie vergleiche ich Produkte bei IGZ?"
+                : "How do I compare products on IGZ?",
               answer: isDe
-                ? "Wähle Produkt A und B – IGZ zeigt Scores, Specs, Preis und Pros/Cons im Side-by-Side-Vergleich."
-                : "Pick product A and B — IGZ shows scores, specs, price and pros/cons in a side-by-side comparison.",
+                ? "Wähle 2–4 Produkte – IGZ zeigt Scores, Specs, Preis und Pros/Cons im Side-by-Side-Vergleich inklusive Nur-Unterschiede-Ansicht."
+                : "Pick 2–4 products — IGZ shows scores, specs, price and pros/cons side by side, including a differences-only view.",
               url: pageUrl,
               locale,
             }),
@@ -102,46 +164,66 @@ export default async function ComparePage({ params, searchParams }: Props) {
         <h1 className="font-display text-4xl font-bold text-primary">
           {t("compare.title")}
         </h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">{t("compare.subtitle")}</p>
+        <p className="mt-3 max-w-2xl text-muted-foreground">
+          {t("compare.subtitle")}
+        </p>
         <div className="mt-6 max-w-3xl">
           <AeoAnswerBlock
             eyebrow={t("product.directAnswer")}
             answer={
               isDe
-                ? "Der IGZ-Direktvergleich stellt Specs und redaktionelle Bewertungen zweier Amazon-Produkte gegenüber – ideal vor der Kaufentscheidung."
-                : "The IGZ head-to-head puts specs and editorial scores of two Amazon products side by side — ideal before you buy."
+                ? "Der IGZ-Direktvergleich stellt Specs und redaktionelle Bewertungen von bis zu vier Amazon-Produkten gegenüber – ideal vor der Kaufentscheidung."
+                : "The IGZ head-to-head puts specs and editorial scores of up to four Amazon products side by side — ideal before you buy."
             }
             takeawaysTitle={t("product.keyTakeaways")}
             takeaways={
               isDe
                 ? [
-                    "Zuerst Kategorie wählen, dann zwei Modelle",
-                    "Canonical SEO-Duells unter /vergleich/a-vs-b",
-                    "Affiliate-Links klar gekennzeichnet",
+                    "2–4 Modelle aus einer Kategorie wählen",
+                    "„Nur Unterschiede“ blendet identische Specs aus",
+                    "SEO-Duells weiter unter /vergleich/a-vs-b",
                   ]
                 : [
-                    "Pick a category, then two models",
-                    "Canonical SEO duels at /vergleich/a-vs-b",
-                    "Affiliate links clearly disclosed",
+                    "Pick 2–4 models from a category",
+                    "Differences-only hides identical specs",
+                    "SEO duels remain at /vergleich/a-vs-b",
                   ]
             }
           />
         </div>
 
+        <div className="mt-8">
+          <MultiComparePicker
+            locale={locale}
+            options={hubOptions}
+            initialSlugs={sp.a ? [sp.a] : []}
+            labels={{
+              title: t("compare.multiTitle"),
+              helper: t("compare.multiHelper"),
+              selected: t("category.multiCompareSelected"),
+              cta: t("category.multiCompareCta"),
+              clear: t("category.multiCompareClear"),
+              maxHint: t("category.multiCompareMaxHint"),
+            }}
+          />
+        </div>
+
         {selected ? (
           <div className="mt-8 igz-card p-5">
-            <p className="text-sm text-muted-foreground">{t("compare.pickSecond")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("compare.pickSecond")}
+            </p>
             <p className="mt-1 font-semibold text-primary">{selected.title}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {(
                 await prisma.product.findMany({
-                  where: { categoryId: selected.categoryId, slug: { not: a } },
+                  where: { categoryId: selected.categoryId, slug: { not: sp.a } },
                   take: 8,
                 })
               ).map((product) => (
                 <Link
                   key={product.id}
-                  href={`/${locale}/vergleich?a=${a}&b=${product.slug}`}
+                  href={`/${locale}/vergleich?slugs=${sp.a},${product.slug}`}
                   className="rounded-full border border-border px-3 py-1.5 text-sm hover:border-secondary hover:text-secondary"
                 >
                   {product.title}
@@ -175,100 +257,109 @@ export default async function ComparePage({ params, searchParams }: Props) {
     );
   }
 
-  const [productA, productB] = await Promise.all([
-    prisma.product.findUnique({
-      where: { slug: a },
-      include: {
-        category: true,
-        articles: {
-          where: { type: "review", locale, status: "published" },
-          take: 1,
-        },
+  const products = await prisma.product.findMany({
+    where: { slug: { in: slugs } },
+    include: {
+      category: true,
+      articles: {
+        where: { type: "review", locale, status: "published" },
+        take: 1,
       },
-    }),
-    prisma.product.findUnique({
-      where: { slug: b },
-      include: {
-        category: true,
-        articles: {
-          where: { type: "review", locale, status: "published" },
-          take: 1,
-        },
-      },
-    }),
-  ]);
-
-  if (!productA || !productB) notFound();
-
-  const reviewA = asReviewContent(productA.articles[0]?.contentJson);
-  const reviewB = asReviewContent(productB.articles[0]?.contentJson);
-  const numberLocale = locale === "en" ? "en-US" : "de-DE";
-
-  const matrix = buildFeatureMatrix([
-    {
-      id: productA.id,
-      title: productA.title,
-      features: collectFeatureList(productA.features),
-      ctaHref: productOutHref(productA, locale, pagePath),
     },
-    {
-      id: productB.id,
-      title: productB.title,
-      features: collectFeatureList(productB.features),
-      ctaHref: productOutHref(productB, locale, pagePath),
-    },
-  ]);
+  });
+
+  const ordered = slugs
+    .map((slug) => products.find((product) => product.slug === slug))
+    .filter((product): product is NonNullable<typeof product> =>
+      Boolean(product),
+    );
+
+  if (ordered.length < 2) notFound();
+
+  const reviews = ordered.map((product) =>
+    asReviewContent(product.articles[0]?.contentJson),
+  );
+
+  const matrix = buildFeatureMatrix(
+    ordered.map((product) => ({
+      id: product.id,
+      title: product.title,
+      features: collectFeatureList(product.features),
+      ctaHref: productOutHref(product, locale, pagePath),
+    })),
+  );
   const specMatrix = buildSpecMatrix(
-    [
-      {
-        id: productA.id,
-        title: productA.title,
-        specsJson: productA.specsJson,
-        features: productA.features,
-        ctaHref: productOutHref(productA, locale, pagePath),
-      },
-      {
-        id: productB.id,
-        title: productB.title,
-        specsJson: productB.specsJson,
-        features: productB.features,
-        ctaHref: productOutHref(productB, locale, pagePath),
-      },
-    ],
+    ordered.map((product) => ({
+      id: product.id,
+      title: product.title,
+      specsJson: product.specsJson,
+      features: product.features,
+      ctaHref: productOutHref(product, locale, pagePath),
+    })),
     locale,
   );
 
-  const products = [productA, productB];
+  const names = ordered.map((product) => product.title);
+  const seoPairHref =
+    ordered.length === 2
+      ? `/${locale}/vergleich/${ordered[0].slug}-vs-${ordered[1].slug}`
+      : null;
 
   return (
     <div className="igz-container py-10 md:py-14">
       <h1 className="font-display text-4xl font-bold text-primary">
         {t("compare.headToHead")}
       </h1>
-      <p className="mt-3 text-muted-foreground">
-        {productA.title} vs. {productB.title}
+      <p className="mt-3 text-muted-foreground">{names.join(" vs. ")}</p>
+      <p className="mt-2 text-sm text-muted">
+        {isDe
+          ? `${ordered.length} Produkte im Vergleich · Unterschiede hervorgehoben`
+          : `${ordered.length} products compared · differences highlighted`}
       </p>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-2">
-        {products.map((product, index) => {
-          const review = index === 0 ? reviewA : reviewB;
+      <div
+        className={`mt-8 grid gap-4 ${
+          ordered.length <= 2
+            ? "lg:grid-cols-2"
+            : ordered.length === 3
+              ? "lg:grid-cols-3"
+              : "sm:grid-cols-2 lg:grid-cols-4"
+        }`}
+      >
+        {ordered.map((product, index) => {
+          const review = reviews[index];
           return (
             <article key={product.id} className="igz-card p-5">
               <h2 className="font-display text-lg font-semibold text-primary">
-                <Link href={`/${locale}/produkt/${product.slug}`} className="hover:text-secondary">
+                <Link
+                  href={`/${locale}/produkt/${product.slug}`}
+                  className="hover:text-secondary"
+                >
                   {product.title}
                 </Link>
               </h2>
-              <div className="mt-3 flex items-center gap-4">
+              <div className="mt-3 flex flex-wrap items-center gap-3">
                 <ScoreBadge
                   score={product.editorialScore ?? product.rating}
                   size="md"
                   label={t("product.score")}
                 />
                 <p className="text-xl font-bold text-primary">
-                  {formatPrice(product.price?.toString(), product.currency, numberLocale)}
+                  {formatPrice(
+                    product.price?.toString(),
+                    product.currency,
+                    numberLocale,
+                  )}
                 </p>
               </div>
+              {typeof product.rating === "number" ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  ★ {product.rating.toFixed(1)} Amazon
+                  {product.reviewCount
+                    ? ` (${product.reviewCount.toLocaleString(numberLocale)})`
+                    : ""}
+                </p>
+              ) : null}
               <div className="mt-4">
                 <CtaButton
                   href={productOutHref(product, locale, pagePath)}
@@ -278,14 +369,16 @@ export default async function ComparePage({ params, searchParams }: Props) {
                   size="sm"
                 />
               </div>
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <ProsCons
-                  prosTitle={t("product.theGood")}
-                  consTitle={t("product.theBad")}
-                  pros={(review.pros || []).slice(0, 4)}
-                  cons={(review.cons || []).slice(0, 3)}
-                />
-              </div>
+              {ordered.length <= 2 ? (
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <ProsCons
+                    prosTitle={t("product.theGood")}
+                    consTitle={t("product.theBad")}
+                    pros={(review.pros || []).slice(0, 4)}
+                    cons={(review.cons || []).slice(0, 3)}
+                  />
+                </div>
+              ) : null}
             </article>
           );
         })}
@@ -299,6 +392,9 @@ export default async function ComparePage({ params, searchParams }: Props) {
           ctaLabel={t("cta.amazon")}
           columns={specMatrix.columns}
           rows={specMatrix.rows}
+          hideIdenticalLabel={t("category.hideIdentical")}
+          showAllLabel={t("category.showAllSpecs")}
+          differencesHint={t("category.differencesHint")}
         />
       ) : (
         <FeatureComparisonMatrix
@@ -312,10 +408,21 @@ export default async function ComparePage({ params, searchParams }: Props) {
         />
       )}
 
-      <div className="mt-8">
-        <Link href={`/${locale}/vergleich`} className="text-sm font-semibold text-secondary hover:underline">
+      <div className="mt-8 flex flex-wrap items-center gap-4">
+        <Link
+          href={`/${locale}/vergleich`}
+          className="text-sm font-semibold text-secondary hover:underline"
+        >
           {t("compare.pickAnother")}
         </Link>
+        {seoPairHref ? (
+          <Link
+            href={seoPairHref}
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            {t("compare.seoPairHint")}
+          </Link>
+        ) : null}
       </div>
     </div>
   );

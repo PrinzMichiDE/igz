@@ -12,13 +12,15 @@ import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { ProsCons } from "@/components/content/pros-cons";
 import { ReviewToc } from "@/components/content/review-toc";
-import { ScoreBadge } from "@/components/product/score-badge";
+import { DualReviewPanel } from "@/components/product/dual-review-panel";
 import { ExperienceCommentExplorer } from "@/components/content/experience-comment-explorer";
 import { AmazonTrustBadges } from "@/components/product/amazon-trust-badges";
 import { ScenarioTags } from "@/components/product/scenario-tags";
 import { ValueIndicators } from "@/components/product/value-indicators";
 import { ProductManuals } from "@/components/product/product-manuals";
 import { ProductImageGallery } from "@/components/product/product-image-gallery";
+import { PriceAlertForm } from "@/components/product/price-alert-form";
+import { PriceHistoryChart } from "@/components/product/price-history-chart";
 import { PriceWatchButton } from "@/components/product/price-watch-button";
 import { PriceTrendBadge } from "@/components/product/price-trend-badge";
 import { TechDatasheet } from "@/components/product/tech-datasheet";
@@ -481,77 +483,76 @@ export default async function ProductPage({ params }: Props) {
             />
           </div>
 
-          <section className="mt-8 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-            <div className="igz-card flex flex-col items-center justify-center p-5 text-center">
-              <p className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">
-                {t("product.igzScore")}
-              </p>
-              <div className="mt-3">
-                <ScoreBadge
-                  score={score}
-                  size="lg"
-                  label={t("product.score")}
-                  showBadge
-                  badgeLabel={t("home.editorsChoice")}
-                />
-              </div>
-            </div>
-            <div className="igz-card p-5">
-              <h2 className="font-display text-base font-semibold text-primary">
-                {t("product.categoryBreakdown")}
-              </h2>
-              <div className="mt-4 space-y-4">
-                {[
-                  {
-                    label: t("product.performance"),
-                    display:
-                      typeof score === "number" ? `${score.toFixed(1)}/10` : "—",
-                    width:
-                      typeof score === "number"
-                        ? Math.min(score * 10, 100)
-                        : 0,
-                  },
-                  {
-                    label: isDe ? "Amazon-Bewertung" : "Amazon rating",
-                    display:
-                      typeof product.rating === "number"
-                        ? `${product.rating.toFixed(1)}/5 · ${product.reviewCount}`
-                        : "—",
-                    width:
-                      typeof product.rating === "number"
-                        ? Math.min((product.rating / 5) * 100, 100)
-                        : 0,
-                  },
-                  {
-                    label: t("product.build"),
-                    display:
-                      typeof product.editorialScore === "number"
-                        ? `${product.editorialScore.toFixed(1)}/10`
-                        : "—",
-                    width:
-                      typeof product.editorialScore === "number"
-                        ? Math.min(product.editorialScore * 10, 100)
-                        : 0,
-                  },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <div className="mb-2 flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-medium text-primary">
-                        {item.display}
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-surface-muted">
-                      <div
-                        className="h-2 rounded-full bg-secondary"
-                        style={{ width: `${item.width}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+          <DualReviewPanel
+            locale={locale}
+            igzScore={typeof score === "number" ? score : null}
+            amazonRating={product.rating}
+            amazonReviewCount={product.reviewCount}
+            scoreBreakdown={content.scoreBreakdown}
+            decisionGuide={content.decisionGuide}
+            labels={{
+              editorialTitle: t("product.dualEditorialTitle"),
+              editorialSubtitle: t("product.dualEditorialSubtitle"),
+              buyerTitle: t("product.dualBuyerTitle"),
+              buyerSubtitle: t("product.dualBuyerSubtitle"),
+              igzScore: t("product.igzScore"),
+              amazonRating: t("product.dualAmazonRating"),
+              amazonReviews: t("product.dualAmazonReviews"),
+              noAmazon: t("product.dualNoAmazon"),
+              breakdownTitle: t("product.dualBreakdownTitle"),
+              breakdown: {
+                value: t("product.scoreValue"),
+                quality: t("product.scoreQuality"),
+                usability: t("product.scoreUsability"),
+                longevity: t("product.scoreLongevity"),
+                overall: t("product.scoreOverall"),
+              },
+              decisionTitle: t("product.dualDecisionTitle"),
+              buyIf: t("product.dualBuyIf"),
+              skipIf: t("product.dualSkipIf"),
+            }}
+          />
+
+          <div className="mt-8 space-y-4">
+            <PriceHistoryChart
+              points={priceHistory
+                .map((point) => {
+                  const price = numericPrice(point.price);
+                  if (price === null) return null;
+                  return {
+                    price,
+                    recordedAt: point.recordedAt.toISOString(),
+                    currency: point.currency || product.currency,
+                  };
+                })
+                .filter((point): point is NonNullable<typeof point> =>
+                  Boolean(point),
+                )}
+              locale={locale}
+              title={t("product.priceChartTitle")}
+              emptyLabel={t("product.priceChartEmpty")}
+              lowLabel={t("product.priceChartLow")}
+              highLabel={t("product.priceChartHigh")}
+            />
+            <PriceAlertForm
+              productId={product.id}
+              locale={locale}
+              currentPrice={currentPrice}
+              currency={product.currency}
+              labels={{
+                title: t("product.priceAlertTitle"),
+                subtitle: t("product.priceAlertSubtitle"),
+                email: t("product.priceAlertEmail"),
+                targetPrice: t("product.priceAlertTarget"),
+                submit: t("product.priceAlertSubmit"),
+                submitting: t("product.priceAlertSubmitting"),
+                success: t("product.priceAlertSuccess"),
+                error: t("product.priceAlertError"),
+                privacy: t("product.priceAlertPrivacy"),
+                privacyHint: t("product.priceAlertPrivacyHint"),
+              }}
+            />
+          </div>
 
           <section id="fazit" className="prose-article mt-10">
             <h2>{t("product.verdict")}</h2>
@@ -839,6 +840,9 @@ export default async function ProductPage({ params }: Props) {
             score={score}
             scoreLabel={t("product.score")}
             editorChoiceLabel={t("home.editorsChoice")}
+            amazonRating={product.rating}
+            amazonReviewCount={product.reviewCount}
+            amazonRatingLabel={t("product.dualAmazonRating")}
             price={product.price?.toString()}
             currency={product.currency}
             locale={locale}

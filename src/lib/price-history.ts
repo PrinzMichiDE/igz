@@ -25,11 +25,12 @@ export async function recordPriceSnapshot(
     })
     .catch(() => null);
 
+  // Keep ~4 months of daily-ish points for charts (deduped on write).
   const oldSnapshots = await prisma.productPriceSnapshot
     .findMany({
       where: { productId },
       orderBy: { recordedAt: "desc" },
-      skip: 30,
+      skip: 120,
       select: { id: true },
     })
     .catch(() => []);
@@ -43,7 +44,7 @@ export async function recordPriceSnapshot(
   }
 }
 
-export async function getPriceHistory(productId: string, limit = 14) {
+export async function getPriceHistory(productId: string, limit = 90) {
   return prisma.productPriceSnapshot
     .findMany({
       where: { productId },

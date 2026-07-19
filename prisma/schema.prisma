@@ -58,6 +58,13 @@ enum ProductTestRequestStatus {
   declined
 }
 
+enum PriceAlertStatus {
+  active
+  triggered
+  unsubscribed
+  failed
+}
+
 model Category {
   id               String    @id @default(cuid())
   slug             String    @unique
@@ -122,6 +129,7 @@ model Product {
   comparisonPriceWins  Comparison[] @relation("PriceWinnerProduct")
   comparisonBudgetWins Comparison[] @relation("BudgetWinnerProduct")
   priceSnapshots       ProductPriceSnapshot[]
+  priceAlerts          PriceAlert[]
 
   @@unique([asin, country])
   @@index([categoryId])
@@ -250,6 +258,30 @@ model ProductPriceSnapshot {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, recordedAt])
+}
+
+/// Email opt-in when a product reaches a wish price.
+model PriceAlert {
+  id             String           @id @default(cuid())
+  email          String
+  locale         Locale
+  targetPrice    Decimal          @db.Decimal(10, 2)
+  currency       String           @default("EUR")
+  status         PriceAlertStatus @default(active)
+  unsubscribeToken String         @unique @default(cuid())
+  lastNotifiedAt DateTime?
+  triggeredAt    DateTime?
+  ipHash         String?
+  privacyAccepted Boolean         @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([status, productId])
+  @@index([email, productId])
+  @@index([ipHash, createdAt])
 }
 
 /// Reader / brand submissions suggesting a product for an IGZ test.

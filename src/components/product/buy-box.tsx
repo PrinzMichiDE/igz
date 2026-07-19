@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Star } from "lucide-react";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { ScoreBadge } from "@/components/product/score-badge";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -9,6 +10,9 @@ type Props = {
   score?: number | null;
   scoreLabel: string;
   editorChoiceLabel?: string;
+  amazonRating?: number | null;
+  amazonReviewCount?: number;
+  amazonRatingLabel?: string;
   price?: number | string | null;
   currency?: string;
   locale: string;
@@ -28,6 +32,9 @@ export function BuyBox({
   score,
   scoreLabel,
   editorChoiceLabel,
+  amazonRating,
+  amazonReviewCount = 0,
+  amazonRatingLabel,
   price,
   currency = "EUR",
   locale,
@@ -81,7 +88,7 @@ export function BuyBox({
         >
           {formatPrice(price, currency, numberLocale)}
         </a>
-        <div className="mt-5 flex items-center gap-4">
+        <div className="mt-5 flex flex-wrap items-center gap-4">
           <ScoreBadge
             score={score}
             size="lg"
@@ -89,6 +96,22 @@ export function BuyBox({
             showBadge={Boolean(editorChoiceLabel)}
             badgeLabel={editorChoiceLabel}
           />
+          {typeof amazonRating === "number" ? (
+            <div>
+              <div className="flex items-center gap-1 text-amazon">
+                <Star className="h-4 w-4 fill-current" />
+                <span className="font-semibold text-primary">
+                  {amazonRating.toFixed(1)}/5
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-muted">
+                {amazonRatingLabel || "Amazon"}
+                {amazonReviewCount > 0
+                  ? ` · ${amazonReviewCount.toLocaleString(numberLocale)}`
+                  : ""}
+              </p>
+            </div>
+          ) : null}
         </div>
         <p className="mt-4 text-xs text-muted">
           {priceNote}: {formatDate(lastSyncedAt, numberLocale)}
