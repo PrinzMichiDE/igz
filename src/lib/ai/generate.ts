@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
 import { openRouterChatJson } from "@/lib/ai/openrouter";
-import { getOpenRouterReviewModel } from "@/lib/ai/openrouter-request";
+import {
+  getOpenRouterReviewModel,
+  isOpenRouterFreeModel,
+} from "@/lib/ai/openrouter-request";
 import {
   buildReviewUserPromptDe,
   reviewSystemPromptDe,
@@ -48,6 +51,7 @@ import type { Locale } from "@prisma/client";
 
 /** Long structured reviews need enough room for 7 × ~160 words + meta JSON. */
 const REVIEW_MAX_TOKENS = 10000;
+const REVIEW_MAX_TOKENS_FREE = 7000;
 
 type ReviewContent = {
   title: string;
@@ -196,7 +200,16 @@ export async function prepareProductReview(productId: string, locale: Locale) {
       : mediaReviewGuidanceEn(product.category.slug)
     : null;
 
-  const system = locale === "de" ? reviewSystemPromptDe : reviewSystemPromptEn;
+  const model = getOpenRouterReviewModel();
+  const freeModel = isOpenRouterFreeModel(model);
+  const jsonOnlyGuard =
+    locale === "de"
+      ? "KRITISCH: Antworte mit genau einem JSON-Objekt. Das erste Zeichen muss { sein, das letzte }. Kein Thinking, keine Einleitung, kein Markdown."
+      : "CRITICAL: Reply with exactly one JSON object. First character must be {, last must be }. No thinking, no preamble, no markdown.";
+
+  const system = `${locale === "de" ? reviewSystemPromptDe : reviewSystemPromptEn}
+
+${jsonOnlyGuard}`;
   const user =
     locale === "de"
       ? buildReviewUserPromptDe({
@@ -227,13 +240,19 @@ export async function prepareProductReview(productId: string, locale: Locale) {
     productSlug: product.slug,
     categorySlug: product.category.slug,
     locale,
-    model: getOpenRouterReviewModel(),
-    // Slightly higher for natural editorial variation; still constrained by JSON schema.
-    temperature: 0.55,
-    maxTokens: REVIEW_MAX_TOKENS,
+    model,
+    // Free models get lower temperature to stay on-schema; paid can vary more.
+    temperature: freeModel ? 0.35 : 0.55,
+    maxTokens: freeModel ? REVIEW_MAX_TOKENS_FREE : REVIEW_MAX_TOKENS,
     messages: [
       { role: "system" as const, content: system },
-      { role: "user" as const, content: user },
+      {
+        role: "user" as const,
+        content: `${user}
+
+${jsonOnlyGuard}
+Starte jetzt mit {.`,
+      },
     ],
   };
 }

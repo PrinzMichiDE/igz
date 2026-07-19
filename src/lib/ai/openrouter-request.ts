@@ -28,29 +28,31 @@ export function getOpenRouterModel() {
 }
 
 /**
- * Long structured reviews need a model that reliably obeys JSON mode.
- * Free router models often return chain-of-thought instead of JSON.
+ * Prefer an explicit review model. Do not silently switch free → paid
+ * (keys often have separate credit limits and return 403).
  */
 export function getOpenRouterReviewModel() {
-  const explicit = process.env.OPENROUTER_REVIEW_MODEL?.trim();
-  if (explicit) return explicit;
-
-  const primary = getOpenRouterModel();
-  if (isFreeModel(primary)) {
-    return (
-      process.env.OPENROUTER_FALLBACK_MODEL?.trim() ||
-      "anthropic/claude-sonnet-4"
-    );
-  }
-  return primary;
+  return (
+    process.env.OPENROUTER_REVIEW_MODEL?.trim() ||
+    getOpenRouterModel()
+  );
 }
 
-export function getOpenRouterFallbackModel() {
-  return (
-    process.env.OPENROUTER_FALLBACK_MODEL?.trim() ||
-    process.env.OPENROUTER_REVIEW_MODEL?.trim() ||
-    "anthropic/claude-sonnet-4"
-  );
+export function getOpenRouterFallbackModel(primaryModel?: string) {
+  const explicit = process.env.OPENROUTER_FALLBACK_MODEL?.trim();
+  if (explicit) return explicit;
+
+  const primary = primaryModel || getOpenRouterReviewModel();
+  // If the primary is paid/quota-limited, fall back to free instruct models.
+  if (!isFreeModel(primary)) {
+    return process.env.OPENROUTER_MODEL?.trim() || "openrouter/free";
+  }
+  // If already on a free router, try a different free instruct checkpoint.
+  return "meta-llama/llama-3.3-70b-instruct:free";
+}
+
+export function isOpenRouterFreeModel(model: string) {
+  return isFreeModel(model);
 }
 
 export function getOpenRouterAuthHeaders() {

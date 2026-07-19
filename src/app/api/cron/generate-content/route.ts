@@ -42,7 +42,11 @@ export async function GET(req: NextRequest) {
     .split(",")
     .map((v) => v.trim())
     .filter((v): v is Locale => v === "de" || v === "en");
-  const commentCount = Number(req.nextUrl.searchParams.get("comments") || 3);
+  const rawComments = req.nextUrl.searchParams.get("comments");
+  const commentCount =
+    rawComments == null || rawComments === ""
+      ? 3
+      : Math.min(6, Math.max(0, Number(rawComments)));
   const productLimit = Number(
     req.nextUrl.searchParams.get("products") || defaultBatchSize(),
   );

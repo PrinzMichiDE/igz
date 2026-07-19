@@ -67,10 +67,10 @@ export const { POST } = serve<Payload>(
     const locales = (
       payload.locales?.length ? payload.locales : (["de"] as Locale[])
     ).filter((v): v is Locale => v === "de" || v === "en");
-    const commentCount = Math.min(
-      6,
-      Math.max(2, Number(payload.comments || 3)),
-    );
+    const rawComments = Number(payload.comments);
+    const commentCount = Number.isFinite(rawComments)
+      ? Math.min(6, Math.max(0, rawComments))
+      : 3;
     const productLimit = Math.min(
       20,
       Math.max(1, Number(payload.productLimit || 5)),
@@ -451,7 +451,7 @@ export const { POST } = serve<Payload>(
                 ],
                 temperature: 0.4,
                 maxTokens: prepared.maxTokens,
-                model: getOpenRouterFallbackModel(),
+                model: getOpenRouterFallbackModel(prepared.model),
               }),
           );
 
