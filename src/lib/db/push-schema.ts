@@ -42,7 +42,7 @@ export async function pushPrismaSchema() {
     );
   }
 
-  const args = [prismaEntry, "db", "push"];
+  const args = [prismaEntry, "db", "push", "--accept-data-loss"];
   if (existsSync(configPath)) {
     args.push("--config", configPath);
   }

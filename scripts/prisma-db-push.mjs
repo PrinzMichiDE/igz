@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * Resolve a usable Postgres URL (Vercel Postgres fallbacks) and run
- * `prisma db push` with it. Respects sslmode=disable / DATABASE_SSL_MODE=disable.
+ * Resolve a usable Postgres URL (Vercel Postgres fallbacks) and sync schema.
+ * Prefers `prisma migrate deploy`; falls back to `prisma db push`.
+ * On Vercel/CI, db push uses `--accept-data-loss` so non-interactive builds
+ * can apply additive unique constraints (Prisma otherwise aborts with a warning).
  */
 import "dotenv/config";
 import { spawnSync } from "node:child_process";
@@ -147,6 +149,23 @@ function resolveUrl() {
   return url;
 }
 
+function shouldAcceptDataLoss() {
+  if (process.env.PRISMA_ACCEPT_DATA_LOSS === "0") return false;
+  if (process.env.PRISMA_ACCEPT_DATA_LOSS === "1") return true;
+  if (process.env.VERCEL === "1") return true;
+  const ci = (process.env.CI || "").toLowerCase();
+  return ci === "1" || ci === "true";
+}
+
+function runPrisma(args, env) {
+  const result = spawnSync("npx", ["prisma", ...args], {
+    stdio: "inherit",
+    env,
+    shell: false,
+  });
+  return result.status ?? 1;
+}
+
 const databaseUrl = resolveUrl();
 
 for (const key of ["PGHOST", "PGHOSTADDR", "PGDATABASE", "PGUSER", "PGPASSWORD"]) {
@@ -168,10 +187,31 @@ if (/[?&]sslmode=disable(?:&|$)/i.test(databaseUrl) || envDisablesSsl()) {
   env.DATABASE_SSL_MODE = env.DATABASE_SSL_MODE || "disable";
 }
 
-const result = spawnSync("npx", ["prisma", "db", "push"], {
-  stdio: "inherit",
-  env,
-  shell: false,
-});
+const skipMigrate = process.env.PRISMA_SKIP_MIGRATE_DEPLOY === "1";
+if (!skipMigrate) {
+  console.log("[prisma-db-push] Trying prisma migrate deploy…");
+  const deployCode = runPrisma(["migrate", "deploy"], env);
+  if (deployCode === 0) {
+    console.log("[prisma-db-push] migrate deploy succeeded");
+    process.exit(0);
+  }
+  console.warn(
+    `[prisma-db-push] migrate deploy exited ${deployCode} – falling back to db push`,
+  );
+}
 
-process.exit(result.status ?? 1);
+const pushArgs = ["db", "push"];
+if (shouldAcceptDataLoss()) {
+  pushArgs.push("--accept-data-loss");
+  console.warn(
+    "[prisma-db-push] Using --accept-data-loss for non-interactive schema sync",
+  );
+}
+
+const pushCode = runPrisma(pushArgs, env);
+if (pushCode === 0) {
+  console.log("[prisma-db-push] db push succeeded");
+  process.exit(0);
+}
+
+process.exit(pushCode);
