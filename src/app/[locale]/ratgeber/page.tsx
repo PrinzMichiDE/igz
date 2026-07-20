@@ -32,11 +32,11 @@ export async function generateMetadata({
   const page = Math.max(1, Number(sp.page || 1) || 1);
   return buildPageMetadata({
     locale,
-    title: locale === "en" ? "Guides & buying advice" : "Ratgeber & Kaufhilfen",
+    title: locale === "en" ? "Guides & how-tos" : "Ratgeber & How-tos",
     description:
       locale === "en"
-        ? "Practical IGZ guides on choosing products – criteria, mistakes to avoid and checklists."
-        : "Praxisnahe IGZ-Ratgeber zur Produktauswahl – Kriterien, Fehlkäufe und Checklisten.",
+        ? "Practical IGZ knowledge articles — clean, care, set up and everyday tips."
+        : "Praxisnahe IGZ-Wissensartikel – reinigen, pflegen, einrichten und Alltagstipps.",
     pathWithoutLocale: "/ratgeber",
     noIndex: page > 1,
   });
@@ -91,11 +91,11 @@ export default async function RatgeberIndexPage({
             : null,
           aeoAnswerJsonLd({
             question: isDe
-              ? "Welche Kauf-Ratgeber bietet IGZ?"
-              : "Which buying guides does IGZ offer?",
+              ? "Welche Ratgeber bietet IGZ?"
+              : "Which guides does IGZ offer?",
             answer: isDe
-              ? `Praxisnahe Ratgeber mit Kriterien, Fehlkäufen und Checklisten – ${totalArticles} redaktionelle Guides plus Nischen-Seiten. Täglich kommt ein neues Thema dazu.`
-              : `Practical guides with criteria, pitfalls and checklists — ${totalArticles} editorial guides plus niche pages. A new topic is added daily.`,
+              ? `Praxisnahe How-to-Artikel wie Reinigen, Pflegen und Einrichten – ${totalArticles} Wissensbeiträge plus Nischen-Seiten. Täglich kommt ein neues Thema dazu.`
+              : `Practical how-tos on cleaning, care and setup — ${totalArticles} knowledge articles plus niche pages. A new topic is added daily.`,
             url: pageUrl,
             locale,
           }),
@@ -123,21 +123,21 @@ export default async function RatgeberIndexPage({
           eyebrow={t("product.directAnswer")}
           answer={
             isDe
-              ? "IGZ-Ratgeber beantworten eine klar definierte Kauffrage mit Direktantwort, Kriterien und Checkliste – zitierfähig für Answer Engines."
-              : "IGZ guides answer one clear buying question with a direct answer, criteria and checklist — citeable for answer engines."
+              ? "IGZ-Ratgeber sind Wissensmagazin-How-tos: eine klare Praxisfrage, Direktantwort, Schritte und FAQ – z. B. wie du AirPods richtig reinigst."
+              : "IGZ guides are knowledge-magazine how-tos: one clear practice question, a direct answer, steps and FAQ — e.g. how to clean AirPods properly."
           }
           takeawaysTitle={t("product.keyTakeaways")}
           takeaways={
             isDe
               ? [
-                  "Täglich ein neuer Themen-Ratgeber",
-                  "Verlinkung zu Kategorie-Vergleichen und Tests",
-                  "FAQ und Speakable-Blöcke für AEO",
+                  "Täglich ein neuer How-to-Artikel",
+                  "Pflege, Reinigung, Einrichtung, Alltag",
+                  "Checklisten und typische Fehler",
                 ]
               : [
-                  "One new topic guide every day",
-                  "Links to category comparisons and tests",
-                  "FAQ and speakable blocks for AEO",
+                  "One new how-to every day",
+                  "Care, cleaning, setup, everyday tips",
+                  "Checklists and common mistakes",
                 ]
           }
         />

@@ -694,7 +694,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                 href: `/${locale}/ratgeber`,
                 title: t("nav.guides"),
                 description: isDe
-                  ? "Themen-Ratgeber und Kaufhilfen"
+                  ? "Themen-Ratgeber und How-tos"
                   : "Topic guides and buying advice",
               },
               {

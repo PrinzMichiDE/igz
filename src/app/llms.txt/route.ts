@@ -50,7 +50,7 @@ export async function GET() {
     `- ${absoluteUrl("/de/bestenlisten")}: Best-of lists hub`,
     `- ${absoluteUrl("/de/reviews")}: All product reviews (filter & sort)`,
     `- ${absoluteUrl("/de/spiele")}: Video game reviews (IGDB + AI)`,
-    `- ${absoluteUrl("/de/ratgeber")}: Buying guides & topic advice (1 new guide/day)`,
+    `- ${absoluteUrl("/de/ratgeber")}: How-to knowledge magazine (1 new guide/day)`,
     `- ${absoluteUrl("/de/vergleich")}: Side-by-side product compare hub`,
     `- ${absoluteUrl("/de/methodik")}: Editorial methodology (E-E-A-T)`,
     `- ${absoluteUrl("/de/redaktionelle-richtlinien")}: Editorial guidelines`,

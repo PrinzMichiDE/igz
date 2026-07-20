@@ -18,7 +18,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Daily Ratgeber pipeline: publish 1 new advice guide on a fresh topic (UTC).
+ * Daily Ratgeber pipeline: publish 1 new how-to / knowledge article (UTC).
+ * Topics are care, cleaning, setup — not classic buying guides.
  * Default locale: de. Opt-in English with ?locales=de,en
  */
 export async function GET(req: NextRequest) {

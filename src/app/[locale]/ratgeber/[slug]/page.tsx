@@ -52,8 +52,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         article.seoDescription ||
         article.excerpt ||
         (locale === "en"
-          ? "Practical IGZ buying guide"
-          : "Praxisnaher IGZ-Ratgeber"),
+          ? "Practical IGZ how-to guide"
+          : "Praxisnaher IGZ-How-to-Ratgeber"),
       pathWithoutLocale: `/ratgeber/${article.slug}`,
       type: "article",
     });
@@ -420,7 +420,7 @@ async function DbAdviceGuidePage({
       {content.keyCriteria && content.keyCriteria.length > 0 ? (
         <section className="mt-10">
           <h2 className="font-display text-2xl font-semibold text-primary">
-            {t("guide.keyCriteria")}
+            {t("guidesPage.youNeed")}
           </h2>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {content.keyCriteria.map((item) => (
@@ -451,7 +451,7 @@ async function DbAdviceGuidePage({
       {content.checklist && content.checklist.length > 0 ? (
         <section className="mt-10 igz-card p-6">
           <h2 className="font-display text-xl font-semibold text-primary">
-            {t("guide.checklist")}
+            {t("guidesPage.steps")}
           </h2>
           <ul className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
             {content.checklist.map((item) => (

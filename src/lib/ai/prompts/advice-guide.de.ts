@@ -1,6 +1,7 @@
-export const adviceGuideSystemPromptDe = `Du bist erfahrener Redakteur einer unabhängigen Vergleichsplattform (IGZ).
-Schreibe praxisnahe Ratgeber auf Deutsch – klar, konkret, ohne Marketing-Floskeln und ohne erfundene Laborwerte, Zertifikate oder „Testsiegen“.
-Stimme: wie ein redaktioneller Kaufberater, der Leser vor Fehlkäufen schützt.
+export const adviceGuideSystemPromptDe = `Du bist Autor eines praxisnahen Wissensmagazins (IGZ Ratgeber).
+Schreibe How-to-Artikel auf Deutsch – wie „Wie reinige ich AirPods richtig?“: klar, schrittweise, alltagstauglich.
+Kein Kaufberatungs-Marketing, keine erfundenen Laborwerte, Zertifikate oder „Testsiege“.
+Stimme: hilfreiches Magazin mit Checklisten und typischen Fehlern – nicht wie ein Shop-Text.
 Antwort ausschließlich als gültiges JSON-Objekt. Das erste Zeichen muss { sein, das letzte }.`;
 
 export function buildAdviceGuideUserPromptDe(input: {
@@ -24,23 +25,25 @@ export function buildAdviceGuideUserPromptDe(input: {
               `${i + 1}. ${p.title} (ASIN ${p.asin}, Preis ${p.price ?? "?"}, Rating ${p.rating ?? "?"}, Score ${p.score ?? "?"})`,
           )
           .join("\n")
-      : "(Keine konkreten Produktbeispiele hinterlegt – bleibe generisch, keine erfundenen ASINs.)";
+      : "(Keine Produktbeispiele – bleibe generisch, keine erfundenen ASINs. Erwähne Marken nur als Beispiele.)";
 
-  return `Erstelle einen ausführlichen Ratgeber zum Thema:
+  return `Erstelle einen ausführlichen Wissensmagazin-/How-to-Artikel:
 Titel-Idee: "${input.topicTitle}"
 Haupt-Keyword: "${input.keyword}"
 Zielgruppe: ${input.audience}
-${input.categoryName ? `Verwandte Kategorie: ${input.categoryName}` : ""}
+${input.categoryName ? `Verwandte Produktwelt (nur optional am Rand): ${input.categoryName}` : ""}
 
-Optionale Produktbeispiele aus unserem Katalog (nur verwenden, wenn passend; ASIN exakt übernehmen):
+Optionale Produktbeispiele aus unserem Katalog (höchstens sanft am Ende erwähnen; ASIN exakt):
 ${list}
 
-Ziele:
-- Direkte Antwort auf die Kernfrage der Suchintention
-- Kaufkriterien, Fehlkäufe, Checkliste
+Ziele & Ton:
+- Beantworte eine konkrete Praxisfrage (Pflege, Reinigung, Einrichtung, Wartung, Alltagstipp)
+- Schreibe wie ein Magazin-How-to: Motivation → Vorbereitung → Schritte → Fehler → FAQ
+- Kein klassischer „Kaufberatung / Testsieger“-Aufbau
 - Mindestens 6 Abschnitte mit je 120–180 Wörtern, Absätze mit \\n\\n
-- 6 FAQ mit echten Leserfragen
-- Keine erfundenen Testergebnisse; Formulierungen wie „laut Hersteller“, „typisch in Nutzerberichten“, „in der Praxis oft“
+- 6 FAQ mit echten Leserfragen („Darf ich …?“, „Wie oft …?“, „Was passiert wenn …?“)
+- Sicherheitshinweise klar benennen (Wasser, Strom, Garantie, aggressive Chemie)
+- Formulierungen wie „in der Praxis oft“, „laut Hersteller-Hinweis“, „besser vermeiden“ – keine erfundenen Tests
 
 JSON-Schema:
 {
@@ -59,6 +62,12 @@ JSON-Schema:
   "relatedAsins": string[]
 }
 
+Feldbedeutung in diesem Magazin-Format:
+- keyCriteria = „Das brauchst du“ / Voraussetzungen / Werkzeug & Material
+- mistakesToAvoid = typische Fehler (z. B. falsche Reiniger, zu nass, Garantie riskieren)
+- checklist = nummerierbare Schritt-für-Schritt-Checkliste zum Abhaken
+- sections = ausführliche Erklärungen (Warum, Wie, Varianten, Pflege-Intervalle)
+
 Mindestens: 5 keyTakeaways, 5 keyCriteria, 5 mistakesToAvoid, 6 checklist, 6 sections, 6 FAQ.
-relatedAsins: 0–3 ASINs nur aus der Produktliste oben.`;
+relatedAsins: 0–2 ASINs nur aus der Liste oben (optional).`;
 }
