@@ -81,6 +81,8 @@ Vercel Cron triggert nur noch **kurze** Endpoints. Die schwere Arbeit läuft als
 
 Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal).
 
+**Auth:** Auf Vercel ist `CRON_SECRET` Pflicht. Alle `/api/cron/*`-Routen erwarten `Authorization: Bearer ${CRON_SECRET}` (Vercel Cron setzt den Header automatisch, sobald die Env-Variable gesetzt ist). Lokal ohne Secret bleiben die Routen für Smoke-Tests offen.
+
 `generate-content` erzeugt pro Step getrennt:
 1. Testberichte (OpenRouter)
 2. Nutzererfahrungs-Kommentare
@@ -88,7 +90,7 @@ Ohne `QSTASH_TOKEN` fallen die Cron-Routes auf Inline-Ausführung zurück (lokal
 
 Schedules (`vercel.json`, UTC): setup 05:55 · sync-categories 05:58 · sync-products 06:00 · generate-content 07:00 (3 diversified tests) · generate-entertainment 02:15 (sync-only by default) · indexnow 08:00 · generate-ratgeber 09:00 (1 guide/day) · generate-content refresh 15:20.
 
-Benötigte Env (auch auf Vercel setzen): `QSTASH_TOKEN`, `QSTASH_URL`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `UPSTASH_WORKFLOW_URL`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
+Benötigte Env (auch auf Vercel setzen): `CRON_SECRET`, `QSTASH_TOKEN`, `QSTASH_URL`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `UPSTASH_WORKFLOW_URL`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
 
 ## Vercel / Postgres
 
@@ -105,6 +107,10 @@ Siehe `.env.example`. Korrekt ist **`DATABASE_URL`** (nicht `DATEBASE_URL`).
 - API-Keys niemals committen
 - RapidAPI-Keys bei Leak rotieren
 - Affiliate-Disclosure ist auf Content-Seiten eingebaut
+- Cron-Routen: `CRON_SECRET` (siehe oben)
+- `/api/out` erlaubt nur Amazon-Hosts und prüft die ASIN
+- Öffentliche KI-/Barcode-APIs sind IP-rate-limited
+- Tests: `npm test`
 
 ## Rechtliches
 
