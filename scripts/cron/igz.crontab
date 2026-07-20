@@ -1,20 +1,21 @@
-# IGZ crontab — sync products, Amazon reviews, game reviews
-# Times are UTC. Replace SITE and set CRON_SECRET in the environment
-# of the user that runs cron (e.g. ~/.profile or /etc/environment).
+# IGZ crontab — sync products, Amazon reviews, game reviews (UTC)
 #
-#   export IGZ_SITE_URL="https://igz.vercel.app"
-#   export CRON_SECRET="..."
+# 1) Create /etc/igz-cron.env (chmod 600):
+#      IGZ_SITE_URL=https://igz.vercel.app
+#      CRON_SECRET=your-secret
+# 2) crontab -e  → paste below (adjust env path if needed)
 #
-# Install: crontab -e  → paste these lines (or: crontab scripts/cron/igz.crontab)
+# Or use: bash scripts/cron/run-cron.sh sync-products
 
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
+CRON_ENV=/etc/igz-cron.env
 
-# 06:00 UTC — Amazon product sync
-0 6 * * * curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" "${IGZ_SITE_URL}/api/cron/sync-products" >>/tmp/igz-cron-sync-products.log 2>&1
+# 06:00 UTC — /api/cron/sync-products
+0 6 * * * set -a; . "$CRON_ENV"; set +a; curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" "${IGZ_SITE_URL}/api/cron/sync-products" >>/tmp/igz-cron-sync-products.log 2>&1
 
-# 07:00 UTC — 3 new Amazon product reviews (DE)
-0 7 * * * curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" "${IGZ_SITE_URL}/api/cron/generate-content?products=3&chain=0&locales=de&comments=2" >>/tmp/igz-cron-generate-content.log 2>&1
+# 07:00 UTC — /api/cron/generate-content
+0 7 * * * set -a; . "$CRON_ENV"; set +a; curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" "${IGZ_SITE_URL}/api/cron/generate-content?products=3&chain=0&locales=de&comments=2" >>/tmp/igz-cron-generate-content.log 2>&1
 
-# 10:00 UTC — 10 IGDB game reviews (DE), no duplicates
-0 10 * * * curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" "${IGZ_SITE_URL}/api/cron/generate-game-reviews?locales=de&count=10" >>/tmp/igz-cron-generate-game-reviews.log 2>&1
+# 10:00 UTC — /api/cron/generate-game-reviews
+0 10 * * * set -a; . "$CRON_ENV"; set +a; curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" "${IGZ_SITE_URL}/api/cron/generate-game-reviews?locales=de&count=10" >>/tmp/igz-cron-generate-game-reviews.log 2>&1
