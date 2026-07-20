@@ -3,6 +3,7 @@ import Link from "next/link";
 const links = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/articles", label: "Tests & Artikel" },
+  { href: "/admin/games", label: "Spiele (IGDB)" },
   { href: "/admin/experiences", label: "Nutzererfahrungen" },
   { href: "/admin/test-requests", label: "Testanfragen" },
 ];

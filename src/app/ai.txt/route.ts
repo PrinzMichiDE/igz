@@ -22,6 +22,7 @@ Home: ${site}/de
 Categories: ${site}/de/kategorien
 Best lists: ${site}/de/bestenlisten
 Reviews: ${site}/de/reviews
+Games: ${site}/de/spiele
 Guides: ${site}/de/ratgeber
 Compare: ${site}/de/vergleich
 Methodology: ${site}/de/methodik

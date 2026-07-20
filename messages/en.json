@@ -7,6 +7,7 @@
     "home": "Home",
     "categories": "Categories",
     "reviews": "Reviews",
+    "games": "Games",
     "guides": "Guides",
     "deals": "Deals",
     "compare": "Compare",
@@ -361,6 +362,22 @@
     "affiliate": "Affiliate disclosure",
     "contact": "Contact",
     "disclaimer": "IGZ is an independent comparison platform. Reviews, comparisons and guides are created entirely by artificial intelligence and are not editorially reviewed (labelled under EU AI Act Art. 50). Prices and availability may vary. Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Amazon links may be affiliate links."
+  },
+  "gamesPage": {
+    "kicker": "Video games",
+    "title": "Video game reviews",
+    "subtitle": "In-depth reviews based on IGDB data — with trailers, screenshots and links to Steam, Ubisoft Connect and more.",
+    "empty": "No game reviews yet. The daily cron or admin panel will create them.",
+    "reviewBadge": "Game review",
+    "score": "IGZ score",
+    "storeLinks": "Play / Buy",
+    "videos": "Trailers & videos",
+    "noImages": "No screenshots available.",
+    "noVideos": "No trailers on file.",
+    "noStoreLinks": "No storefront links found on IGDB.",
+    "developers": "Developers",
+    "publishers": "Publishers",
+    "sourceIgdb": "Source: IGDB"
   },
   "reviewsPage": {
     "kicker": "Editorial",

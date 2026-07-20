@@ -35,6 +35,7 @@ enum JobType {
   generate_buying_guide
   generate_tech_profile
   generate_advice_guide
+  generate_game_review
 }
 
 enum JobStatus {
@@ -307,4 +308,60 @@ model ProductTestRequest {
   @@index([status, createdAt])
   @@index([ipHash, createdAt])
   @@index([email, createdAt])
+}
+
+/// Video game catalog entry sourced from IGDB (https://www.igdb.com/).
+model Game {
+  id               String    @id @default(cuid())
+  igdbId           Int       @unique
+  slug             String    @unique
+  name             String
+  summary          String?
+  storyline        String?
+  coverUrl         String?
+  releaseDate      DateTime?
+  igdbRating       Float?
+  igdbRatingCount  Int?
+  genresJson       Json?
+  platformsJson    Json?
+  developersJson   Json?
+  publishersJson   Json?
+  screenshotsJson  Json?
+  videosJson       Json?
+  websitesJson     Json?
+  storeLinksJson   Json?
+  rawIgdbJson      Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  reviews GameReview[]
+
+  @@index([releaseDate])
+  @@index([igdbRating])
+  @@index([name])
+}
+
+/// Long-form AI game review (locale-specific), linked to a Game.
+model GameReview {
+  id             String        @id @default(cuid())
+  locale         Locale
+  status         ArticleStatus @default(draft)
+  title          String
+  slug           String
+  excerpt        String?
+  seoTitle       String?
+  seoDescription String?
+  contentJson    Json?
+  overallScore   Float?
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, locale])
+  @@unique([slug, locale])
+  @@index([status, publishedAt])
+  @@index([locale, status])
 }

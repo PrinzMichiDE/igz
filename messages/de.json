@@ -7,6 +7,7 @@
     "home": "Home",
     "categories": "Kategorien",
     "reviews": "Tests",
+    "games": "Spiele",
     "guides": "Ratgeber",
     "deals": "Deals",
     "compare": "Vergleich",
@@ -361,6 +362,22 @@
     "affiliate": "Affiliate-Hinweis",
     "contact": "Kontakt",
     "disclaimer": "IGZ ist eine unabhängige Vergleichsplattform. Testberichte, Vergleiche und Ratgeber werden vollständig durch Künstliche Intelligenz erstellt und nicht redaktionell geprüft (Kennzeichnung gemäß EU AI Act Art. 50). Preise und Verfügbarkeit können variieren. Amazon und das Amazon-Logo sind Warenzeichen von Amazon.com, Inc. oder verbundenen Unternehmen. Amazon-Links können Affiliate-Links sein."
+  },
+  "gamesPage": {
+    "kicker": "Videospiele",
+    "title": "Videospiel-Reviews",
+    "subtitle": "Ausführliche Tests auf Basis von IGDB-Daten – mit Trailer, Screenshots und Links zu Steam, Ubisoft Connect & Co.",
+    "empty": "Noch keine Spiele-Reviews. Der tägliche Cron oder das Admin-Panel legt welche an.",
+    "reviewBadge": "Spiele-Test",
+    "score": "IGZ Score",
+    "storeLinks": "Spielen / Kaufen",
+    "videos": "Trailer & Videos",
+    "noImages": "Keine Screenshots verfügbar.",
+    "noVideos": "Keine Trailer hinterlegt.",
+    "noStoreLinks": "Keine Store-Links bei IGDB gefunden.",
+    "developers": "Entwickler",
+    "publishers": "Publisher",
+    "sourceIgdb": "Datenquelle IGDB"
   },
   "reviewsPage": {
     "kicker": "Redaktion",

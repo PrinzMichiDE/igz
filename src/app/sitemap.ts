@@ -12,20 +12,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     updatedAt: Date;
     locale: "de" | "en";
   }> = [];
+  let gameReviews: Array<{
+    slug: string;
+    updatedAt: Date;
+    locale: "de" | "en";
+    gameSlug: string;
+  }> = [];
   try {
-    [products, categories, adviceGuides] = await Promise.all([
+    [products, categories, adviceGuides, gameReviews] = await Promise.all([
       prisma.product.findMany({ select: { slug: true, updatedAt: true } }),
       prisma.category.findMany({ select: { slug: true, updatedAt: true } }),
       prisma.article.findMany({
         where: { type: "advice_guide", status: "published" },
         select: { slug: true, updatedAt: true, locale: true },
       }),
+      prisma.gameReview
+        .findMany({
+          where: { status: "published" },
+          select: {
+            slug: true,
+            updatedAt: true,
+            locale: true,
+            game: { select: { slug: true } },
+          },
+        })
+        .then((rows) =>
+          rows.map((row) => ({
+            slug: row.slug,
+            updatedAt: row.updatedAt,
+            locale: row.locale,
+            gameSlug: row.game.slug,
+          })),
+        ),
     ]);
   } catch {
     // Build/preview without a reachable DB should still emit static routes.
     products = [];
     categories = [];
     adviceGuides = [];
+    gameReviews = [];
   }
 
   const locales = ["de", "en"] as const;
@@ -34,6 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/kategorien",
     "/bestenlisten",
     "/reviews",
+    "/spiele",
     "/ratgeber",
     "/deals",
     "/suche",
@@ -62,8 +88,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       entries.push({
         url: `${baseUrl}/${locale}${path}`,
         lastModified: new Date(),
-        changeFrequency: path === "" || path === "/ratgeber" ? "daily" : "weekly",
-        priority: path === "" ? 1 : path === "/ratgeber" ? 0.85 : 0.7,
+        changeFrequency:
+          path === "" || path === "/ratgeber" || path === "/spiele"
+            ? "daily"
+            : "weekly",
+        priority:
+          path === ""
+            ? 1
+            : path === "/ratgeber" || path === "/spiele"
+              ? 0.85
+              : 0.7,
       });
     }
 
@@ -95,6 +129,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       entries.push({
         url: `${baseUrl}/${locale}/ratgeber/${guide.slug}`,
         lastModified: guide.updatedAt,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
+    }
+
+    for (const gameReview of gameReviews.filter((g) => g.locale === locale)) {
+      entries.push({
+        url: `${baseUrl}/${locale}/spiele/${gameReview.gameSlug}`,
+        lastModified: gameReview.updatedAt,
         changeFrequency: "weekly",
         priority: 0.8,
       });

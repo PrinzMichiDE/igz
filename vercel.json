@@ -31,6 +31,10 @@
     {
       "path": "/api/cron/generate-ratgeber?locales=de",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/generate-game-reviews?locales=de&count=10",
+      "schedule": "0 10 * * *"
     }
   ]
 }
