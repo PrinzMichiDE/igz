@@ -1,7 +1,7 @@
-import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
+import { getClientIp, hashClientIp } from "@/lib/security/client-ip";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,18 +27,6 @@ const bodySchema = z.object({
 type Props = {
   params: Promise<{ slug: string }>;
 };
-
-function clientIp(req: NextRequest) {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown";
-  }
-  return req.headers.get("x-real-ip") || "unknown";
-}
-
-function hashIp(ip: string) {
-  return createHash("sha256").update(ip).digest("hex").slice(0, 64);
-}
 
 function wordCount(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -85,7 +73,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  const ipHash = hashIp(clientIp(req));
+  const ipHash = hashClientIp(getClientIp(req));
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
   const recentFromIp = await prisma.productExperienceComment.count({
     where: {

@@ -13,6 +13,7 @@ import {
   entertainmentSyncSlugForToday,
 } from "@/lib/entertainment";
 import { remainingDailyReviewSlots } from "@/lib/review-daily-quota";
+import { authorizeCronRequest } from "@/lib/security/cron-auth";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 import type { Locale } from "@prisma/client";
 
@@ -30,6 +31,9 @@ export const maxDuration = 60;
  * Opt-in reviews: `?reviews=1` (uses remaining daily slots) or `?products=N`.
  */
 export async function GET(req: NextRequest) {
+  const denied = authorizeCronRequest(req);
+  if (denied) return denied;
+
   const locales = (req.nextUrl.searchParams.get("locales") || "de")
     .split(",")
     .map((v) => v.trim())

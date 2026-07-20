@@ -10,6 +10,7 @@ import {
   buildAmazonStoreAffiliateUrl,
   getPartnerTag,
 } from "@/lib/amazon/affiliate";
+import { enforceIpRateLimit } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -138,6 +139,13 @@ async function loadCatalogContext(options: {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await enforceIpRateLimit(req, {
+    bucket: "chat",
+    limit: 20,
+    windowSeconds: 60 * 60,
+  });
+  if (limited) return limited;
+
   try {
     const json = await req.json();
     const body = bodySchema.parse(json);

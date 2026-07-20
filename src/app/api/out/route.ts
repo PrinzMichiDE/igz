@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
+import { isAllowedAmazonRedirectTarget } from "@/lib/security/safe-amazon-redirect";
 import type { Locale } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -19,12 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
   }
 
-  try {
-    const parsed = new URL(target);
-    if (!["http:", "https:"].includes(parsed.protocol)) {
-      return NextResponse.json({ error: "Invalid target" }, { status: 400 });
-    }
-  } catch {
+  if (!isAllowedAmazonRedirectTarget(target, asin)) {
     return NextResponse.json({ error: "Invalid target" }, { status: 400 });
   }
 

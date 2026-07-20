@@ -9,6 +9,7 @@ import {
   countRemainingAdviceGuideTopics,
   pickNextAdviceGuideTopic,
 } from "@/lib/ratgeber/select-topic";
+import { authorizeCronRequest } from "@/lib/security/cron-auth";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 import type { Locale } from "@prisma/client";
 
@@ -21,6 +22,9 @@ export const maxDuration = 60;
  * Default locale: de. Opt-in English with ?locales=de,en
  */
 export async function GET(req: NextRequest) {
+  const denied = authorizeCronRequest(req);
+  if (denied) return denied;
+
   const locales = (req.nextUrl.searchParams.get("locales") || "de")
     .split(",")
     .map((v) => v.trim())

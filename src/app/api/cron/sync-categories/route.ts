@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureTopAmazonCategories } from "@/lib/amazon/sync-categories";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
+import { authorizeCronRequest } from "@/lib/security/cron-auth";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 
 export const runtime = "nodejs";
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
+  const denied = authorizeCronRequest(req);
+  if (denied) return denied;
+
   const fetchFromApi = req.nextUrl.searchParams.get("api") !== "0";
   const limit = Number(req.nextUrl.searchParams.get("limit") || 50);
   const country = req.nextUrl.searchParams.get("country") || "DE";

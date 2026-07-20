@@ -7,6 +7,7 @@ import {
   syncCategorySearch,
 } from "@/lib/amazon/sync";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
+import { authorizeCronRequest } from "@/lib/security/cron-auth";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 
 export const runtime = "nodejs";
@@ -14,6 +15,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
+  const denied = authorizeCronRequest(req);
+  if (denied) return denied;
+
   const slug = req.nextUrl.searchParams.get("category");
   const detailsTopN = Number(req.nextUrl.searchParams.get("top") || 3);
   const forceInline = req.nextUrl.searchParams.get("inline") === "1";

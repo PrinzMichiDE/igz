@@ -1,14 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { resolveDatabaseUrl } from "@/lib/db/database-url";
 import { prisma } from "@/lib/db/prisma";
 import { formatDatabaseError, withDbRetry } from "@/lib/db/with-db-retry";
+import { authorizeCronRequest } from "@/lib/security/cron-auth";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const denied = authorizeCronRequest(req);
+  if (denied) return denied;
+
   try {
     return await enqueueOrRunInline(
       {

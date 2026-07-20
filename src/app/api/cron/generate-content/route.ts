@@ -19,6 +19,7 @@ import {
   DAILY_NEW_REVIEW_TARGET,
   remainingDailyReviewSlots,
 } from "@/lib/review-daily-quota";
+import { authorizeCronRequest } from "@/lib/security/cron-auth";
 import { enqueueOrRunInline } from "@/lib/workflows/trigger-cron";
 import type { Locale } from "@prisma/client";
 
@@ -36,6 +37,9 @@ function defaultChainRemaining() {
 }
 
 export async function GET(req: NextRequest) {
+  const denied = authorizeCronRequest(req);
+  if (denied) return denied;
+
   const slug = req.nextUrl.searchParams.get("category");
   const product = req.nextUrl.searchParams.get("product");
   const locales = (req.nextUrl.searchParams.get("locales") || "de")

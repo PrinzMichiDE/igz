@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { lookupBarcode } from "@/lib/barcode/lookup";
 import { formatDatabaseError } from "@/lib/db/with-db-retry";
+import { enforceIpRateLimit } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,13 @@ const schema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const limited = await enforceIpRateLimit(req, {
+    bucket: "barcode-lookup",
+    limit: 40,
+    windowSeconds: 60 * 60,
+  });
+  if (limited) return limited;
+
   const parsed = schema.safeParse({
     code: req.nextUrl.searchParams.get("code") || "",
     locale: req.nextUrl.searchParams.get("locale") || "de",
@@ -44,6 +52,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await enforceIpRateLimit(req, {
+    bucket: "barcode-lookup",
+    limit: 40,
+    windowSeconds: 60 * 60,
+  });
+  if (limited) return limited;
+
   let json: unknown;
   try {
     json = await req.json();

@@ -1,8 +1,9 @@
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { numericPrice } from "@/lib/product-links";
+import { getClientIp, hashClientIp } from "@/lib/security/client-ip";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,16 +17,6 @@ const bodySchema = z.object({
   privacyAccepted: z.literal(true),
   website: z.string().max(0).optional().or(z.literal("")),
 });
-
-function clientIp(req: NextRequest) {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
-  return req.headers.get("x-real-ip") || "unknown";
-}
-
-function hashIp(ip: string) {
-  return createHash("sha256").update(ip).digest("hex").slice(0, 64);
-}
 
 export async function POST(req: NextRequest) {
   let json: unknown;
@@ -69,7 +60,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ipHash = hashIp(clientIp(req));
+  const ipHash = hashClientIp(getClientIp(req));
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recent = await prisma.priceAlert.count({
     where: {

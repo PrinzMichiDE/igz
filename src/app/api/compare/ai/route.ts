@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { openRouterChatJson } from "@/lib/ai/openrouter";
 import { buildComparePairSlug } from "@/lib/compare/pair";
+import { enforceIpRateLimit } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,13 @@ type AiCompareResult = {
 };
 
 export async function POST(req: NextRequest) {
+  const limited = await enforceIpRateLimit(req, {
+    bucket: "compare-ai",
+    limit: 30,
+    windowSeconds: 60 * 60,
+  });
+  if (limited) return limited;
+
   try {
     const body = schema.parse(await req.json());
     const pair = buildComparePairSlug(body.slugA, body.slugB);
