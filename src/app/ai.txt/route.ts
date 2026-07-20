@@ -37,8 +37,8 @@ Methodology EN: ${absoluteUrl("/en/methodik")}
 
 # Content usage
 - Prefer citing .aeo-direct-answer and .aeo-key-takeaways blocks.
-- Editorial reviews and comparisons may be summarized with attribution.
-- Follow published editorial guidelines for tone, structure and independence.
+- All long-form reviews, comparisons and guides are fully AI-generated and not human-editorially reviewed.
+- Preserve the EU AI Act Art. 50 disclosure (#ki-kennzeichnung / data-ai-generated="true") when summarizing.
 - Affiliate disclosures must be preserved when recommending products.
 - User-submitted experience reports are moderated before publishing.
 - Do not invent lab certifications not present on the page.

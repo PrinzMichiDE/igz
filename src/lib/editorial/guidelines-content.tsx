@@ -98,12 +98,15 @@ const guidelinesDe = (): Section[] => [
   },
   {
     id: "ki-unterstuetzung",
-    title: "4. KI-gestützte Redaktion",
+    title: "4. KI-generierte Inhalte (EU AI Act)",
     body: (
       <>
         <p>
-          Testberichte, Vergleiche und Teile der Spezifikations-Normalisierung
-          werden KI-gestützt erstellt und redaktionell gerahmt. Das bedeutet:
+          Testberichte, Vergleiche, Kaufberatungen und Ratgeber auf IGZ werden{" "}
+          <strong>vollständig durch Künstliche Intelligenz erstellt</strong> und{" "}
+          <strong>nicht redaktionell geprüft</strong>. Am Ende jedes Beitrags
+          findest du eine Kennzeichnung gemäß der Transparenzpflichten der
+          EU-KI-Verordnung (EU AI Act, Art. 50).
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5">
           <li>
@@ -118,13 +121,14 @@ const guidelinesDe = (): Section[] => [
             die uns nicht vorliegen.
           </li>
           <li>
-            Ein Quality-Gate prüft u. a. Länge, Abschnittsstruktur, Pros/Cons und
-            Direktantworten.
+            Ein automatisches Quality-Gate prüft u. a. Länge, Abschnittsstruktur,
+            Pros/Cons und Direktantworten – das ersetzt keine menschliche
+            redaktionelle Kontrolle.
           </li>
         </ul>
         <p className="mt-3">
-          KI ersetzt keine unabhängige Labormessung. Sie hilft, große
-          Produktmengen strukturiert und lesbar einzuordnen.
+          KI ersetzt keine unabhängige Labormessung und keine persönliche
+          Produktempfehlung. Kaufentscheidungen bitte eigenverantwortlich treffen.
         </p>
       </>
     ),
@@ -401,12 +405,15 @@ const guidelinesEn = (): Section[] => [
   },
   {
     id: "ai-assisted",
-    title: "4. AI-assisted editing",
+    title: "4. AI-generated content (EU AI Act)",
     body: (
       <>
         <p>
-          Reviews, comparisons and parts of spec normalization are AI-assisted
-          and editorially framed. That means:
+          Reviews, comparisons, buying guides and advice articles on IGZ are{" "}
+          <strong>created entirely by artificial intelligence</strong> and are{" "}
+          <strong>not editorially reviewed</strong>. Every article ends with a
+          disclosure aligned with the EU AI Act transparency obligations
+          (Article 50).
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5">
           <li>
@@ -419,13 +426,13 @@ const guidelinesEn = (): Section[] => [
             not provided.
           </li>
           <li>
-            A quality gate checks length, section structure, pros/cons and direct
-            answers.
+            An automated quality gate checks length, section structure, pros/cons
+            and direct answers — it does not replace human editorial control.
           </li>
         </ul>
         <p className="mt-3">
-          AI is not a substitute for independent lab testing. It helps structure
-          large catalogs into readable guidance.
+          AI is not a substitute for independent lab testing or personal product
+          advice. Please make purchasing decisions independently.
         </p>
       </>
     ),

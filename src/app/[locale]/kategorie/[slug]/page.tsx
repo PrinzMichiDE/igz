@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
+import { AiContentDisclosure } from "@/components/content/ai-content-disclosure";
 import { AwardBadge } from "@/components/comparison/award-badge";
 import { AwardPicker } from "@/components/comparison/award-picker";
 import { FilteredComparisonSection } from "@/components/comparison/filtered-comparison-section";
@@ -715,6 +716,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                     }))
                 : []),
             ]}
+          />
+
+          <AiContentDisclosure
+            title={t("disclosure.aiTitle")}
+            body={t("disclosure.aiBody")}
+            legalNote={t("disclosure.aiLegal")}
+            methodologyHref={`/${locale}/methodik`}
+            methodologyLabel={t("disclosure.aiMethodology")}
           />
       </div>
     </div>

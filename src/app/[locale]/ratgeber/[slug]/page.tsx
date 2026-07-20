@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
 import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
+import { AiContentDisclosure } from "@/components/content/ai-content-disclosure";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { ProductCard } from "@/components/product/product-card";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
@@ -249,6 +250,14 @@ export default async function RatgeberPage({ params }: Props) {
             description: isDe ? item.descriptionDe : item.descriptionEn,
           })),
         ]}
+      />
+
+      <AiContentDisclosure
+        title={t("disclosure.aiTitle")}
+        body={t("disclosure.aiBody")}
+        legalNote={t("disclosure.aiLegal")}
+        methodologyHref={`/${locale}/methodik`}
+        methodologyLabel={t("disclosure.aiMethodology")}
       />
     </div>
   );
@@ -501,6 +510,14 @@ async function DbAdviceGuidePage({
           }))}
         />
       ) : null}
+
+      <AiContentDisclosure
+        title={t("disclosure.aiTitle")}
+        body={t("disclosure.aiBody")}
+        legalNote={t("disclosure.aiLegal")}
+        methodologyHref={`/${locale}/methodik`}
+        methodologyLabel={t("disclosure.aiMethodology")}
+      />
     </div>
   );
 }

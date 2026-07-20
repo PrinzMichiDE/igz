@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CtaButton } from "@/components/affiliate/cta-button";
 import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
+import { AiContentDisclosure } from "@/components/content/ai-content-disclosure";
 import { ProsCons } from "@/components/content/pros-cons";
 import { FeatureComparisonMatrix } from "@/components/comparison/feature-comparison-matrix";
 import { MultiComparePicker } from "@/components/comparison/multi-compare-picker";
@@ -424,6 +425,14 @@ export default async function ComparePage({ params, searchParams }: Props) {
           </Link>
         ) : null}
       </div>
+
+      <AiContentDisclosure
+        title={t("disclosure.aiTitle")}
+        body={t("disclosure.aiBody")}
+        legalNote={t("disclosure.aiLegal")}
+        methodologyHref={`/${locale}/methodik`}
+        methodologyLabel={t("disclosure.aiMethodology")}
+      />
     </div>
   );
 }

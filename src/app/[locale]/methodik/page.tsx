@@ -73,8 +73,8 @@ export default async function MethodologyPage({ params }: Props) {
       </h1>
       <p className="aeo-direct-answer mb-8 text-lg text-zinc-700">
         {isDe
-          ? "Wir kombinieren Amazon-Produktdaten, redaktionelle Kriterien und KI-gestützte Auswertung – ohne erfundene Labormessungen."
-          : "We combine Amazon product data, editorial criteria and AI-assisted analysis — without invented lab measurements."}
+          ? "Wir kombinieren Amazon-Produktdaten und KI-generierte Auswertung nach festen Kriterien – ohne erfundene Labormessungen und ohne menschliche redaktionelle Freigabe der Texte."
+          : "We combine Amazon product data and AI-generated analysis against fixed criteria — without invented lab measurements and without human editorial approval of the copy."}
       </p>
 
       <div className="prose-article space-y-6 font-serif text-zinc-700">
@@ -90,16 +90,16 @@ export default async function MethodologyPage({ params }: Props) {
           <h2>{isDe ? "2. Testbericht-Erstellung" : "2. Review creation"}</h2>
           <p>
             {isDe
-              ? "Ausführliche Testberichte werden mit OpenRouter generiert und gegen ein Quality-Gate geprüft (Länge, Pros/Cons, Direktantwort, Takeaways). Der Ton orientiert sich an Alltagsszenarien statt Marketingfloskeln. Automatisch erscheinen pro Tag bis zu drei neue Amazon-Tests aus verschiedenen Kategorien."
-              : "Long-form reviews are generated with OpenRouter and checked against a quality gate (length, pros/cons, direct answer, takeaways). The tone follows real-world scenarios instead of marketing fluff. Automatically we publish up to three new Amazon tests per day from different categories."}
+              ? "Ausführliche Testberichte, Vergleiche und Ratgeber werden vollständig mit OpenRouter (KI) generiert und nur gegen ein automatisches Quality-Gate geprüft (Länge, Pros/Cons, Direktantwort, Takeaways) – nicht durch eine menschliche Redaktion. Am Ende jedes Beitrags kennzeichnen wir das gemäß EU AI Act Art. 50. Der Ton orientiert sich an Alltagsszenarien statt Marketingfloskeln. Automatisch erscheinen pro Tag bis zu drei neue Amazon-Tests aus verschiedenen Kategorien."
+              : "Long-form reviews, comparisons and guides are generated entirely with OpenRouter (AI) and only checked by an automated quality gate (length, pros/cons, direct answer, takeaways) — not by a human editor. Every article ends with an EU AI Act Art. 50 disclosure. The tone follows real-world scenarios instead of marketing fluff. Automatically we publish up to three new Amazon tests per day from different categories."}
           </p>
         </section>
         <section>
           <h2>{isDe ? "3. Score-Modell" : "3. Score model"}</h2>
           <p>
             {isDe
-              ? "Der redaktionelle Score (0–10) berücksichtigt Preis-Leistung, Verarbeitung, Alltagstauglichkeit und Langzeitnutzen. Amazon-Sterne fließen als Signal ein, ersetzen aber nicht die redaktionelle Bewertung."
-              : "The editorial score (0–10) considers value, build quality, everyday usability and longevity. Amazon stars are a signal, not a replacement for editorial judgment."}
+              ? "Der KI-Score (0–10) berücksichtigt Preis-Leistung, Verarbeitung, Alltagstauglichkeit und Langzeitnutzen. Amazon-Sterne fließen als Signal ein, ersetzen aber nicht die modellbasierte Bewertung."
+              : "The AI score (0–10) considers value, build quality, everyday usability and longevity. Amazon stars are a signal, not a replacement for the model-based assessment."}
           </p>
         </section>
         <section>
@@ -114,8 +114,8 @@ export default async function MethodologyPage({ params }: Props) {
           <h2>{isDe ? "5. Bekannte Fehler & Fehlercodes" : "5. Known issues & error codes"}</h2>
           <p>
             {isDe
-              ? "Zusätzlich recherchiert die Redaktion/KI öffentlich berichtete Probleme und typische Fehlercodes inkl. erster Schritte. Quellen werden verlinkt, wenn verfügbar. Keine Garantie auf Vollständigkeit."
-              : "We also research publicly reported issues and typical error codes with first remediation steps. Sources are linked when available. Completeness is not guaranteed."}
+              ? "Zusätzlich recherchiert die KI öffentlich berichtete Probleme und typische Fehlercodes inkl. erster Schritte. Quellen werden verlinkt, wenn verfügbar. Keine Garantie auf Vollständigkeit; Inhalte sind nicht redaktionell geprüft."
+              : "AI also researches publicly reported issues and typical error codes with first remediation steps. Sources are linked when available. Completeness is not guaranteed; content is not editorially reviewed."}
           </p>
         </section>
         <section>

@@ -347,7 +347,11 @@
   },
   "disclosure": {
     "short": "Affiliate-Hinweis: Mit Sternchen (*) markierte Links sind Affiliate-Links. Wenn du darüber einkaufst, erhalten wir ggf. eine Provision – ohne Mehrkosten für dich.",
-    "inline": "Affiliate-Link"
+    "inline": "Affiliate-Link",
+    "aiTitle": "KI-generierter Inhalt",
+    "aiBody": "Dieser Beitrag wurde vollständig durch Künstliche Intelligenz erstellt und nicht redaktionell geprüft. Angaben zu Produkten, Scores und Empfehlungen können Fehler enthalten. Treffe Kaufentscheidungen bitte eigenverantwortlich und prüfe aktuelle Preise sowie Produktdaten auf Amazon.",
+    "aiLegal": "Kennzeichnung gemäß Transparenzpflichten der EU-KI-Verordnung (EU AI Act, Art. 50): Der Text ist künstlich erzeugt; es liegt keine menschliche redaktionelle Kontrolle mit inhaltlicher Verantwortung vor.",
+    "aiMethodology": "Mehr zu Methodik und Limits"
   },
   "footer": {
     "rights": "Alle Rechte vorbehalten.",
@@ -356,7 +360,7 @@
     "methodology": "Methodik",
     "affiliate": "Affiliate-Hinweis",
     "contact": "Kontakt",
-    "disclaimer": "IGZ ist eine unabhängige Vergleichsplattform. Preise und Verfügbarkeit können variieren. Amazon und das Amazon-Logo sind Warenzeichen von Amazon.com, Inc. oder verbundenen Unternehmen. Amazon-Links können Affiliate-Links sein."
+    "disclaimer": "IGZ ist eine unabhängige Vergleichsplattform. Testberichte, Vergleiche und Ratgeber werden vollständig durch Künstliche Intelligenz erstellt und nicht redaktionell geprüft (Kennzeichnung gemäß EU AI Act Art. 50). Preise und Verfügbarkeit können variieren. Amazon und das Amazon-Logo sind Warenzeichen von Amazon.com, Inc. oder verbundenen Unternehmen. Amazon-Links können Affiliate-Links sein."
   },
   "reviewsPage": {
     "kicker": "Redaktion",

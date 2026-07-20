@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Star } from "lucide-react";
 import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
+import { AiContentDisclosure } from "@/components/content/ai-content-disclosure";
 import { AmazonImageLink } from "@/components/affiliate/amazon-image-link";
 import { AmazonInlineCta } from "@/components/affiliate/amazon-inline-cta";
 import { BuyBox } from "@/components/product/buy-box";
@@ -920,8 +921,8 @@ export default async function ProductPage({ params }: Props) {
             href: `/${locale}/reviews?category=${product.category.slug}`,
             title: isDe ? "Alle Tests dieser Kategorie" : "All tests in this category",
             description: isDe
-              ? "Weitere redaktionelle Amazon-Tests im Überblick"
-              : "More editorial Amazon tests at a glance",
+              ? "Weitere Amazon-Tests im Überblick"
+              : "More Amazon tests at a glance",
           },
           {
             href: `/${locale}/methodik`,
@@ -943,6 +944,14 @@ export default async function ProductPage({ params }: Props) {
               ]
             : []),
         ]}
+      />
+
+      <AiContentDisclosure
+        title={t("disclosure.aiTitle")}
+        body={t("disclosure.aiBody")}
+        legalNote={t("disclosure.aiLegal")}
+        methodologyHref={`/${locale}/methodik`}
+        methodologyLabel={t("disclosure.aiMethodology")}
       />
 
       <StickyAmazonBar

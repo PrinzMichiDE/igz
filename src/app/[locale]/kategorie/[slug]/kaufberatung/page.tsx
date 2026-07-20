@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
+import { AiContentDisclosure } from "@/components/content/ai-content-disclosure";
 import { FaqAccordion } from "@/components/content/faq-accordion";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -268,6 +269,14 @@ export default async function BuyingGuidePage({ params }: Props) {
       ) : null}
 
       <FaqAccordion items={content.faq || []} />
+
+      <AiContentDisclosure
+        title={t("disclosure.aiTitle")}
+        body={t("disclosure.aiBody")}
+        legalNote={t("disclosure.aiLegal")}
+        methodologyHref={`/${locale}/methodik`}
+        methodologyLabel={t("disclosure.aiMethodology")}
+      />
 
       <div className="mt-10">
         <Link

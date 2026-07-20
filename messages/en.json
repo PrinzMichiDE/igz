@@ -347,7 +347,11 @@
   },
   "disclosure": {
     "short": "Affiliate disclosure: Links marked with an asterisk (*) are affiliate links. We may earn a commission at no extra cost to you.",
-    "inline": "Affiliate link"
+    "inline": "Affiliate link",
+    "aiTitle": "AI-generated content",
+    "aiBody": "This article was created entirely by artificial intelligence and was not editorially reviewed. Product details, scores and recommendations may contain errors. Please make purchasing decisions independently and verify current prices and product data on Amazon.",
+    "aiLegal": "Labelled in line with the transparency obligations of the EU AI Act (Article 50): the text is artificially generated; there is no human editorial control with content responsibility.",
+    "aiMethodology": "More about methodology and limits"
   },
   "footer": {
     "rights": "All rights reserved.",
@@ -356,7 +360,7 @@
     "methodology": "Methodology",
     "affiliate": "Affiliate disclosure",
     "contact": "Contact",
-    "disclaimer": "IGZ is an independent comparison platform. Prices and availability may vary. Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Amazon links may be affiliate links."
+    "disclaimer": "IGZ is an independent comparison platform. Reviews, comparisons and guides are created entirely by artificial intelligence and are not editorially reviewed (labelled under EU AI Act Art. 50). Prices and availability may vary. Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Amazon links may be affiliate links."
   },
   "reviewsPage": {
     "kicker": "Editorial",

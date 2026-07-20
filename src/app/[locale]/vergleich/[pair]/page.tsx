@@ -5,6 +5,7 @@ import { AffiliateDisclosure } from "@/components/affiliate/disclosure";
 import { AiCompareVerdict } from "@/components/comparison/ai-compare-verdict";
 import { HeadToHeadTable } from "@/components/comparison/head-to-head-table";
 import { AeoAnswerBlock } from "@/components/content/aeo-answer-block";
+import { AiContentDisclosure } from "@/components/content/ai-content-disclosure";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
@@ -225,6 +226,14 @@ export default async function ComparePairPage({ params }: Props) {
           }}
         />
       </div>
+
+      <AiContentDisclosure
+        title={t("disclosure.aiTitle")}
+        body={t("disclosure.aiBody")}
+        legalNote={t("disclosure.aiLegal")}
+        methodologyHref={`/${locale}/methodik`}
+        methodologyLabel={t("disclosure.aiMethodology")}
+      />
     </div>
   );
 }
