@@ -27,6 +27,19 @@ Alle produktionsrelevanten Änderungen an Sicherheit, Architektur, Datenflüssen
 
 ## Detailbeschreibung
 
+### Eintrag 2026-07-21 – Preisalarme Admin & Audit-Log
+
+| Feld | Inhalt |
+| --- | --- |
+| Änderung | Admin-Panel `/admin/price-alerts`, geschützte Admin-API, `AdminAuditLog`-Modell, IP-Rate-Limit auf `POST /api/price-alerts`, Tests |
+| Begründung | Preisalarme waren für Operatoren unsichtbar; Admin-Aktionen ohne Audit-Spur; öffentliche API ohne shared Rate-Limit |
+| Auswirkung | Operatoren sehen/stornieren Alarme; Stornierungen werden in `AdminAuditLog` protokolliert; aggressive Clients → 429 |
+| Risiko | Schema-Migration `AdminAuditLog` muss via Build/`db push` auf Vercel Postgres laufen |
+| Betroffene Komponenten | `prisma/schema.prisma`, `src/app/admin/price-alerts`, `src/app/api/admin/price-alerts/*`, `src/lib/admin/audit-log.ts`, `src/app/api/price-alerts/route.ts` |
+| Prüfung | `npm test` grün |
+| Freigabe | Merge auf `master` nach grünem Gate |
+| Rollback | Revert Commit; `AdminAuditLog`-Tabelle kann bestehen bleiben (harmlos) |
+
 ### Eintrag 2026-07-20 – Security Hardening
 
 | Feld | Inhalt |
@@ -68,4 +81,5 @@ Jeder Daily-Evolution-Lauf mit Codeänderung erzeugt einen Eintrag hier und in `
 
 | Datum | Autor/Rolle | Änderung | Anlass |
 | --- | --- | --- | --- |
+| 2026-07-21 | Daily Evolution Agent | Preisalarme-Admin + Audit-Log | Daily Evolution |
 | 2026-07-20 | Daily Evolution Agent | Prozess etabliert + Security-Eintrag | Daily Evolution |

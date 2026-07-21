@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { numericPrice } from "@/lib/product-links";
 import { getClientIp, hashClientIp } from "@/lib/security/client-ip";
+import { enforceIpRateLimit } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,13 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const limited = await enforceIpRateLimit(req, {
+    bucket: "price-alerts",
+    limit: 12,
+    windowSeconds: 60 * 60,
+  });
+  if (limited) return limited;
+
   let json: unknown;
   try {
     json = await req.json();

@@ -365,3 +365,17 @@ model GameReview {
   @@index([status, publishedAt])
   @@index([locale, status])
 }
+
+/// Immutable record of privileged admin actions for operational audit.
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  entityType  String
+  entityId    String?
+  actorEmail  String
+  detailsJson Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}

@@ -9,7 +9,7 @@
     "build": "node scripts/prisma-db-push.mjs && next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx src/lib/reviews/published-at.test.ts && tsx src/lib/security/cron-auth.test.ts && tsx src/lib/security/safe-amazon-redirect.test.ts && tsx src/lib/security/rate-limit.test.ts && tsx src/lib/security/client-ip.test.ts",
+    "test": "tsx src/lib/reviews/published-at.test.ts && tsx src/lib/security/cron-auth.test.ts && tsx src/lib/security/safe-amazon-redirect.test.ts && tsx src/lib/security/rate-limit.test.ts && tsx src/lib/security/client-ip.test.ts && tsx src/lib/admin/mask-email.test.ts && tsx src/lib/price-alerts/admin-stats.test.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "node scripts/prisma-db-push.mjs",

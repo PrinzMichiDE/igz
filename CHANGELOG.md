@@ -2,6 +2,22 @@
 
 All notable changes to IGZ are documented in this file.
 
+## [2026-07-21] – Price alerts admin & audit logging
+
+### Added
+- Admin panel at `/admin/price-alerts` with status filters, masked emails, product links, and cancel action.
+- Protected API routes: `GET /api/admin/price-alerts`, `PATCH /api/admin/price-alerts/[id]`.
+- `AdminAuditLog` Prisma model and `logAdminAction()` helper for operational audit trails.
+- Email masking helper (`src/lib/admin/mask-email.ts`) for DSGVO-friendly admin list views.
+- Dashboard card linking to active price alerts count.
+- Unit tests for mask-email and price-alert admin stats aggregation.
+
+### Fixed
+- Public `POST /api/price-alerts` now enforces IP rate limiting (12 req/hour) via shared rate-limit module.
+
+### Changed
+- Admin navigation includes Preisalarme section.
+
 ## [2026-07-20] – Daily evolution (security hardening)
 
 ### Added

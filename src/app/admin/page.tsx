@@ -38,6 +38,7 @@ export default async function AdminDashboardPage() {
     adviceGuidesToday,
     adviceGuidesPublished,
     adviceTopicsRemaining,
+    activePriceAlerts,
   ] = await Promise.all([
     getQuotaStatus(),
     getAffiliateAnalytics(30),
@@ -67,6 +68,7 @@ export default async function AdminDashboardPage() {
       where: { type: "advice_guide", status: "published" },
     }),
     countRemainingAdviceGuideTopics("de"),
+    prisma.priceAlert.count({ where: { status: "active" } }),
   ]);
 
   return (
@@ -155,6 +157,18 @@ export default async function AdminDashboardPage() {
             {pendingTestRequests}
           </p>
           <p className="mt-2 text-xs text-secondary">Anfragen prüfen →</p>
+        </Link>
+        <Link
+          href="/admin/price-alerts"
+          className="igz-card igz-card-hover block p-5"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Aktive Preisalarme
+          </p>
+          <p className="mt-2 font-display text-3xl font-bold text-primary">
+            {activePriceAlerts}
+          </p>
+          <p className="mt-2 text-xs text-secondary">Alarme verwalten →</p>
         </Link>
         <div className="igz-card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
