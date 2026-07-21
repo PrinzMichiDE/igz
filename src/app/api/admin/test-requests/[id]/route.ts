@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { logAdminAction } from "@/lib/admin/audit-log";
 import { requireAdminSession } from "@/lib/admin";
 import { prisma } from "@/lib/db/prisma";
 
@@ -33,6 +34,14 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: "Validation failed" }, { status: 400 });
   }
 
+  const existing = await prisma.productTestRequest.findUnique({
+    where: { id },
+    select: { id: true, status: true, adminNote: true, productTitle: true },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const updated = await prisma.productTestRequest.update({
     where: { id },
     data: {
@@ -56,6 +65,21 @@ export async function PATCH(req: NextRequest, { params }: Props) {
       canShipSample: true,
       adminNote: true,
       createdAt: true,
+    },
+  });
+
+  await logAdminAction({
+    action: "product_test_request.update",
+    entityType: "product_test_request",
+    entityId: id,
+    actorEmail: session.user.email ?? "admin",
+    details: {
+      previousStatus: existing.status,
+      newStatus: updated.status,
+      productTitle: existing.productTitle,
+      adminNoteChanged:
+        typeof parsed.data.adminNote === "string" &&
+        parsed.data.adminNote !== (existing.adminNote ?? ""),
     },
   });
 

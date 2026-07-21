@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { logAdminAction } from "@/lib/admin/audit-log";
 import { requireAdminSession } from "@/lib/admin";
 import { generateAndPublishGameReview } from "@/lib/games/generate-review";
 import { upsertGameByIgdbId } from "@/lib/games/upsert";
@@ -61,6 +62,21 @@ export async function POST(req: NextRequest) {
         path: `/${locale}/spiele/${game.slug}`,
       });
     }
+
+    await logAdminAction({
+      action: "game_review.generate",
+      entityType: "game_review",
+      entityId: game.id,
+      actorEmail: session.user.email ?? "admin",
+      details: {
+        igdbId: parsed.data.igdbId,
+        gameSlug: game.slug,
+        gameName: game.name,
+        locales: parsed.data.locales,
+        reviewIds: created.map((r) => r.id),
+      },
+    });
+
     return NextResponse.json({
       ok: true,
       game: {

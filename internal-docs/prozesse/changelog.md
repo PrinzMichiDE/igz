@@ -27,6 +27,19 @@ Alle produktionsrelevanten Änderungen an Sicherheit, Architektur, Datenflüssen
 
 ## Detailbeschreibung
 
+### Eintrag 2026-07-21 (b) – Global Audit-Log & Affiliate Rate-Limit
+
+| Feld | Inhalt |
+| --- | --- |
+| Änderung | `/admin/audit` Viewer, `GET /api/admin/audit-logs`, Audit-Logging auf allen mutierenden Admin-Routen, IP-Rate-Limit auf `/api/out` (60/h), Tests |
+| Begründung | Audit-Infrastruktur existierte nur für Preisalarme; destruktive Admin-Aktionen (Produkt/Artikel-Löschung) ohne Nachweis; `/api/out` schrieb unbegrenzt `affiliateClick`-Zeilen |
+| Auswirkung | Vollständige Audit-Spur für Admin-Mutationen; Operatoren können alle Aktionen filtern/paginieren; Affiliate-Spam → 429 |
+| Risiko | Gering – reine Erweiterung bestehender Audit-Tabelle und Rate-Limit-Modul |
+| Betroffene Komponenten | `src/lib/admin/audit-log.ts`, `src/app/admin/audit`, `src/app/api/admin/audit-logs`, Admin-Mutator-Routen, `src/app/api/out/route.ts` |
+| Prüfung | `npm test` grün |
+| Freigabe | Merge auf `master` nach grünem Gate |
+| Rollback | Revert Commit; Audit-Einträge bleiben harmlos erhalten |
+
 ### Eintrag 2026-07-21 – Preisalarme Admin & Audit-Log
 
 | Feld | Inhalt |
@@ -81,5 +94,6 @@ Jeder Daily-Evolution-Lauf mit Codeänderung erzeugt einen Eintrag hier und in `
 
 | Datum | Autor/Rolle | Änderung | Anlass |
 | --- | --- | --- | --- |
+| 2026-07-21 | Daily Evolution Agent | Global Audit-Log + Affiliate Rate-Limit | Daily Evolution |
 | 2026-07-21 | Daily Evolution Agent | Preisalarme-Admin + Audit-Log | Daily Evolution |
 | 2026-07-20 | Daily Evolution Agent | Prozess etabliert + Security-Eintrag | Daily Evolution |

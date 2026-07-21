@@ -7,6 +7,7 @@ const links = [
   { href: "/admin/price-alerts", label: "Preisalarme" },
   { href: "/admin/experiences", label: "Nutzererfahrungen" },
   { href: "/admin/test-requests", label: "Testanfragen" },
+  { href: "/admin/audit", label: "Audit-Log" },
 ];
 
 export function AdminNav({ currentPath }: { currentPath: string }) {

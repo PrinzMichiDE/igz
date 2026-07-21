@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
+import { enforceIpRateLimit } from "@/lib/security/rate-limit";
 import { isAllowedAmazonRedirectTarget } from "@/lib/security/safe-amazon-redirect";
 import type { Locale } from "@prisma/client";
 
@@ -11,6 +12,13 @@ function isLocale(value: string | null): value is Locale {
 }
 
 export async function GET(req: NextRequest) {
+  const rateLimited = await enforceIpRateLimit(req, {
+    bucket: "affiliate-out",
+    limit: 60,
+    windowSeconds: 3600,
+  });
+  if (rateLimited) return rateLimited;
+
   const asin = req.nextUrl.searchParams.get("asin");
   const localeParam = req.nextUrl.searchParams.get("locale");
   const target = req.nextUrl.searchParams.get("to");

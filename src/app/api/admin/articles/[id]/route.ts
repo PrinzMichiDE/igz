@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logAdminAction } from "@/lib/admin/audit-log";
 import { requireAdminSession } from "@/lib/admin";
 import { prisma } from "@/lib/db/prisma";
 import type { ArticleStatus } from "@prisma/client";
@@ -26,11 +27,33 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
+  const existing = await prisma.article.findUnique({
+    where: { id },
+    select: { id: true, title: true, type: true, status: true, slug: true },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const article = await prisma.article.update({
     where: { id },
     data: {
       status: body.status,
       publishedAt: body.status === "published" ? new Date() : null,
+    },
+  });
+
+  await logAdminAction({
+    action: "article.status_update",
+    entityType: "article",
+    entityId: id,
+    actorEmail: session.user.email ?? "admin",
+    details: {
+      previousStatus: existing.status,
+      newStatus: body.status,
+      title: existing.title,
+      type: existing.type,
+      slug: existing.slug,
     },
   });
 
@@ -55,6 +78,17 @@ export async function DELETE(_req: NextRequest, { params }: Props) {
   }
 
   await prisma.article.delete({ where: { id } });
+
+  await logAdminAction({
+    action: "article.delete",
+    entityType: "article",
+    entityId: id,
+    actorEmail: session.user.email ?? "admin",
+    details: {
+      title: existing.title,
+      type: existing.type,
+    },
+  });
 
   return NextResponse.json({
     ok: true,

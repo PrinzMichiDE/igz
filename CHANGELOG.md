@@ -2,6 +2,22 @@
 
 All notable changes to IGZ are documented in this file.
 
+## [2026-07-21] – Global audit log & affiliate click rate limit
+
+### Added
+- Global admin audit log viewer at `/admin/audit` with entity-type filters and pagination.
+- Protected API route `GET /api/admin/audit-logs` for programmatic audit access.
+- `logAdminAction()` coverage on all mutating admin routes: articles, products, experience comments, test requests, and game review generation.
+- Extended audit helpers: `listAdminAuditLogs`, `countAdminAuditLogs`, `normalizeAuditPagination`, entity-type validation.
+- Unit tests for audit pagination and entity-type helpers.
+
+### Fixed
+- `/api/out` affiliate redirect now enforces IP rate limiting (60 req/hour) to prevent affiliate-click DB spam.
+
+### Changed
+- Admin navigation includes Audit-Log section.
+- Destructive admin actions (product/article/comment delete) now leave immutable audit trails.
+
 ## [2026-07-21] – Price alerts admin & audit logging
 
 ### Added
