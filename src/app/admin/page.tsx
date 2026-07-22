@@ -16,6 +16,10 @@ import {
   countSucceededReviewsToday,
   DAILY_NEW_REVIEW_TARGET,
 } from "@/lib/review-daily-quota";
+import {
+  aggregateJobRunCounts,
+  countRecentFailedJobs,
+} from "@/lib/jobs/admin-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +43,8 @@ export default async function AdminDashboardPage() {
     adviceGuidesPublished,
     adviceTopicsRemaining,
     activePriceAlerts,
+    jobStatusRows,
+    recentFailedJobs,
   ] = await Promise.all([
     getQuotaStatus(),
     getAffiliateAnalytics(30),
@@ -69,7 +75,17 @@ export default async function AdminDashboardPage() {
     }),
     countRemainingAdviceGuideTopics("de"),
     prisma.priceAlert.count({ where: { status: "active" } }),
+    prisma.jobRun.findMany({ select: { status: true } }),
+    prisma.jobRun.findMany({
+      where: { status: "failed" },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: { status: true, createdAt: true },
+    }),
   ]);
+
+  const jobCounts = aggregateJobRunCounts(jobStatusRows);
+  const failedJobsLast24h = countRecentFailedJobs(recentFailedJobs);
 
   return (
     <div className="igz-container py-10 md:py-14">
@@ -170,6 +186,22 @@ export default async function AdminDashboardPage() {
           </p>
           <p className="mt-2 text-xs text-secondary">Alarme verwalten →</p>
         </Link>
+        <Link
+          href="/admin/jobs"
+          className="igz-card igz-card-hover block p-5"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Fehlgeschlagene Jobs (24h)
+          </p>
+          <p
+            className={`mt-2 font-display text-3xl font-bold ${failedJobsLast24h > 0 ? "text-red-600" : "text-primary"}`}
+          >
+            {failedJobsLast24h}
+          </p>
+          <p className="mt-2 text-xs text-secondary">
+            {jobCounts.failed} gesamt · Jobs anzeigen →
+          </p>
+        </Link>
         <div className="igz-card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             Neue Tests heute (UTC)
@@ -244,9 +276,17 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="font-display text-xl font-semibold text-primary">
-          Letzte Jobs
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl font-semibold text-primary">
+            Letzte Jobs
+          </h2>
+          <Link
+            href="/admin/jobs"
+            className="text-sm font-semibold text-secondary hover:underline"
+          >
+            Alle Jobs →
+          </Link>
+        </div>
         <ul className="mt-4 divide-y divide-border rounded-xl border border-border bg-surface">
           {recentJobs.map((job) => (
             <li

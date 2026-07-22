@@ -4,6 +4,7 @@ const links = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/articles", label: "Tests & Artikel" },
   { href: "/admin/games", label: "Spiele (IGDB)" },
+  { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/price-alerts", label: "Preisalarme" },
   { href: "/admin/experiences", label: "Nutzererfahrungen" },
   { href: "/admin/test-requests", label: "Testanfragen" },

@@ -27,6 +27,19 @@ Alle produktionsrelevanten Änderungen an Sicherheit, Architektur, Datenflüssen
 
 ## Detailbeschreibung
 
+### Eintrag 2026-07-22 – Job-Runs Admin-Panel
+
+| Feld | Inhalt |
+| --- | --- |
+| Änderung | `/admin/jobs` Viewer, `GET /api/admin/job-runs`, Job-Aggregations-Helpers, Dashboard-Karte für Fehler in 24h, Tests |
+| Begründung | Cron/Workflow-Läufe waren nur als Kurzliste im Dashboard sichtbar; Operatoren konnten Fehler, Typen und Dauer nicht filtern oder paginieren |
+| Auswirkung | Vollständige Sicht auf `JobRun`-Historie; schnelle Erkennung fehlgeschlagener Sync-/Generierungs-Jobs; API für externe Monitoring-Integration |
+| Risiko | Gering – read-only Admin-Zugriff, bestehende Auth-Session erforderlich |
+| Betroffene Komponenten | `src/lib/jobs/admin-stats.ts`, `src/app/admin/jobs`, `src/app/api/admin/job-runs`, `src/app/admin/page.tsx`, `src/components/admin/admin-nav.tsx` |
+| Prüfung | `npm test` grün |
+| Freigabe | Merge auf `master` nach grünem Gate |
+| Rollback | Revert Commit; keine Schema-Änderung |
+
 ### Eintrag 2026-07-21 (b) – Global Audit-Log & Affiliate Rate-Limit
 
 | Feld | Inhalt |
@@ -94,6 +107,7 @@ Jeder Daily-Evolution-Lauf mit Codeänderung erzeugt einen Eintrag hier und in `
 
 | Datum | Autor/Rolle | Änderung | Anlass |
 | --- | --- | --- | --- |
+| 2026-07-22 | Daily Evolution Agent | Job-Runs Admin-Panel | Daily Evolution |
 | 2026-07-21 | Daily Evolution Agent | Global Audit-Log + Affiliate Rate-Limit | Daily Evolution |
 | 2026-07-21 | Daily Evolution Agent | Preisalarme-Admin + Audit-Log | Daily Evolution |
 | 2026-07-20 | Daily Evolution Agent | Prozess etabliert + Security-Eintrag | Daily Evolution |

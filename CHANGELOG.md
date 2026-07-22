@@ -2,6 +2,19 @@
 
 All notable changes to IGZ are documented in this file.
 
+## [2026-07-22] – Job runs admin panel
+
+### Added
+- Admin panel at `/admin/jobs` with status/type filters, pagination, duration metrics, and error visibility.
+- Protected API route `GET /api/admin/job-runs` for programmatic job history access.
+- Job run aggregation helpers: `aggregateJobRunCounts`, `countRecentFailedJobs`, pagination and filter builders.
+- Dashboard card showing failed jobs in the last 24 hours with link to the jobs panel.
+- Unit tests for job admin stats helpers.
+
+### Changed
+- Admin navigation includes Jobs section.
+- Dashboard “Letzte Jobs” section links to the full jobs viewer.
+
 ## [2026-07-21] – Global audit log & affiliate click rate limit
 
 ### Added
