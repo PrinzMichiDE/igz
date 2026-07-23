@@ -187,6 +187,20 @@ export default async function AdminDashboardPage() {
           <p className="mt-2 text-xs text-secondary">Alarme verwalten →</p>
         </Link>
         <Link
+          href="/admin/health"
+          className="igz-card igz-card-hover block p-5"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            System-Health
+          </p>
+          <p className="mt-2 font-display text-3xl font-bold text-primary">
+            Status
+          </p>
+          <p className="mt-2 text-xs text-secondary">
+            DB, Env, Cron-Pipelines →
+          </p>
+        </Link>
+        <Link
           href="/admin/jobs"
           className="igz-card igz-card-hover block p-5"
         >

@@ -2,6 +2,23 @@
 
 All notable changes to IGZ are documented in this file.
 
+## [2026-07-23] – System health panel & admin login hardening
+
+### Added
+- Admin system health panel at `/admin/health` with DB/Redis latency probes, env-var checklist, cron pipeline recency, and runtime metadata.
+- Protected API route `GET /api/admin/health` for programmatic health access.
+- System health helpers: `evaluateEnvChecks`, `evaluateCronPipelines`, `collectSystemHealthReport`.
+- Admin login IP rate limiting (10 attempts/hour) on NextAuth credential callbacks.
+- Audit logging for successful and failed admin login attempts (`entityType: auth`).
+- Unit tests for system-health and admin-login-rate-limit modules.
+
+### Changed
+- Admin navigation includes Health section; dashboard links to health panel.
+- Admin audit entity types include `auth` for login event filtering.
+
+### Security
+- Brute-force protection on `/api/auth/callback/credentials` via shared rate-limit module (Redis when configured).
+
 ## [2026-07-22] – Job runs admin panel
 
 ### Added

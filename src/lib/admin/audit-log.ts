@@ -58,6 +58,7 @@ export function normalizeAuditPagination(input: {
 }
 
 export const ADMIN_AUDIT_ENTITY_TYPES = [
+  "auth",
   "price_alert",
   "article",
   "product",

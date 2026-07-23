@@ -19,7 +19,11 @@ export function AdminLoginForm() {
     });
 
     if (result?.error) {
-      setError("Login fehlgeschlagen");
+      if (result.status === 429) {
+        setError("Zu viele Login-Versuche. Bitte später erneut versuchen.");
+      } else {
+        setError("Login fehlgeschlagen");
+      }
       return;
     }
 

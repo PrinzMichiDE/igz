@@ -27,6 +27,19 @@ Alle produktionsrelevanten Änderungen an Sicherheit, Architektur, Datenflüssen
 
 ## Detailbeschreibung
 
+### Eintrag 2026-07-23 – System-Health & Admin-Login-Härtung
+
+| Feld | Inhalt |
+| --- | --- |
+| Änderung | `/admin/health` Panel, `GET /api/admin/health`, Env-/Cron-Health-Helpers, Login-Rate-Limit (10/h), Audit für Login-Erfolg/-Fehler, Tests |
+| Begründung | Operatoren hatten keine zentrale Sicht auf DB/Env/Cron-Konfiguration; Admin-Login nutzt einzelne Credentials ohne Brute-Force-Schutz |
+| Auswirkung | Frühe Erkennung fehlender `CRON_SECRET`/QStash/DB; Cron-Pipeline-Recency aus `JobRun`; Login-Versuche begrenzt und auditierbar |
+| Risiko | Gering – read-only Health-Checks; Rate-Limit nutzt bestehendes Modul; Audit blockiert Login nicht |
+| Betroffene Komponenten | `src/lib/admin/system-health.ts`, `src/lib/admin/collect-system-health.ts`, `src/lib/security/admin-login-rate-limit.ts`, `src/app/admin/health`, `src/app/api/admin/health`, `src/lib/auth.ts`, `src/app/api/auth/[...nextauth]/route.ts` |
+| Prüfung | `npm test` grün (11 Testdateien) |
+| Freigabe | Merge auf `master` nach grünem Gate |
+| Rollback | Revert Commit; keine Schema-Änderung |
+
 ### Eintrag 2026-07-22 – Job-Runs Admin-Panel
 
 | Feld | Inhalt |
