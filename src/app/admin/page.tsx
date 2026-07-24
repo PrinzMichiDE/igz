@@ -118,14 +118,18 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="igz-card p-5">
+        <Link
+          href="/admin/affiliate"
+          className="igz-card igz-card-hover block p-5"
+        >
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             Affiliate-Klicks (30T)
           </p>
           <p className="mt-2 font-display text-3xl font-bold text-primary">
             {analytics.totalClicks}
           </p>
-        </div>
+          <p className="mt-2 text-xs text-secondary">Analytics anzeigen →</p>
+        </Link>
         <div className="igz-card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             RapidAPI Quota
