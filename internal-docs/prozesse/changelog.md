@@ -27,6 +27,19 @@ Alle produktionsrelevanten Änderungen an Sicherheit, Architektur, Datenflüssen
 
 ## Detailbeschreibung
 
+### Eintrag 2026-07-24 – Affiliate-Analytics & Dependency-Patches
+
+| Feld | Inhalt |
+| --- | --- |
+| Änderung | `/admin/affiliate` Panel, `GET /api/admin/affiliate-analytics`, Affiliate-Admin-Helpers, Tests; `next` 15.5.21, `next-auth` beta.32 |
+| Begründung | Affiliate-Klicks waren nur als Dashboard-Zahl sichtbar; Operatoren konnten Pfade, Locale-Verteilung und Klick-Log nicht analysieren; npm audit meldete kritische Auth.js-/Next.js-Advisories |
+| Auswirkung | Vollständige Sicht auf Outbound-Klicks (7/30/90 Tage, Locale, ASIN-Filter, Pagination); API für Monitoring; reduzierte Angriffsfläche durch Framework-Patches |
+| Risiko | Gering – read-only Admin-Zugriff; Dependency-Updates innerhalb Minor/Patch |
+| Betroffene Komponenten | `src/lib/affiliate/admin-analytics.ts`, `src/app/admin/affiliate`, `src/app/api/admin/affiliate-analytics`, `src/components/admin/admin-nav.tsx`, `src/app/admin/page.tsx`, `package.json`, `package-lock.json` |
+| Prüfung | `npm test` grün (12 Testdateien) |
+| Freigabe | Merge auf `master` nach grünem Gate |
+| Rollback | Revert Commit; keine Schema-Änderung |
+
 ### Eintrag 2026-07-23 – System-Health & Admin-Login-Härtung
 
 | Feld | Inhalt |
@@ -120,6 +133,8 @@ Jeder Daily-Evolution-Lauf mit Codeänderung erzeugt einen Eintrag hier und in `
 
 | Datum | Autor/Rolle | Änderung | Anlass |
 | --- | --- | --- | --- |
+| 2026-07-24 | Daily Evolution Agent | Affiliate-Analytics-Panel + Dependency-Patches | Daily Evolution |
+| 2026-07-23 | Daily Evolution Agent | System-Health & Admin-Login-Härtung | Daily Evolution |
 | 2026-07-22 | Daily Evolution Agent | Job-Runs Admin-Panel | Daily Evolution |
 | 2026-07-21 | Daily Evolution Agent | Global Audit-Log + Affiliate Rate-Limit | Daily Evolution |
 | 2026-07-21 | Daily Evolution Agent | Preisalarme-Admin + Audit-Log | Daily Evolution |

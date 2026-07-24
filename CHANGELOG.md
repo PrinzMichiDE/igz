@@ -2,6 +2,21 @@
 
 All notable changes to IGZ are documented in this file.
 
+## [2026-07-24] – Affiliate analytics panel & dependency security patches
+
+### Added
+- Admin affiliate analytics panel at `/admin/affiliate` with period/locale filters, top products/paths, paginated click log, and 24h metrics.
+- Protected API route `GET /api/admin/affiliate-analytics` for programmatic affiliate analytics access.
+- Affiliate admin helpers: `normalizeAffiliatePeriodDays`, `buildAffiliateClickWhere`, `countRecentAffiliateClicks`, `aggregateAffiliateLocaleCounts`.
+- Unit tests for affiliate admin-analytics helpers.
+
+### Changed
+- Admin navigation includes Affiliate section; dashboard affiliate card links to analytics panel.
+
+### Security
+- Patched `next` 15.5.20 → 15.5.21 (App Router DoS/SSRF/cache fixes).
+- Patched `next-auth` 5.0.0-beta.31 → 5.0.0-beta.32 (Auth.js core advisories).
+
 ## [2026-07-23] – System health panel & admin login hardening
 
 ### Added
